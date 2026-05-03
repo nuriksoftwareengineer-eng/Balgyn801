@@ -1,6 +1,7 @@
 package com.nurba.java.domain;
 
 
+import com.nurba.java.enums.DeliveryType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
