@@ -1,5 +1,6 @@
 package com.nurba.java.domain;
 
+import com.nurba.java.enums.CdekShipmentStatus;
 import jakarta.persistence.*;
 
 import java.time.LocalDate;
@@ -14,21 +15,21 @@ public class CdekShipment {
 
     @OneToOne
     @JoinColumn(name = "order_id")
-    private Order order;           // FK -> orders
+    private Order order;
 
-    private String cdekOrderUuid;  // VARCHAR (UUID из СДЭК)
-    private String trackingNumber; // VARCHAR
+    private String cdekOrderUuid;
+    private String trackingNumber;
 
-    private Integer tariffCode;    // INTEGER (136, 137 и т.д.)
+    private Integer tariffCode;
 
-    private String fromCity;       // VARCHAR
-    private String toCity;         // VARCHAR
+    private String fromCity;
+    private String toCity;
 
-    private LocalDate estimatedDeliveryDate; // DATE
+    private LocalDate estimatedDeliveryDate;
 
     @Enumerated(EnumType.STRING)
-    private CdekShipmentStatus status; // VARCHAR (enum)
+    private CdekShipmentStatus status;
 
-    private LocalDateTime createdAt;  // TIMESTAMP
-    private LocalDateTime updatedAt;  // TIMESTAMP
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }
