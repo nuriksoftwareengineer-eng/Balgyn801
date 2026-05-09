@@ -5,12 +5,16 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
+
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-public class CreateCustomDesignRequest {
-    private Long customerId;
+public class CreateProductRequest {
+    private String title;
     private String description;
-    private String referenceImageUrl;
+    private BigDecimal price;
+    private String imageUrl;
+    private String inStock;
 }
