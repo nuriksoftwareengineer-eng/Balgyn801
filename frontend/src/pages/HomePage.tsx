@@ -1,14 +1,16 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Container } from "@/shared/ui/container";
 import { SectionHead } from "@/shared/ui/section-head";
 import { CategoryChips } from "@/widgets/CategoryChips";
+import { CustomDesignCTASection } from "@/widgets/CustomDesignCTASection";
 import { HeroSection } from "@/widgets/HeroSection";
-import { NewsletterSection } from "@/widgets/NewsletterSection";
 import { ProductCatalogGrid } from "@/widgets/ProductCatalogGrid";
-import { ReviewsSection } from "@/widgets/ReviewsSection";
 import { TrustStrip } from "@/widgets/TrustStrip";
 
 export function HomePage() {
+  const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
+
   return (
     <>
       <HeroSection />
@@ -23,7 +25,10 @@ export function HomePage() {
               </Link>
             }
           />
-          <CategoryChips />
+          <CategoryChips
+            selectedCategory={categoryFilter}
+            onSelect={setCategoryFilter}
+          />
           <SectionHead
             title="Хиты каталога"
             className="mt-12"
@@ -33,11 +38,10 @@ export function HomePage() {
               </span>
             }
           />
-          <ProductCatalogGrid />
+          <ProductCatalogGrid categoryFilter={categoryFilter} />
         </Container>
       </section>
-      <ReviewsSection />
-      <NewsletterSection />
+      <CustomDesignCTASection />
     </>
   );
 }

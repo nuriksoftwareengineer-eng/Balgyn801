@@ -9,8 +9,29 @@ import {
   uploadMedia,
 } from "@/shared/api/backend-api";
 import { ApiError } from "@/shared/api/http";
+import type { Product, ProductColorOption } from "@/shared/api/types";
+import { PRODUCT_CATEGORIES } from "@/shared/constants/store-content";
 import { formatMoney } from "@/shared/lib/format-money";
 import { Button } from "@/shared/ui/button";
+
+function parseSizesInput(raw: string): string[] {
+  return raw
+    .split(/[,;\n]+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+function parseColorsInput(raw: string): ProductColorOption[] {
+  return raw
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const m = line.match(/^(.+?)(?:\s+(#[0-9a-fA-F]{6}))?$/);
+      if (!m) return { name: line, hex: null };
+      return { name: m[1].trim(), hex: m[2] ?? null };
+    });
+}
 
 export function AdminProductsPage() {
   const { token } = useAuth();
@@ -24,10 +45,15 @@ export function AdminProductsPage() {
   const [price, setPrice] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [inStock, setInStock] = useState(true);
+  const [category, setCategory] = useState<string>(PRODUCT_CATEGORIES[0]);
+  const [sizesText, setSizesText] = useState("S, M, L, XL");
+  const [colorsText, setColorsText] = useState(
+    "Чёрный #1a1a1a\nМолочный #f5f0e8",
+  );
 
-  const productsQuery = useQuery({
-    queryKey: ["products"],
-    queryFn: getProducts,
+  const productsQuery = useQuery<Product[]>({
+    queryKey: ["products", "all"],
+    queryFn: () => getProducts(),
   });
 
   const createMut = useMutation({
@@ -37,6 +63,8 @@ export function AdminProductsPage() {
       if (!Number.isFinite(p) || p < 0) {
         throw new Error("Укажите корректную цену");
       }
+      const sizes = parseSizesInput(sizesText);
+      const colors = parseColorsInput(colorsText);
       return createProduct(
         {
           title: title.trim(),
@@ -44,6 +72,9 @@ export function AdminProductsPage() {
           price: p,
           imageUrl: imageUrl.trim() || null,
           inStock,
+          category,
+          sizes: sizes.length ? sizes : [],
+          colors: colors.length ? colors : [],
         },
         token,
       );
@@ -55,6 +86,9 @@ export function AdminProductsPage() {
       setPrice("");
       setImageUrl("");
       setInStock(true);
+      setCategory(PRODUCT_CATEGORIES[0]);
+      setSizesText("S, M, L, XL");
+      setColorsText("Чёрный #1a1a1a\nМолочный #f5f0e8");
       void queryClient.invalidateQueries({ queryKey: ["products"] });
     },
     onError: (err: unknown) => {
@@ -130,6 +164,50 @@ export function AdminProductsPage() {
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
               className="resize-y rounded-[10px] border border-white/10 bg-zinc-950 px-3 py-2 text-zinc-100 outline-none focus:border-violet-500/40 focus:ring-2 focus:ring-violet-500/30"
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-sm md:col-span-2">
+            <span className="text-zinc-400">
+              Категория (как на главной витрине)
+            </span>
+            <select
+              required
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="rounded-[10px] border border-white/10 bg-zinc-950 px-3 py-2 text-zinc-100 outline-none focus:border-violet-500/40 focus:ring-2 focus:ring-violet-500/30"
+            >
+              {PRODUCT_CATEGORIES.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="flex flex-col gap-1 text-sm md:col-span-2">
+            <span className="text-zinc-400">
+              Размеры (через запятую или с новой строки)
+            </span>
+            <input
+              value={sizesText}
+              onChange={(e) => setSizesText(e.target.value)}
+              placeholder="S, M, L, XL"
+              className="rounded-[10px] border border-white/10 bg-zinc-950 px-3 py-2 text-zinc-100 outline-none focus:border-violet-500/40 focus:ring-2 focus:ring-violet-500/30"
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-sm md:col-span-2">
+            <span className="text-zinc-400">
+              Цвета (каждый с новой строки:{" "}
+              <span className="font-normal text-zinc-600">
+                Название #RRGGBB
+              </span>
+              , HEX необязателен)
+            </span>
+            <textarea
+              value={colorsText}
+              onChange={(e) => setColorsText(e.target.value)}
+              rows={4}
+              placeholder={"Чёрный #1a1a1a\nБелый"}
+              className="resize-y rounded-[10px] border border-white/10 bg-zinc-950 px-3 py-2 font-mono text-sm text-zinc-100 outline-none focus:border-violet-500/40 focus:ring-2 focus:ring-violet-500/30"
             />
           </label>
           <label className="flex flex-col gap-1 text-sm">
@@ -218,6 +296,7 @@ export function AdminProductsPage() {
                 <tr className="border-b border-white/10 bg-zinc-900/80 text-xs uppercase tracking-wide text-zinc-500">
                   <th className="px-4 py-3 font-semibold">ID</th>
                   <th className="px-4 py-3 font-semibold">Название</th>
+                  <th className="px-4 py-3 font-semibold">Категория</th>
                   <th className="px-4 py-3 font-semibold">Цена</th>
                   <th className="px-4 py-3 font-semibold">Статус</th>
                   <th className="px-4 py-3 font-semibold">На сайте</th>
@@ -235,6 +314,9 @@ export function AdminProductsPage() {
                     </td>
                     <td className="max-w-[220px] truncate px-4 py-3 font-medium text-zinc-100">
                       {p.title}
+                    </td>
+                    <td className="max-w-[120px] truncate px-4 py-3 text-zinc-400">
+                      {p.category ?? "—"}
                     </td>
                     <td className="px-4 py-3 tabular-nums text-zinc-300">
                       {formatMoney(p.price)} ₸

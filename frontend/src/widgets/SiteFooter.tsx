@@ -54,9 +54,12 @@ export function SiteFooter() {
                 </a>
               </li>
               <li>
-                <a href="#" className="text-sm text-zinc-400 hover:text-zinc-100">
-                  Дизайн на заказ
-                </a>
+                <Link
+                  to="/custom-design"
+                  className="text-sm text-zinc-400 hover:text-zinc-100"
+                >
+                  Свой дизайн
+                </Link>
               </li>
             </ul>
           </div>

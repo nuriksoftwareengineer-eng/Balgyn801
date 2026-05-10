@@ -146,6 +146,8 @@ export function CartPage() {
       items: lines.map((l) => ({
         productId: l.productId,
         quantity: l.qty,
+        size: l.size,
+        color: l.color,
       })),
       address:
         deliveryType === "TAXI" || deliveryType === "CDEK"
@@ -206,7 +208,7 @@ export function CartPage() {
             <ul className="m-0 list-none space-y-3 p-0">
               {lines.map((line) => (
                 <motion.li
-                  key={line.productId}
+                  key={line.lineKey}
                   layout
                   initial={{ opacity: 0, x: reduceMotion ? 0 : -8 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -219,6 +221,11 @@ export function CartPage() {
                     >
                       {line.title}
                     </Link>
+                    {line.size || line.color ? (
+                      <p className="mt-0.5 text-xs text-zinc-500">
+                        {[line.size, line.color].filter(Boolean).join(" · ")}
+                      </p>
+                    ) : null}
                     <p className="mt-1 text-sm text-zinc-500">
                       {formatMoney(line.price)} ₸ × {line.qty}{" "}
                       <span className="text-zinc-600">·</span>{" "}
@@ -233,7 +240,7 @@ export function CartPage() {
                       variant="outline"
                       className="h-9 min-w-9 px-0"
                       aria-label="Уменьшить количество"
-                      onClick={() => decrement(line.productId)}
+                      onClick={() => decrement(line.lineKey)}
                     >
                       −
                     </Button>
@@ -245,7 +252,7 @@ export function CartPage() {
                       variant="outline"
                       className="h-9 min-w-9 px-0"
                       aria-label="Увеличить количество"
-                      onClick={() => increment(line.productId)}
+                      onClick={() => increment(line.lineKey)}
                     >
                       +
                     </Button>
@@ -254,7 +261,7 @@ export function CartPage() {
                     type="button"
                     variant="outline"
                     className="text-red-400 hover:border-red-500/40 hover:bg-red-500/10 hover:text-red-300"
-                    onClick={() => removeLine(line.productId)}
+                    onClick={() => removeLine(line.lineKey)}
                   >
                     Удалить
                   </Button>

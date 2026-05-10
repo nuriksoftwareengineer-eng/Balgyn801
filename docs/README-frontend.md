@@ -11,9 +11,9 @@
 
 `src/app/router.tsx` — `createBrowserRouter`:
 
-- Публичная витрина под `MainLayout`: `/`, `/catalog`, `/catalog/:productId`, `/cart`, `/about`.
+- Публичная витрина под `MainLayout`: `/`, `/catalog`, `/catalog/:productId`, `/cart`, `/custom-design`, `/about`.
 - Авторизация: `/login`, `/register` (`AuthShellLayout`).
-- Админка: `/admin`, `/admin/products` — обёртка `RequireAdmin` + `AdminLayout`.
+- Админка: `/admin`, `/admin/orders`, `/admin/orders/:orderId`, `/admin/products` — обёртка `RequireAdmin` + `AdminLayout`.
 
 ## Слои (ориентир по папкам)
 
@@ -22,7 +22,7 @@
 | `src/app/` | Провайдеры (`providers.tsx`), роутер, **контекст авторизации** (`auth-context.tsx`), корзина (`cart-provider.tsx`, `use-cart.ts`, `cart-context.ts`). |
 | `src/pages/` | Страницы: главная, каталог, карточка товара, корзина, о проекте, вход/регистрация. |
 | `src/admin/` | Админ-дэшборд, товары, `RequireAdmin`, общий `AdminLayout`. |
-| `src/widgets/` | Крупные блоки UI: шапка, подвал, герой, сетка каталога, карточка товара, отзывы и т.д. |
+| `src/widgets/` | Крупные блоки UI: шапка, подвал, герой, CTA «свой дизайн», сетка каталога, карточка товара и т.д. |
 | `src/shared/ui/` | Переиспользуемые примитивы: кнопка, контейнер, иконки-кнопки. |
 | `src/shared/api/` | Контракт с бэкендом: `types.ts`, `http.ts` (`apiFetch`, `ApiError`), `backend-api.ts` (методы + комментарий `BACKEND_API`), при необходимости `queries.ts` (React Query). |
 | `src/shared/lib/` | Утилиты: `cn`, форматирование цен, **`auth-storage.ts`** (JWT в `localStorage`, ключ `balgyn_access_token`). |

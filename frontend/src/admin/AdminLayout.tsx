@@ -23,6 +23,9 @@ export function AdminLayout() {
           <NavLink to="/admin" end className={navClass}>
             Обзор
           </NavLink>
+          <NavLink to="/admin/orders" className={navClass}>
+            Заказы
+          </NavLink>
           <NavLink to="/admin/products" className={navClass}>
             Товары
           </NavLink>

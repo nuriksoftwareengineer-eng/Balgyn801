@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { getProduct, getProducts } from "@/shared/api/backend-api";
 
-export function useProducts() {
+export function useProducts(category?: string | null) {
   return useQuery({
-    queryKey: ["products"],
-    queryFn: getProducts,
+    queryKey: ["products", category ?? "all"],
+    queryFn: () => getProducts(category),
   });
 }
 

@@ -12,9 +12,9 @@ import java.util.List;
 @RequestMapping("/api/v1/product")
 public interface ProductApi {
 
-    @Operation(summary = "Список товаров")
+    @Operation(summary = "Список товаров (опционально по категории, как на витрине)")
     @GetMapping
-    List<ProductResponse> getAll();
+    List<ProductResponse> getAll(@RequestParam(required = false) String category);
 
     @Operation(summary = "Товар по ID")
     @GetMapping("/{id}")

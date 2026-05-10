@@ -7,15 +7,23 @@ export function AdminDashboardPage() {
         Обзор
       </h1>
       <p className="max-w-xl text-zinc-400">
-        Дальше здесь можно вывести счётчики заказов и быстрые действия. Сейчас доступно
-        управление каталогом.
+        Просматривайте заказы и управляйте каталогом. Счётчики и аналитику можно
+        добавить позже.
       </p>
-      <Link
-        to="/admin/products"
-        className="mt-8 inline-flex rounded-full border border-violet-500/35 bg-violet-500/10 px-6 py-3 text-sm font-semibold text-violet-200 transition hover:bg-violet-500/20"
-      >
-        Перейти к товарам
-      </Link>
+      <div className="mt-8 flex flex-wrap gap-3">
+        <Link
+          to="/admin/orders"
+          className="inline-flex rounded-full border border-violet-500/35 bg-violet-500/10 px-6 py-3 text-sm font-semibold text-violet-200 transition hover:bg-violet-500/20"
+        >
+          Заказы
+        </Link>
+        <Link
+          to="/admin/products"
+          className="inline-flex rounded-full border border-white/15 bg-white/5 px-6 py-3 text-sm font-semibold text-zinc-200 transition hover:bg-white/10"
+        >
+          Товары
+        </Link>
+      </div>
     </div>
   );
 }

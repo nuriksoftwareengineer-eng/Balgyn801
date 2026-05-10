@@ -55,8 +55,12 @@ export const BACKEND_API = {
   },
 } as const;
 
-export async function getProducts(): Promise<Product[]> {
-  return apiFetch<Product[]>("/product");
+export async function getProducts(category?: string | null): Promise<Product[]> {
+  const q =
+    category != null && category.length > 0
+      ? `?category=${encodeURIComponent(category)}`
+      : "";
+  return apiFetch<Product[]>(`/product${q}`);
 }
 
 export async function getProduct(id: number): Promise<Product> {
@@ -142,4 +146,15 @@ export async function createOrder(
     method: "POST",
     body: JSON.stringify(body),
   });
+}
+
+export async function getOrders(token: string): Promise<OrderResponse[]> {
+  return apiFetch<OrderResponse[]>("/order", { token });
+}
+
+export async function getOrderByIdAdmin(
+  id: number,
+  token: string,
+): Promise<OrderResponse> {
+  return apiFetch<OrderResponse>(`/order/${id}`, { token });
 }

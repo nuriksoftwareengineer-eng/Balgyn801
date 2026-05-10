@@ -1,14 +1,17 @@
 package com.nurba.java.domain;
 
-
+import com.nurba.java.model.ProductColorOption;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "products")
@@ -24,5 +27,16 @@ public class Product {
     private BigDecimal price;
     private String imageUrl;
     private Boolean inStock;
+    /** Совпадает с подписью категории на сайте (см. StoreCategories.PRODUCT_CATEGORY_LABELS). */
+    private String category;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    private List<String> sizes = new ArrayList<>();
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    private List<ProductColorOption> colors = new ArrayList<>();
+
     private LocalDateTime createdAt;
 }

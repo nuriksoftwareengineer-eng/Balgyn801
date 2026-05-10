@@ -83,6 +83,20 @@ body {
   animation: hero-aurora-float 22s ease-in-out infinite reverse;
 }
 
+/* Текстура внутри букв (hero): обводка + тени для чёткого силуэта на сплит-фоне */
+.hero-title-clip {
+  background-repeat: no-repeat;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 0.85px rgba(255, 250, 245, 0.42);
+  paint-order: stroke fill;
+  filter: drop-shadow(0 0 3px rgba(0, 0, 0, 0.95))
+    drop-shadow(0 0 1px rgba(0, 0, 0, 1))
+    drop-shadow(0 0 22px rgba(251, 146, 60, 0.65));
+}
+
 @keyframes cart-badge-pop {
   0% {
     transform: scale(0.65);
@@ -95,26 +109,22 @@ body {
   }
 }
 
-@keyframes layout-glow-shift {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.92;
-  }
-}
-
-.layout-glow {
-  animation: layout-glow-shift 16s ease-in-out infinite;
-}
-
 @media (prefers-reduced-motion: reduce) {
+  .hero-title-clip {
+    background-image: none !important;
+    -webkit-text-fill-color: unset;
+    color: #f4f4f5;
+    filter: none;
+    -webkit-text-stroke: 0;
+    paint-order: normal;
+    -webkit-background-clip: unset;
+    background-clip: unset;
+  }
+
   .announcement-shimmer,
   .skeleton-shimmer,
   .hero-aurora,
-  .hero-aurora-delay,
-  .layout-glow {
+  .hero-aurora-delay {
     animation: none !important;
   }
 

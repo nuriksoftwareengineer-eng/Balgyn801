@@ -32,4 +32,9 @@ public class OrderItem {
 
     @Column(precision = 10, scale = 2)
     private BigDecimal unitPrice;
+
+    /** Подпись размера с витрины (если у товара заданы размеры). */
+    private String sizeLabel;
+    /** Название цвета с витрины. */
+    private String colorName;
 }

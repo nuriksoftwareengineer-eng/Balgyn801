@@ -13,4 +13,6 @@ public class OrderItemRequest {
     private Long productId;
     private Long customDesignId;
     private Integer quantity;
+    private String size;
+    private String color;
 }

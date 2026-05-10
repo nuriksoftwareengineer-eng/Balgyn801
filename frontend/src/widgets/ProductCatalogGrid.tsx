@@ -39,8 +39,13 @@ const cardVariants = {
   },
 };
 
-export function ProductCatalogGrid() {
-  const { data: products, isPending, isError, error } = useProducts();
+export function ProductCatalogGrid({
+  categoryFilter = null,
+}: {
+  categoryFilter?: string | null;
+}) {
+  const { data: products, isPending, isError, error } =
+    useProducts(categoryFilter);
   const reduceMotion = useReducedMotion();
 
   if (isPending) {

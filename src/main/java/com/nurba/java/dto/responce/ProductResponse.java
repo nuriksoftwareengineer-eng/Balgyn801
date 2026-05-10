@@ -1,8 +1,10 @@
 package com.nurba.java.dto.responce;
 
+import com.nurba.java.model.ProductColorOption;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -15,4 +17,7 @@ public class ProductResponse {
     private BigDecimal price;
     private String imageUrl;
     private Boolean inStock;
+    private String category;
+    private List<String> sizes;
+    private List<ProductColorOption> colors;
 }

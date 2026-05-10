@@ -16,8 +16,8 @@ public class ProductController implements ProductApi {
     private final ProductService productService;
 
     @Override
-    public List<ProductResponse> getAll() {
-        return productService.getAll();
+    public List<ProductResponse> getAll(String category) {
+        return productService.getAll(category);
     }
 
     @Override

@@ -13,4 +13,6 @@ public class OrderItemResponse {
     private String productTitle;
     private Integer quantity;
     private BigDecimal unitPrice;
+    private String sizeLabel;
+    private String colorName;
 }

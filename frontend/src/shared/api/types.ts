@@ -1,5 +1,10 @@
 /** Типы ответов/запросов под REST `/api/v1` (Spring). Числа — как приходит из JSON. */
 
+export type ProductColorOption = {
+  name: string;
+  hex?: string | null;
+};
+
 export type Product = {
   id: number;
   title: string;
@@ -7,6 +12,9 @@ export type Product = {
   price: number;
   imageUrl?: string | null;
   inStock: boolean;
+  category?: string | null;
+  sizes?: string[] | null;
+  colors?: ProductColorOption[] | null;
 };
 
 /** Ответ POST `/media/upload` (роль ADMIN, multipart). */
@@ -21,6 +29,9 @@ export type CreateProductRequest = {
   price: number;
   imageUrl?: string | null;
   inStock: boolean;
+  category: string;
+  sizes?: string[] | null;
+  colors?: ProductColorOption[] | null;
 };
 
 export type AuthResponse = {
@@ -60,6 +71,8 @@ export type OrderItemResponse = {
   productTitle: string;
   quantity: number;
   unitPrice: number;
+  sizeLabel?: string | null;
+  colorName?: string | null;
 };
 
 export type DeliveryAddressRequest = {
@@ -84,6 +97,8 @@ export type OrderItemRequest = {
   productId: number;
   customDesignId?: number | null;
   quantity: number;
+  size?: string | null;
+  color?: string | null;
 };
 
 /** Тело POST `/order` — то же, что `CreateOrderRequest` на бэкенде. */

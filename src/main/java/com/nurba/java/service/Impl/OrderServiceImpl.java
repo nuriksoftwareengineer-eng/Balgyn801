@@ -5,11 +5,13 @@ import com.nurba.java.domain.DeliveryAddress;
 import com.nurba.java.domain.Order;
 import com.nurba.java.domain.OrderItem;
 import com.nurba.java.domain.Product;
+import com.nurba.java.model.ProductColorOption;
 import com.nurba.java.dto.request.CreateOrderRequest;
 import com.nurba.java.dto.request.DeliveryAddressRequest;
 import com.nurba.java.dto.request.OrderItemRequest;
 import com.nurba.java.dto.responce.OrderResponse;
 import com.nurba.java.enums.DeliveryType;
+import com.nurba.java.enums.OrderStatus;
 import com.nurba.java.exception.BusinessRuleException;
 import com.nurba.java.exception.NotFoundException;
 import com.nurba.java.mapper.DeliveryMapper;
@@ -24,6 +26,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -49,6 +52,7 @@ public class OrderServiceImpl implements OrderService {
         Order order = new Order();
         order.setCustomer(customer);
         order.setDeliveryType(request.getDeliveryType());
+        order.setStatus(OrderStatus.NEW);
         order.setComment(request.getComment());
         order.setCreatedAt(LocalDateTime.now());
         order.setUpdatedAt(LocalDateTime.now());
@@ -72,11 +76,15 @@ public class OrderServiceImpl implements OrderService {
                 throw new BusinessRuleException("Количество должно быть больше 0");
             }
 
+            validateProductVariant(product, itemRequest);
+
             OrderItem orderItem = new OrderItem();
             orderItem.setOrder(savedOrder);
             orderItem.setProduct(product);
             orderItem.setQuantity(quantity);
             orderItem.setUnitPrice(product.getPrice());
+            orderItem.setSizeLabel(resolveSizeLabel(product, itemRequest));
+            orderItem.setColorName(resolveColorName(product, itemRequest));
 
             orderItemRepository.save(orderItem);
 
@@ -106,6 +114,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public OrderResponse getOrderById(Long id) {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Заказ не найден: " + id));
@@ -114,6 +123,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<OrderResponse> getAll() {
         return orderRepository.findAll()
                 .stream()
@@ -178,5 +188,62 @@ public class OrderServiceImpl implements OrderService {
 
         return customerRepository.save(customer);
 
+    }
+
+    private static void validateProductVariant(Product product, OrderItemRequest item) {
+        List<String> sizes = product.getSizes();
+        List<ProductColorOption> colors = product.getColors();
+        boolean hasSizes = sizes != null && !sizes.isEmpty();
+        boolean hasColors = colors != null && !colors.isEmpty();
+
+        if (hasSizes) {
+            if (item.getSize() == null || item.getSize().isBlank()) {
+                throw new BusinessRuleException("Укажите размер для товара «" + product.getTitle() + "»");
+            }
+            String s = item.getSize().trim();
+            if (!sizes.contains(s)) {
+                throw new BusinessRuleException("Недопустимый размер для «" + product.getTitle() + "»");
+            }
+        }
+
+        if (hasColors) {
+            if (item.getColor() == null || item.getColor().isBlank()) {
+                throw new BusinessRuleException("Укажите цвет для товара «" + product.getTitle() + "»");
+            }
+            String c = item.getColor().trim();
+            boolean ok = colors.stream()
+                    .filter(Objects::nonNull)
+                    .map(ProductColorOption::getName)
+                    .filter(Objects::nonNull)
+                    .anyMatch(name -> name.trim().equalsIgnoreCase(c));
+            if (!ok) {
+                throw new BusinessRuleException("Недопустимый цвет для «" + product.getTitle() + "»");
+            }
+        }
+    }
+
+    private static String resolveSizeLabel(Product product, OrderItemRequest item) {
+        if (product.getSizes() == null || product.getSizes().isEmpty()) {
+            return null;
+        }
+        return item.getSize() != null ? item.getSize().trim() : null;
+    }
+
+    private static String resolveColorName(Product product, OrderItemRequest item) {
+        if (product.getColors() == null || product.getColors().isEmpty()) {
+            return null;
+        }
+        if (item.getColor() == null || item.getColor().isBlank()) {
+            return null;
+        }
+        String c = item.getColor().trim();
+        return product.getColors().stream()
+                .filter(Objects::nonNull)
+                .map(ProductColorOption::getName)
+                .filter(Objects::nonNull)
+                .filter(name -> name.trim().equalsIgnoreCase(c))
+                .findFirst()
+                .map(String::trim)
+                .orElse(c);
     }
 }

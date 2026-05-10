@@ -22,7 +22,7 @@ export function SiteHeader() {
   const closeMenu = () => setMenuOpen(false);
 
   return (
-    <header className="sticky top-10 z-[100] border-b border-white/10 bg-zinc-950/80 backdrop-blur-xl">
+    <header className="sticky top-10 z-[100] border-b border-white/10 bg-zinc-950/85 backdrop-blur-md">
       <Container className="flex h-16 items-center justify-between gap-6">
         <Link
           to="/"
@@ -40,16 +40,10 @@ export function SiteHeader() {
             Каталог
           </NavLink>
           <Link
-            to="/#reviews"
+            to="/custom-design"
             className="text-sm font-medium text-zinc-400 transition hover:text-zinc-100"
           >
-            Отзывы
-          </Link>
-          <Link
-            to="/#subscribe"
-            className="text-sm font-medium text-zinc-400 transition hover:text-zinc-100"
-          >
-            Подписка
+            Свой дизайн
           </Link>
           <NavLink to="/about" className={navLinkClass}>
             О нас
@@ -166,11 +160,8 @@ export function SiteHeader() {
             <NavLink to="/catalog" onClick={closeMenu}>
               Каталог
             </NavLink>
-            <Link to="/#reviews" onClick={closeMenu}>
-              Отзывы
-            </Link>
-            <Link to="/#subscribe" onClick={closeMenu}>
-              Подписка
+            <Link to="/custom-design" onClick={closeMenu}>
+              Свой дизайн
             </Link>
             <NavLink to="/about" onClick={closeMenu}>
               О нас
