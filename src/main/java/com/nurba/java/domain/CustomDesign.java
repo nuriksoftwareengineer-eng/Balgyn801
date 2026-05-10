@@ -2,11 +2,17 @@ package com.nurba.java.domain;
 
 import com.nurba.java.enums.CustomDesignStatus;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "custom_designs")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class CustomDesign {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

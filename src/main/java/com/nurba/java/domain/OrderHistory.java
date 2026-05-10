@@ -18,9 +18,10 @@ public class OrderHistory  {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "order_history_seq")
     @SequenceGenerator(
-            name = "order_status_hist_seq",
+            name = "order_history_seq",
             sequenceName = "ORDER_STATUS_HIST_ID_SEQ",
-            allocationSize = 1)
+            allocationSize = 1
+    )
     private Long id;
 
     @ManyToOne(targetEntity = Order.class)

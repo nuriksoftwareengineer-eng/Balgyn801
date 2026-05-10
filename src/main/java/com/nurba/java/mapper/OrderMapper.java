@@ -10,5 +10,9 @@ public interface OrderMapper {
 
     @Mapping(source = "customer.name", target = "customerName")
     @Mapping(source = "customer.phone", target = "customerPhone")
+    @Mapping(target = "status", ignore = true)
+    @Mapping(target = "items", ignore = true)
+    @Mapping(target = "address", ignore = true)
+    @Mapping(target = "cdekShipment", ignore = true)
     OrderResponse toResponse(Order order);
 }

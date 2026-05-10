@@ -18,7 +18,7 @@ public interface CustomerApi {
 
     @Operation(summary = "Получить клиента по ID")
     @GetMapping("/{id}")
-    CustomerResponse getById(Long id);
+    CustomerResponse getById(@PathVariable Long id);
 
     @Operation(summary = "Создать нового клиента")
     @PostMapping
@@ -30,5 +30,5 @@ public interface CustomerApi {
 
     @Operation(summary = "Удалить клиента")
     @DeleteMapping("/{id}")
-    void delete(Long id);
+    void delete(@PathVariable Long id);
 }

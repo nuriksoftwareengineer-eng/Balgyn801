@@ -2,6 +2,7 @@ package com.nurba.java.service.Impl;
 
 import com.nurba.java.dto.request.CustomerRequest;
 import com.nurba.java.dto.responce.CustomerResponse;
+import com.nurba.java.exception.NotFoundException;
 import com.nurba.java.mapper.CustomerMapper;
 import com.nurba.java.repositories.CustomerRepository;
 import com.nurba.java.service.CustomerService;
@@ -24,7 +25,8 @@ public class CustomerServiceImpl implements CustomerService {
 
     @Override
     public CustomerResponse getById(Long id) {
-        return customerMapper.toResponse(customerRepository.findById(id).orElseThrow());
+        return customerMapper.toResponse(customerRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Клиент не найден")));
     }
 
     @Override

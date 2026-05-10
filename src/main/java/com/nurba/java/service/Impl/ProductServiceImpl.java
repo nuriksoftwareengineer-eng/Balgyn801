@@ -3,6 +3,7 @@ package com.nurba.java.service.Impl;
 import com.nurba.java.domain.Product;
 import com.nurba.java.dto.request.CreateProductRequest;
 import com.nurba.java.dto.responce.ProductResponse;
+import com.nurba.java.exception.NotFoundException;
 import com.nurba.java.mapper.ProductMapper;
 import com.nurba.java.repositories.ProductRepository;
 import com.nurba.java.service.ProductService;
@@ -20,7 +21,7 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public ProductResponse getById(Long id) {
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Product not found"));
+                .orElseThrow(() -> new NotFoundException("Товар не найден"));
         return productMapper.toResponse(product);
     }
 

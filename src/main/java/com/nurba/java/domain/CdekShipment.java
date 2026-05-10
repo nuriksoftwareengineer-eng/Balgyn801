@@ -2,12 +2,18 @@ package com.nurba.java.domain;
 
 import com.nurba.java.enums.CdekShipmentStatus;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "cdek_shipments")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class CdekShipment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -1,9 +1,15 @@
 package com.nurba.java.domain;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "delivery_addresses")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class DeliveryAddress {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

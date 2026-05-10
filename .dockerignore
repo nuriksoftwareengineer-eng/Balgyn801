@@ -1,0 +1,9 @@
+.git
+.gradle
+build
+**/build
+frontend/node_modules
+.cursor
+.idea
+*.iml
+.DS_Store

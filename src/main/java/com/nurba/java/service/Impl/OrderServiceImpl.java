@@ -7,6 +7,8 @@ import com.nurba.java.domain.Product;
 import com.nurba.java.dto.request.CreateOrderRequest;
 import com.nurba.java.dto.request.OrderItemRequest;
 import com.nurba.java.dto.responce.OrderResponse;
+import com.nurba.java.exception.BusinessRuleException;
+import com.nurba.java.exception.NotFoundException;
 import com.nurba.java.mapper.OrderMapper;
 import com.nurba.java.repositories.*;
 import com.nurba.java.service.OrderService;
@@ -17,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -32,6 +35,8 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional
     public OrderResponse createOrder(CreateOrderRequest request) {
+
+        validateCreateOrderRequest(request);
 
         Customer customer = createCustomer(request);
 
@@ -49,16 +54,16 @@ public class OrderServiceImpl implements OrderService {
 
         for (OrderItemRequest itemRequest : request.getItems()) {
             Product product = productRepository.findById(itemRequest.getProductId())
-                    .orElseThrow(() -> new RuntimeException("Product not found"));
+                    .orElseThrow(() -> new NotFoundException("Товар не найден"));
 
             if (Boolean.FALSE.equals(product.getInStock())) {
-                throw new RuntimeException("Product is out of stock");
+                throw new BusinessRuleException("Товар нет в наличии");
             }
 
             int quantity = itemRequest.getQuantity();
 
             if (quantity <= 0) {
-                throw new RuntimeException("Quantity must be greater than 0");
+                throw new BusinessRuleException("Количество должно быть больше 0");
             }
 
             OrderItem orderItem = new OrderItem();
@@ -84,26 +89,34 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public OrderResponse getOrderById(Long id) {
         Order order = orderRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Заказ не найден: " + id));
+                .orElseThrow(() -> new NotFoundException("Заказ не найден: " + id));
 
         return orderMapper.toResponse(order);
     }
 
+    @Override
+    public List<OrderResponse> getAll() {
+        return orderRepository.findAll()
+                .stream()
+                .map(orderMapper::toResponse)
+                .toList();
+    }
+
     private void validateCreateOrderRequest(CreateOrderRequest request) {
         if (request.getCustomerName() == null || request.getCustomerName().isBlank()) {
-            throw new RuntimeException("Имя клиента обязательно");
+            throw new BusinessRuleException("Имя клиента обязательно");
         }
 
         if (request.getCustomerPhone() == null || request.getCustomerPhone().isBlank()) {
-            throw new RuntimeException("Телефон клиента обязателен");
+            throw new BusinessRuleException("Телефон клиента обязателен");
         }
 
         if (request.getItems() == null || request.getItems().isEmpty()) {
-            throw new RuntimeException("Нельзя создать заказ без товаров");
+            throw new BusinessRuleException("Нельзя создать заказ без товаров");
         }
 
         if (request.getDeliveryType() == null) {
-            throw new RuntimeException("Тип доставки обязателен");
+            throw new BusinessRuleException("Тип доставки обязателен");
         }
     }
 
