@@ -12,7 +12,7 @@ public interface OrderMapper {
     @Mapping(source = "customer.phone", target = "customerPhone")
     @Mapping(target = "status", ignore = true)
     @Mapping(target = "items", ignore = true)
-    @Mapping(target = "address", ignore = true)
+    @Mapping(source = "deliveryAddress", target = "address")
     @Mapping(target = "cdekShipment", ignore = true)
     OrderResponse toResponse(Order order);
 }

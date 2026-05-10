@@ -1,5 +1,13 @@
 # React + TypeScript + Vite
 
+## Balgyn801 — API и витрина
+
+- Базовый URL API: переменная **`VITE_API_BASE_URL`** (см. `.env.example`), по умолчанию `http://localhost:8080/api/v1`.
+- Реализация клиента: каталог **`src/shared/api/`** — типы (`types.ts`), обёртка запроса (`http.ts`), методы и карта маршрутов **`BACKEND_API`** в `backend-api.ts` (что публично, что только с JWT или ролью ADMIN).
+- На UI: **`GET /product`**, **`GET /product/{id}`**, корзина в **`sessionStorage`**, оформление заказа с корзины — **`POST /order`** (`createOrder`).
+
+---
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:

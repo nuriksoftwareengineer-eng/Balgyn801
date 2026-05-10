@@ -1,14 +1,18 @@
 package com.nurba.java.service.Impl;
 
 import com.nurba.java.domain.Customer;
+import com.nurba.java.domain.DeliveryAddress;
 import com.nurba.java.domain.Order;
 import com.nurba.java.domain.OrderItem;
 import com.nurba.java.domain.Product;
 import com.nurba.java.dto.request.CreateOrderRequest;
+import com.nurba.java.dto.request.DeliveryAddressRequest;
 import com.nurba.java.dto.request.OrderItemRequest;
 import com.nurba.java.dto.responce.OrderResponse;
+import com.nurba.java.enums.DeliveryType;
 import com.nurba.java.exception.BusinessRuleException;
 import com.nurba.java.exception.NotFoundException;
+import com.nurba.java.mapper.DeliveryMapper;
 import com.nurba.java.mapper.OrderMapper;
 import com.nurba.java.repositories.*;
 import com.nurba.java.service.OrderService;
@@ -29,7 +33,9 @@ public class OrderServiceImpl implements OrderService {
     private final OrderItemRepository orderItemRepository;
     private final ProductRepository productRepository;
     private final CustomerRepository customerRepository;
+    private final DeliveryAddressRepository deliveryAddressRepository;
     private final OrderMapper orderMapper;
+    private final DeliveryMapper deliveryMapper;
 
 
     @Override
@@ -83,7 +89,20 @@ public class OrderServiceImpl implements OrderService {
 
         Order updatedOrder = orderRepository.save(savedOrder);
 
-        return orderMapper.toResponse(updatedOrder);
+        if (requiresDeliveryAddress(request.getDeliveryType())) {
+            DeliveryAddressRequest addrReq = request.getAddress();
+            if (addrReq == null) {
+                throw new BusinessRuleException("Укажите адрес доставки для выбранного способа получения");
+            }
+            validateDeliveryAddress(addrReq);
+            DeliveryAddress address = deliveryMapper.toEntity(addrReq);
+            address.setOrder(updatedOrder);
+            deliveryAddressRepository.save(address);
+        }
+
+        Order withRelations = orderRepository.findById(updatedOrder.getId())
+                .orElseThrow(() -> new NotFoundException("Заказ не найден после создания"));
+        return orderMapper.toResponse(withRelations);
     }
 
     @Override
@@ -118,6 +137,36 @@ public class OrderServiceImpl implements OrderService {
         if (request.getDeliveryType() == null) {
             throw new BusinessRuleException("Тип доставки обязателен");
         }
+
+    }
+
+    private static boolean requiresDeliveryAddress(DeliveryType type) {
+        return type == DeliveryType.TAXI || type == DeliveryType.CDEK;
+    }
+
+    private void validateDeliveryAddress(DeliveryAddressRequest a) {
+        if (isBlank(a.getCity())) {
+            throw new BusinessRuleException("Укажите город");
+        }
+        if (isBlank(a.getStreet())) {
+            throw new BusinessRuleException("Укажите улицу и дом");
+        }
+        if (isBlank(a.getApartment())) {
+            throw new BusinessRuleException("Укажите квартиру / офис (или «—» если не требуется)");
+        }
+        if (isBlank(a.getPostalCode())) {
+            throw new BusinessRuleException("Укажите почтовый индекс");
+        }
+        if (isBlank(a.getRecipientName())) {
+            throw new BusinessRuleException("Укажите имя получателя");
+        }
+        if (isBlank(a.getRecipientPhone())) {
+            throw new BusinessRuleException("Укажите телефон получателя");
+        }
+    }
+
+    private static boolean isBlank(String s) {
+        return s == null || s.isBlank();
     }
 
     private Customer createCustomer(CreateOrderRequest request) {

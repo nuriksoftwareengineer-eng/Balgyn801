@@ -16,5 +16,5 @@ public class CreateProductRequest {
     private String description;
     private BigDecimal price;
     private String imageUrl;
-    private String inStock;
+    private Boolean inStock;
 }

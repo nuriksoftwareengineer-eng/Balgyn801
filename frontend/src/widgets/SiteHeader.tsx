@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, NavLink } from "react-router-dom";
+import { useAuth } from "@/app/auth-context";
 import { useCart } from "@/app/use-cart";
 import { cn } from "@/shared/lib/cn";
 import { Container } from "@/shared/ui/container";
@@ -15,7 +16,8 @@ const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   );
 
 export function SiteHeader() {
-  const { count } = useCart();
+  const { totalQty } = useCart();
+  const { user, loading, logout, isAdmin } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const closeMenu = () => setMenuOpen(false);
 
@@ -52,6 +54,39 @@ export function SiteHeader() {
           <NavLink to="/about" className={navLinkClass}>
             О нас
           </NavLink>
+          {isAdmin ? (
+            <NavLink to="/admin" className={navLinkClass}>
+              Админка
+            </NavLink>
+          ) : null}
+          {user ? (
+            <>
+              <span
+                className="max-w-[140px] truncate text-xs text-zinc-500"
+                title={user.email}
+              >
+                {user.email}
+              </span>
+              <button
+                type="button"
+                className="text-sm font-medium text-zinc-400 transition hover:text-zinc-100"
+                onClick={logout}
+              >
+                Выйти
+              </button>
+            </>
+          ) : loading ? (
+            <span className="text-xs text-zinc-600">…</span>
+          ) : (
+            <>
+              <NavLink to="/login" className={navLinkClass}>
+                Вход
+              </NavLink>
+              <NavLink to="/register" className={navLinkClass}>
+                Регистрация
+              </NavLink>
+            </>
+          )}
         </nav>
 
         <div className="flex items-center gap-3">
@@ -101,7 +136,7 @@ export function SiteHeader() {
           <Link
             to="/cart"
             className={cn(iconBtnLink, "relative")}
-            aria-label={`Корзина, ${count} поз.`}
+            aria-label={`Корзина, ${totalQty} поз.`}
           >
             <svg
               width="20"
@@ -116,9 +151,9 @@ export function SiteHeader() {
               <circle cx="9" cy="20" r="1" />
               <circle cx="18" cy="20" r="1" />
             </svg>
-            {count > 0 ? (
-              <span className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-violet-500 px-1 text-[0.65rem] font-bold text-white">
-                {count > 99 ? "99+" : count}
+            {totalQty > 0 ? (
+              <span className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] animate-[cart-badge-pop_0.35s_ease-out] items-center justify-center rounded-full bg-violet-500 px-1 text-[0.65rem] font-bold text-white">
+                {totalQty > 99 ? "99+" : totalQty}
               </span>
             ) : null}
           </Link>
@@ -140,6 +175,35 @@ export function SiteHeader() {
             <NavLink to="/about" onClick={closeMenu}>
               О нас
             </NavLink>
+            {isAdmin ? (
+              <NavLink to="/admin" onClick={closeMenu}>
+                Админка
+              </NavLink>
+            ) : null}
+            {user ? (
+              <>
+                <span className="truncate text-xs text-zinc-500">{user.email}</span>
+                <button
+                  type="button"
+                  className="text-left font-semibold text-violet-400"
+                  onClick={() => {
+                    logout();
+                    closeMenu();
+                  }}
+                >
+                  Выйти
+                </button>
+              </>
+            ) : (
+              <>
+                <NavLink to="/login" onClick={closeMenu}>
+                  Вход
+                </NavLink>
+                <NavLink to="/register" onClick={closeMenu}>
+                  Регистрация
+                </NavLink>
+              </>
+            )}
           </nav>
         </div>
       ) : null}
