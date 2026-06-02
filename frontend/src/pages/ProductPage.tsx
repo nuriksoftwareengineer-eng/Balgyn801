@@ -44,6 +44,7 @@ function ProductBuyColumn({ product }: { product: Product }) {
       size: needSize ? pickSize : null,
       color: needColor ? pickColor : null,
     });
+    navigate("/cart", { state: { justAdded: product.title } });
   }
 
   return (

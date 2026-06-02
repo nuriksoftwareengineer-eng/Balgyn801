@@ -166,6 +166,18 @@ export function SiteHeader() {
             <NavLink to="/about" onClick={closeMenu}>
               О нас
             </NavLink>
+            <Link
+              to="/cart"
+              onClick={closeMenu}
+              className="flex items-center justify-between gap-3"
+            >
+              <span>Корзина</span>
+              {totalQty > 0 ? (
+                <span className="rounded-full bg-violet-500 px-2 py-0.5 text-xs font-bold text-white">
+                  {totalQty > 99 ? "99+" : totalQty}
+                </span>
+              ) : null}
+            </Link>
             {isAdmin ? (
               <NavLink to="/admin" onClick={closeMenu}>
                 Админка

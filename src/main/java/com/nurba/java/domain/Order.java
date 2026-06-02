@@ -40,6 +40,10 @@ public class Order {
     @Column(precision = 10, scale = 2)
     private BigDecimal totalPrice;
 
+    /** Часть {@link #totalPrice}, приходящая от доставки (СДЭК и т.д.). Может быть null для старых заказов. */
+    @Column(precision = 10, scale = 2)
+    private BigDecimal deliveryFee;
+
     @Column(columnDefinition = "TEXT")
     private String comment;
 

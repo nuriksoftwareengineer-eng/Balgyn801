@@ -8,13 +8,20 @@ import {
   type ReactNode,
 } from "react";
 import {
+  AUTH_REFRESH_STORAGE_KEY,
   AUTH_TOKEN_STORAGE_KEY,
   clearStoredToken,
+  readStoredRefresh,
   readStoredToken,
-  writeStoredToken,
+  writeStoredTokens,
 } from "@/shared/lib/auth-storage";
-import { getMe, login as loginApi, register as registerApi } from "@/shared/api/backend-api";
-import { ApiError } from "@/shared/api/http";
+import {
+  getMe,
+  login as loginApi,
+  refreshAuth,
+  register as registerApi,
+} from "@/shared/api/backend-api";
+import { ApiError, setAccessTokenRefresher } from "@/shared/api/http";
 import type { AuthMeResponse } from "@/shared/api/types";
 
 type AuthContextValue = {
@@ -38,11 +45,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     function onStorage(e: StorageEvent) {
       if (e.storageArea !== localStorage) return;
-      if (e.key !== null && e.key !== AUTH_TOKEN_STORAGE_KEY) return;
+      if (
+        e.key !== null &&
+        e.key !== AUTH_TOKEN_STORAGE_KEY &&
+        e.key !== AUTH_REFRESH_STORAGE_KEY
+      ) {
+        return;
+      }
       setToken(readStoredToken());
     }
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
+  }, []);
+
+  useEffect(() => {
+    setAccessTokenRefresher(async () => {
+      const refresh = readStoredRefresh();
+      if (!refresh) return null;
+      try {
+        const res = await refreshAuth({ refreshToken: refresh });
+        writeStoredTokens(res.accessToken, res.refreshToken);
+        setToken(res.accessToken);
+        return res.accessToken;
+      } catch {
+        clearStoredToken();
+        setToken(null);
+        setUser(null);
+        return null;
+      }
+    });
+    return () => setAccessTokenRefresher(null);
   }, []);
 
   useEffect(() => {
@@ -78,13 +110,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(async (email: string, password: string) => {
     const res = await loginApi({ email, password });
-    writeStoredToken(res.accessToken);
+    writeStoredTokens(res.accessToken, res.refreshToken);
     setToken(res.accessToken);
   }, []);
 
   const register = useCallback(async (email: string, password: string) => {
     const res = await registerApi({ email, password });
-    writeStoredToken(res.accessToken);
+    writeStoredTokens(res.accessToken, res.refreshToken);
     setToken(res.accessToken);
   }, []);
 

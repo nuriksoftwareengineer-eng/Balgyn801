@@ -1,5 +1,4 @@
 import { Link } from "react-router-dom";
-import ceoPortrait from "@/assets/ceo-dias-abris.png";
 import {
   CONTACT_EMAIL,
   STORE_TELEGRAM_URL,
@@ -20,14 +19,19 @@ export function AboutPage() {
 
         <section className="mb-14 grid gap-10 md:grid-cols-[minmax(0,280px)_1fr] md:items-center md:gap-12">
           <div className="mx-auto w-full max-w-[280px] md:mx-0">
-            <div className="overflow-hidden rounded-2xl border border-white/10 bg-zinc-900 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.65)] ring-1 ring-white/5">
-              <img
-                src={ceoPortrait}
-                alt="Dias Abris, CEO BALGYN"
-                className="aspect-[4/5] w-full object-cover object-[center_15%]"
-                loading="lazy"
-                decoding="async"
-              />
+            <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-zinc-900/60 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.65)] ring-1 ring-white/5">
+              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(139,92,246,0.35),transparent_65%)]" />
+              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom,rgba(76,29,149,0.45),transparent_72%)]" />
+              <div className="relative flex aspect-[4/5] items-center justify-center">
+                <div className="rounded-full border border-violet-300/35 bg-violet-500/15 px-8 py-8 text-center">
+                  <p className="font-display text-5xl tracking-[0.08em] text-zinc-100">
+                    DA
+                  </p>
+                  <p className="mt-1 text-xs uppercase tracking-[0.2em] text-violet-200">
+                    Balgyn Studio
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
           <div>

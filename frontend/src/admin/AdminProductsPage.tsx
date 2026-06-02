@@ -220,7 +220,7 @@ export function AdminProductsPage() {
               className="rounded-[10px] border border-white/10 bg-zinc-950 px-3 py-2 text-zinc-100 outline-none focus:border-violet-500/40 focus:ring-2 focus:ring-violet-500/30"
             />
           </label>
-          <div className="flex flex-col gap-2 text-sm">
+          <div className="flex flex-col gap-2 text-sm md:col-span-2">
             <span className="text-zinc-400">Картинка</span>
             <div className="flex flex-wrap items-center gap-2">
               <input
@@ -240,17 +240,30 @@ export function AdminProductsPage() {
               >
                 {imageUploadBusy ? "Загрузка…" : "Загрузить файл"}
               </Button>
+              {imageUrl ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="rounded-[10px]"
+                  disabled={imageUploadBusy}
+                  onClick={() => setImageUrl("")}
+                >
+                  Убрать
+                </Button>
+              ) : null}
               <span className="text-xs text-zinc-500">
-                или укажите URL ниже (до 8 МБ, image/*)
+                до 8 МБ, только изображения (хранилище MinIO / S3)
               </span>
             </div>
-            <input
-              type="url"
-              placeholder="https://…"
-              value={imageUrl}
-              onChange={(e) => setImageUrl(e.target.value)}
-              className="rounded-[10px] border border-white/10 bg-zinc-950 px-3 py-2 text-zinc-100 outline-none focus:border-violet-500/40 focus:ring-2 focus:ring-violet-500/30"
-            />
+            {imageUrl ? (
+              <div className="mt-1 flex items-start gap-3">
+                <img
+                  src={imageUrl}
+                  alt="Превью"
+                  className="h-24 w-24 rounded-[10px] border border-white/10 object-cover"
+                />
+              </div>
+            ) : null}
           </div>
           <label className="flex items-center gap-2 text-sm md:col-span-2">
             <input

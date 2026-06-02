@@ -1,17 +1,8 @@
 import { motion, useReducedMotion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import heroShowcaseLeft from "@/assets/hero-showcase-left.png";
-import heroShowcaseRight from "@/assets/hero-showcase-right.png";
-import heroTitleTexture from "@/assets/hero-title-texture.png";
 import { Container } from "@/shared/ui/container";
 import { Button } from "@/shared/ui/button";
 import { cn } from "@/shared/lib/cn";
-
-/** Тени под текст на фото — чуть мягче, без «грязи» */
-const shadowEyebrow =
-  "[text-shadow:0_0_18px_rgba(0,0,0,0.88),0_1px_4px_rgba(0,0,0,0.85)]";
-const shadowBody =
-  "[text-shadow:0_1px_2px_rgba(0,0,0,0.92),0_0_18px_rgba(0,0,0,0.65),0_3px_14px_rgba(0,0,0,0.55)]";
 
 export function HeroSection() {
   const navigate = useNavigate();
@@ -20,46 +11,22 @@ export function HeroSection() {
 
   return (
     <section className="relative min-h-[min(78vh,700px)] overflow-hidden py-11 md:py-14">
-      {/* Фото 1 | Фото 2 — чуть компактнее кадр */}
-      <div
-        className="pointer-events-none absolute inset-0 flex min-h-full"
-        aria-hidden
-      >
-        <div
-          className="h-full min-h-[240px] w-1/2 bg-cover bg-[center_top] sm:bg-center"
-          style={{ backgroundImage: `url(${heroShowcaseLeft})` }}
-        />
-        <div
-          className="h-full min-h-[240px] w-1/2 bg-cover bg-[center_30%] sm:bg-center"
-          style={{ backgroundImage: `url(${heroShowcaseRight})` }}
-        />
-      </div>
-
-      {/* Вуаль чуть светлее — фото чуть ярче, центр остаётся читаемым */}
-      <div
-        className="pointer-events-none absolute inset-0 bg-zinc-950/[0.18]"
-        aria-hidden
-      />
-      <div
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_92%_78%_at_50%_46%,transparent_22%,rgba(9,9,11,0.28)_58%,rgba(9,9,11,0.46)_100%)]"
-        aria-hidden
-      />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_70%_65%_at_50%_40%,rgba(139,92,246,0.28),rgba(9,9,11,0)_70%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(120deg,rgba(30,27,75,0.45),rgba(9,9,11,0.4),rgba(76,29,149,0.38))]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_90%_75%_at_50%_110%,rgba(59,7,100,0.4),transparent_60%)]" />
 
       <div
-        className="pointer-events-none absolute inset-0 opacity-[0.16]"
+        className="pointer-events-none absolute inset-0 opacity-[0.42]"
         aria-hidden
       >
-        <div className="hero-aurora absolute -left-1/4 top-0 h-[420px] w-[70%] rounded-full blur-[100px]" />
-        <div className="hero-aurora-delay absolute -right-1/4 bottom-0 h-[380px] w-[60%] rounded-full blur-[90px]" />
+        <div className="hero-aurora absolute -left-1/4 top-0 h-[420px] w-[70%] rounded-full blur-[110px]" />
+        <div className="hero-aurora-delay absolute -right-1/4 bottom-0 h-[380px] w-[60%] rounded-full blur-[100px]" />
       </div>
 
       <Container className="relative z-[1] flex min-h-[min(60vh,540px)] items-center justify-center">
         <div className="w-full max-w-2xl px-4 text-center md:max-w-3xl">
           <motion.p
-            className={cn(
-              "mb-4 text-xs font-semibold uppercase tracking-[0.28em] text-violet-200",
-              shadowEyebrow,
-            )}
+            className="mb-4 text-xs font-semibold uppercase tracking-[0.28em] text-violet-200/95"
             initial={{ opacity: 0, y: reduceMotion ? 0 : 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ ...t, delay: reduceMotion ? 0 : 0.05 }}
@@ -69,20 +36,8 @@ export function HeroSection() {
           <motion.h1
             className={cn(
               "font-display mx-auto max-w-4xl text-[clamp(2rem,7.5vw,4.25rem)] leading-[0.98] tracking-[0.03em] md:text-[clamp(2.2rem,8vw,4.45rem)]",
-              reduceMotion
-                ? "text-zinc-100 [text-shadow:0_2px_16px_rgba(0,0,0,0.95)]"
-                : "hero-title-clip",
+              "bg-gradient-to-br from-zinc-50 via-violet-200 to-purple-300 bg-clip-text text-transparent [text-shadow:0_0_26px_rgba(168,85,247,0.25)]",
             )}
-            style={
-              reduceMotion
-                ? undefined
-                : {
-                    backgroundImage: `url(${heroTitleTexture})`,
-                    /* Крупнее кроп яркого принта — меньше «разнотона» по буквам */
-                    backgroundSize: "300% auto",
-                    backgroundPosition: "54% 40%",
-                  }
-            }
             initial={{ opacity: 0, y: reduceMotion ? 0 : 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ ...t, delay: reduceMotion ? 0 : 0.12 }}
@@ -94,10 +49,7 @@ export function HeroSection() {
             ХАРАКТЕРОМ
           </motion.h1>
           <motion.p
-            className={cn(
-              "mx-auto mt-4 max-w-md text-[0.98rem] leading-relaxed text-zinc-100/92 sm:max-w-lg sm:text-[1.025rem]",
-              shadowBody,
-            )}
+            className="mx-auto mt-4 max-w-md text-[0.98rem] leading-relaxed text-zinc-100/88 sm:max-w-lg sm:text-[1.025rem]"
             initial={{ opacity: 0, y: reduceMotion ? 0 : 14 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ ...t, delay: reduceMotion ? 0 : 0.2 }}

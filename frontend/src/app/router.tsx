@@ -32,6 +32,11 @@ const LoginPage = lazy(() =>
 const RegisterPage = lazy(() =>
   import("@/pages/RegisterPage").then((m) => ({ default: m.RegisterPage })),
 );
+const PaymentReturnPage = lazy(() =>
+  import("@/pages/PaymentReturnPage").then((m) => ({
+    default: m.PaymentReturnPage,
+  })),
+);
 const AdminDashboardPage = lazy(() =>
   import("@/admin/AdminDashboardPage").then((m) => ({
     default: m.AdminDashboardPage,
@@ -50,6 +55,11 @@ const AdminOrderDetailPage = lazy(() =>
 const AdminProductsPage = lazy(() =>
   import("@/admin/AdminProductsPage").then((m) => ({
     default: m.AdminProductsPage,
+  })),
+);
+const AdminCustomersPage = lazy(() =>
+  import("@/admin/AdminCustomersPage").then((m) => ({
+    default: m.AdminCustomersPage,
   })),
 );
 
@@ -103,6 +113,14 @@ const router = createBrowserRouter([
         element: (
           <Suspense fallback={<PageLoadFallback />}>
             <AboutPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "payment-return",
+        element: (
+          <Suspense fallback={<PageLoadFallback />}>
+            <PaymentReturnPage />
           </Suspense>
         ),
       },
@@ -165,6 +183,14 @@ const router = createBrowserRouter([
             element: (
               <Suspense fallback={<PageLoadFallback />}>
                 <AdminProductsPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "customers",
+            element: (
+              <Suspense fallback={<PageLoadFallback />}>
+                <AdminCustomersPage />
               </Suspense>
             ),
           },

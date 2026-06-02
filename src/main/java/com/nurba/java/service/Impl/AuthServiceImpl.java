@@ -2,6 +2,7 @@ package com.nurba.java.service.Impl;
 
 import com.nurba.java.domain.AppUser;
 import com.nurba.java.dto.request.LoginRequest;
+import com.nurba.java.dto.request.RefreshTokenRequest;
 import com.nurba.java.dto.request.RegisterRequest;
 import com.nurba.java.dto.responce.AuthMeResponse;
 import com.nurba.java.dto.responce.AuthResponse;
@@ -51,12 +52,7 @@ public class AuthServiceImpl implements AuthService {
 
         appUserRepository.save(user);
 
-        String token = jwtService.generateToken(user);
-        return AuthResponse.builder()
-                .accessToken(token)
-                .tokenType("Bearer")
-                .expiresInMs(jwtProperties.expirationMs())
-                .build();
+        return buildAuthResponse(user);
     }
 
     @Override
@@ -73,11 +69,30 @@ public class AuthServiceImpl implements AuthService {
         AppUser user = appUserRepository.findByEmailIgnoreCase(email)
                 .orElseThrow(() -> new NotFoundException("Пользователь не найден"));
 
-        String token = jwtService.generateToken(user);
+        return buildAuthResponse(user);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public AuthResponse refresh(RefreshTokenRequest request) {
+        String email;
+        try {
+            email = jwtService.validateRefreshToken(request.getRefreshToken().trim());
+        } catch (RuntimeException ex) {
+            throw new BusinessRuleException("Невалидный или просроченный refresh-токен");
+        }
+        AppUser user = appUserRepository.findByEmailIgnoreCase(email)
+                .orElseThrow(() -> new NotFoundException("Пользователь не найден"));
+        return buildAuthResponse(user);
+    }
+
+    private AuthResponse buildAuthResponse(AppUser user) {
         return AuthResponse.builder()
-                .accessToken(token)
+                .accessToken(jwtService.generateAccessToken(user))
+                .refreshToken(jwtService.generateRefreshToken(user))
                 .tokenType("Bearer")
                 .expiresInMs(jwtProperties.expirationMs())
+                .refreshExpiresInMs(jwtProperties.refreshExpirationMs())
                 .build();
     }
 
@@ -86,6 +101,57 @@ public class AuthServiceImpl implements AuthService {
     public AuthMeResponse me(String email) {
         AppUser user = appUserRepository.findByEmailIgnoreCase(email)
                 .orElseThrow(() -> new NotFoundException("Пользователь не найден"));
+        return toMeResponse(user);
+    }
+
+    @Override
+    @Transactional
+    public AuthMeResponse grantAdmin(String targetEmail) {
+        String email = normalize(targetEmail);
+        AppUser user = appUserRepository.findByEmailIgnoreCase(email)
+                .orElseThrow(() -> new NotFoundException("Пользователь не найден: " + email));
+
+        if (!user.getRoles().contains(Role.ADMIN)) {
+            user.getRoles().add(Role.ADMIN);
+            appUserRepository.save(user);
+        }
+        return toMeResponse(user);
+    }
+
+    @Override
+    @Transactional
+    public AuthMeResponse revokeAdmin(String currentAdminEmail, String targetEmail) {
+        String current = normalize(currentAdminEmail);
+        String target = normalize(targetEmail);
+
+        if (current.equalsIgnoreCase(target)) {
+            throw new BusinessRuleException("Нельзя снять роль ADMIN у самого себя");
+        }
+
+        AppUser user = appUserRepository.findByEmailIgnoreCase(target)
+                .orElseThrow(() -> new NotFoundException("Пользователь не найден: " + target));
+
+        if (!user.getRoles().contains(Role.ADMIN)) {
+            return toMeResponse(user);
+        }
+
+        long adminCount = appUserRepository.findAll().stream()
+                .filter(u -> u.getRoles().contains(Role.ADMIN))
+                .count();
+        if (adminCount <= 1) {
+            throw new BusinessRuleException("Нельзя снять роль ADMIN у последнего администратора");
+        }
+
+        user.getRoles().remove(Role.ADMIN);
+        appUserRepository.save(user);
+        return toMeResponse(user);
+    }
+
+    private static String normalize(String email) {
+        return email == null ? "" : email.trim().toLowerCase();
+    }
+
+    private static AuthMeResponse toMeResponse(AppUser user) {
         var roles = user.getRoles().stream()
                 .map(Role::name)
                 .collect(Collectors.toList());

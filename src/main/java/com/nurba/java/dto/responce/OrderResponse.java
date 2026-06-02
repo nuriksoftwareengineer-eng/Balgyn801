@@ -22,6 +22,8 @@ public class OrderResponse {
     private OrderStatus status;
     private DeliveryType deliveryType;
     private BigDecimal totalPrice;
+    /** Сумма доставки, если была передана при оформлении (иначе null). */
+    private BigDecimal deliveryFee;
     private String comment;
     private List<OrderItemResponse> items;
     private DeliveryAddressResponse address;

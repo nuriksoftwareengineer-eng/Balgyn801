@@ -2,6 +2,7 @@ package com.nurba.java.controller;
 
 import com.nurba.java.api.OrderApi;
 import com.nurba.java.dto.request.CreateOrderRequest;
+import com.nurba.java.dto.request.UpdateOrderStatusRequest;
 import com.nurba.java.dto.responce.OrderResponse;
 import com.nurba.java.service.OrderService;
 import lombok.RequiredArgsConstructor;
@@ -28,5 +29,10 @@ public class OrderController implements OrderApi {
     @Override
     public OrderResponse getOrderById(Long id) {
         return orderService.getOrderById(id);
+    }
+
+    @Override
+    public OrderResponse updateOrderStatus(Long id, UpdateOrderStatusRequest request) {
+        return orderService.updateOrderStatus(id, request);
     }
 }

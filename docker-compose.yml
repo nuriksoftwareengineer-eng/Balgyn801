@@ -8,6 +8,12 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/balgynbol-spring
       - SPRING_DATASOURCE_USERNAME=postgres
       - SPRING_DATASOURCE_PASSWORD=postgres
+      # CDEK (optional): set real credentials in env/.env for non-stub mode.
+      - CDEK_BASE_URL=${CDEK_BASE_URL:-https://api.edu.cdek.ru/v2}
+      - CDEK_CLIENT_ID=${CDEK_CLIENT_ID:-}
+      - CDEK_CLIENT_SECRET=${CDEK_CLIENT_SECRET:-}
+      - CDEK_SENDER_CITY=${CDEK_SENDER_CITY:-270}
+      - CDEK_DEFAULT_TARIFF=${CDEK_DEFAULT_TARIFF:-136}
       - MINIO_ENDPOINT=http://minio:9000
       - MINIO_PUBLIC_URL=http://localhost:9000
       - MINIO_ROOT_USER=minioadmin

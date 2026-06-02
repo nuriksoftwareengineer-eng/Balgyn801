@@ -1,10 +1,17 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useAuth } from "@/app/auth-context";
-import { getOrderByIdAdmin } from "@/shared/api/backend-api";
+import { getOrderByIdAdmin, patchOrderStatusAdmin } from "@/shared/api/backend-api";
+import { ApiError } from "@/shared/api/http";
+import type { OrderStatus } from "@/shared/api/types";
 import { deliveryTypeLabel } from "@/shared/lib/delivery-labels";
 import { formatMoney } from "@/shared/lib/format-money";
-import { orderStatusLabel } from "@/shared/lib/order-status-labels";
+import {
+  ORDER_STATUS_VALUES,
+  orderStatusLabel,
+} from "@/shared/lib/order-status-labels";
+import { Button } from "@/shared/ui/button";
 
 function formatDate(iso: string | undefined) {
   if (!iso) return "—";
@@ -21,10 +28,19 @@ function formatDate(iso: string | undefined) {
   }
 }
 
+function resolveItemsTotal(totalPrice: number, deliveryFee?: number | null): number {
+  const fee = deliveryFee ?? 0;
+  return Math.max(0, totalPrice - fee);
+}
+
 export function AdminOrderDetailPage() {
   const { orderId } = useParams<{ orderId: string }>();
   const id = Number.parseInt(orderId ?? "", 10);
   const { token } = useAuth();
+  const queryClient = useQueryClient();
+  /** Локальный выбор в селекте; `null` — показываем статус с сервера. */
+  const [statusDraft, setStatusDraft] = useState<OrderStatus | null>(null);
+  const [statusError, setStatusError] = useState<string | null>(null);
 
   const q = useQuery({
     queryKey: ["admin-order", id],
@@ -34,6 +50,28 @@ export function AdminOrderDetailPage() {
       return getOrderByIdAdmin(id, token);
     },
     enabled: !!token && Number.isFinite(id) && id > 0,
+  });
+
+  const statusMut = useMutation({
+    mutationFn: async (status: OrderStatus) => {
+      if (!token) throw new Error("Нет токена");
+      return patchOrderStatusAdmin(id, { status }, token);
+    },
+    onMutate: () => setStatusError(null),
+    onSuccess: () => {
+      setStatusDraft(null);
+      void queryClient.invalidateQueries({ queryKey: ["admin-order", id] });
+      void queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
+    },
+    onError: (err: unknown) => {
+      setStatusError(
+        err instanceof ApiError
+          ? err.message
+          : err instanceof Error
+            ? err.message
+            : "Не удалось сохранить статус",
+      );
+    },
   });
 
   if (!Number.isFinite(id) || id <= 0) {
@@ -71,6 +109,9 @@ export function AdminOrderDetailPage() {
   }
 
   const o = q.data!;
+  const current = o.status ?? "NEW";
+  const selectedStatus = statusDraft ?? current;
+  const statusDirty = statusDraft !== null && statusDraft !== current;
 
   return (
     <div>
@@ -105,16 +146,73 @@ export function AdminOrderDetailPage() {
           </h2>
           <p className="text-zinc-100">{deliveryTypeLabel(o.deliveryType)}</p>
           <p className="mt-2 text-sm text-zinc-400">
-            Статус:{" "}
+            Текущий статус:{" "}
             <span className="font-medium text-zinc-200">
               {orderStatusLabel(o.status)}
             </span>
           </p>
           <p className="mt-3 text-lg font-bold text-zinc-100">
+            Товары: {formatMoney(resolveItemsTotal(o.totalPrice, o.deliveryFee))} ₸
+          </p>
+          <p className="mt-1 text-sm text-zinc-400">
+            Доставка: {formatMoney(o.deliveryFee ?? 0)} ₸
+          </p>
+          <p className="mt-2 text-lg font-bold text-zinc-100">
             Итого: {formatMoney(o.totalPrice)} ₸
           </p>
         </section>
       </div>
+
+      <section className="mb-8 rounded-[14px] border border-violet-500/25 bg-violet-500/[0.06] p-5">
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-zinc-400">
+          Смена статуса
+        </h2>
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
+          <label className="flex min-w-[200px] flex-1 flex-col gap-1.5 text-sm">
+            <span className="font-medium text-zinc-500">Новый статус</span>
+            <select
+              value={selectedStatus}
+              onChange={(e) => {
+                const v = e.target.value as OrderStatus;
+                setStatusDraft(v === current ? null : v);
+              }}
+              className="rounded-[10px] border border-white/15 bg-zinc-950 px-3 py-2.5 text-zinc-100 outline-none focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/25"
+            >
+              {ORDER_STATUS_VALUES.map((s) => (
+                <option key={s} value={s}>
+                  {orderStatusLabel(s)}
+                </option>
+              ))}
+            </select>
+          </label>
+          <Button
+            type="button"
+            variant="primary"
+            className="rounded-[10px] sm:shrink-0"
+            disabled={
+              !statusDirty ||
+              statusMut.isPending ||
+              current === "CANCELLED" ||
+              current === "DELIVERED"
+            }
+            onClick={() => statusMut.mutate(selectedStatus)}
+          >
+            {statusMut.isPending ? "Сохранение…" : "Сохранить статус"}
+          </Button>
+        </div>
+        {current === "CANCELLED" || current === "DELIVERED" ? (
+          <p className="mt-3 text-sm text-zinc-500">
+            {current === "CANCELLED"
+              ? "Отменённый заказ нельзя вернуть в работу через API."
+              : "Доставленный заказ нельзя менять через API."}
+          </p>
+        ) : null}
+        {statusError ? (
+          <p className="mt-3 text-sm font-medium text-red-400" role="alert">
+            {statusError}
+          </p>
+        ) : null}
+      </section>
 
       {o.address ? (
         <section className="mb-8 rounded-[14px] border border-white/10 bg-zinc-900/40 p-5">

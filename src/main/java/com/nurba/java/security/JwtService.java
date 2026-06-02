@@ -16,18 +16,30 @@ import java.util.stream.Collectors;
 @Service
 public class JwtService {
 
+    private static final String CLAIM_TYP = "typ";
+    private static final String TYP_ACCESS = "access";
+    private static final String TYP_REFRESH = "refresh";
+
     private final SecretKey signingKey;
-    private final long expirationMs;
+    private final long accessExpirationMs;
+    private final long refreshExpirationMs;
 
     public JwtService(JwtProperties props) {
-        byte[] keyBytes = props.secret().getBytes(StandardCharsets.UTF_8);
+        String secret = props.secret() == null ? "" : props.secret();
+        byte[] keyBytes = secret.getBytes(StandardCharsets.UTF_8);
+        if (keyBytes.length < 32) {
+            throw new IllegalStateException(
+                    "JWT секрет слишком короткий (" + keyBytes.length + " байт). "
+                            + "HS256 требует минимум 32 байта. Задайте JWT_SECRET через env.");
+        }
         this.signingKey = Keys.hmacShaKeyFor(keyBytes);
-        this.expirationMs = props.expirationMs();
+        this.accessExpirationMs = props.expirationMs();
+        this.refreshExpirationMs = props.refreshExpirationMs();
     }
 
-    public String generateToken(AppUser user) {
+    public String generateAccessToken(AppUser user) {
         Instant now = Instant.now();
-        Instant exp = now.plusMillis(expirationMs);
+        Instant exp = now.plusMillis(accessExpirationMs);
         String roles = user.getRoles().stream()
                 .map(Role::name)
                 .collect(Collectors.joining(","));
@@ -35,7 +47,20 @@ public class JwtService {
                 .subject(user.getEmail())
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(exp))
+                .claim(CLAIM_TYP, TYP_ACCESS)
                 .claim("roles", roles)
+                .signWith(signingKey)
+                .compact();
+    }
+
+    public String generateRefreshToken(AppUser user) {
+        Instant now = Instant.now();
+        Instant exp = now.plusMillis(refreshExpirationMs);
+        return Jwts.builder()
+                .subject(user.getEmail())
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(exp))
+                .claim(CLAIM_TYP, TYP_REFRESH)
                 .signWith(signingKey)
                 .compact();
     }
@@ -44,14 +69,40 @@ public class JwtService {
         return parseClaims(token).getSubject();
     }
 
-    public boolean isTokenValid(String token, String expectedEmail) {
+    /**
+     * Допускает только access-токен (или старые токены без claim {@code typ} — для плавного перехода).
+     */
+    public boolean isAccessTokenValid(String token, String expectedEmail) {
         try {
-            String subject = extractEmail(token);
-            Instant exp = parseClaims(token).getExpiration().toInstant();
+            Claims claims = parseClaims(token);
+            String typ = claims.get(CLAIM_TYP, String.class);
+            if (TYP_REFRESH.equalsIgnoreCase(typ)) {
+                return false;
+            }
+            String subject = claims.getSubject();
+            Instant exp = claims.getExpiration().toInstant();
             return expectedEmail.equalsIgnoreCase(subject) && exp.isAfter(Instant.now());
         } catch (RuntimeException ex) {
             return false;
         }
+    }
+
+    /** Проверяет refresh-токен и возвращает email субъекта. */
+    public String validateRefreshToken(String token) {
+        Claims claims = parseClaims(token);
+        String typ = claims.get(CLAIM_TYP, String.class);
+        if (!TYP_REFRESH.equalsIgnoreCase(typ)) {
+            throw new IllegalArgumentException("Неверный тип токена");
+        }
+        Instant exp = claims.getExpiration().toInstant();
+        if (!exp.isAfter(Instant.now())) {
+            throw new IllegalArgumentException("Срок действия refresh-токена истёк");
+        }
+        String subject = claims.getSubject();
+        if (subject == null || subject.isBlank()) {
+            throw new IllegalArgumentException("Неверный refresh-токен");
+        }
+        return subject.trim().toLowerCase();
     }
 
     private Claims parseClaims(String token) {

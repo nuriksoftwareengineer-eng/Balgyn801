@@ -1,6 +1,7 @@
 package com.nurba.java.security;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -30,6 +31,9 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final RestAuthenticationEntryPoint authenticationEntryPoint;
     private final RestAccessDeniedHandler accessDeniedHandler;
+
+    @Value("${app.swagger.enabled:true}")
+    private boolean swaggerEnabled;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -67,39 +71,66 @@ public class SecurityConfig {
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint(authenticationEntryPoint)
                         .accessDeniedHandler(accessDeniedHandler))
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(
-                                "/api/v1/auth/**",
+                .authorizeHttpRequests(auth -> {
+                    auth
+                            .requestMatchers(
+                                    "/api/v1/auth/register",
+                                    "/api/v1/auth/login",
+                                    "/api/v1/auth/refresh"
+                            ).permitAll()
+
+                            .requestMatchers("/api/v1/auth/admin/**").hasRole("ADMIN")
+
+                            .requestMatchers(HttpMethod.GET, "/api/v1/product/**").permitAll()
+
+                            .requestMatchers(HttpMethod.POST, "/api/v1/order").permitAll()
+
+                            .requestMatchers(HttpMethod.POST, "/api/v1/custom-design").permitAll()
+
+                            .requestMatchers(HttpMethod.GET, "/api/v1/delivery/cdek/**").permitAll()
+                            .requestMatchers(HttpMethod.POST, "/api/v1/delivery/cdek/calculate").permitAll()
+                            .requestMatchers(HttpMethod.POST, "/api/v1/delivery/cdek/calculate-order").permitAll()
+                            .requestMatchers(HttpMethod.POST, "/api/v1/payments/init").permitAll()
+                            .requestMatchers(HttpMethod.POST, "/api/v1/payments/webhook/**").permitAll()
+
+                            .requestMatchers(HttpMethod.GET, "/api/v1/order", "/api/v1/order/**")
+                            .hasRole("ADMIN")
+
+                            .requestMatchers(HttpMethod.PATCH, "/api/v1/order/**")
+                            .hasRole("ADMIN")
+
+                            .requestMatchers("/api/v1/customer/**").hasRole("ADMIN")
+
+                            .requestMatchers(HttpMethod.POST, "/api/v1/product").hasRole("ADMIN")
+                            .requestMatchers(HttpMethod.DELETE, "/api/v1/product/**").hasRole("ADMIN")
+
+                            .requestMatchers(HttpMethod.POST, "/api/v1/media/upload").hasRole("ADMIN")
+
+                            .requestMatchers(HttpMethod.GET, "/api/v1/custom-design", "/api/v1/custom-design/**")
+                            .hasRole("ADMIN")
+
+                            .requestMatchers("/api/v1/cdek-shipment/**").hasRole("ADMIN")
+                            .requestMatchers("/api/v1/delivery-address/**").hasRole("ADMIN")
+                            .requestMatchers("/api/v1/order-item/**").hasRole("ADMIN");
+
+                    if (swaggerEnabled) {
+                        auth.requestMatchers(
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
                                 "/v3/api-docs/**",
                                 "/v3/api-docs"
-                        ).permitAll()
+                        ).permitAll();
+                    } else {
+                        auth.requestMatchers(
+                                "/swagger-ui/**",
+                                "/swagger-ui.html",
+                                "/v3/api-docs/**",
+                                "/v3/api-docs"
+                        ).denyAll();
+                    }
 
-                        .requestMatchers(HttpMethod.GET, "/api/v1/product/**").permitAll()
-
-                        .requestMatchers(HttpMethod.POST, "/api/v1/order").permitAll()
-
-                        .requestMatchers(HttpMethod.POST, "/api/v1/custom-design").permitAll()
-
-                        .requestMatchers(HttpMethod.GET, "/api/v1/order", "/api/v1/order/**")
-                        .hasRole("ADMIN")
-
-                        .requestMatchers("/api/v1/customer/**").hasRole("ADMIN")
-
-                        .requestMatchers(HttpMethod.POST, "/api/v1/product").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/v1/product/**").hasRole("ADMIN")
-
-                        .requestMatchers(HttpMethod.POST, "/api/v1/media/upload").hasRole("ADMIN")
-
-                        .requestMatchers(HttpMethod.GET, "/api/v1/custom-design", "/api/v1/custom-design/**")
-                        .hasRole("ADMIN")
-
-                        .requestMatchers("/api/v1/cdek-shipment/**").hasRole("ADMIN")
-                        .requestMatchers("/api/v1/delivery-address/**").hasRole("ADMIN")
-                        .requestMatchers("/api/v1/order-item/**").hasRole("ADMIN")
-
-                        .anyRequest().authenticated())
+                    auth.anyRequest().authenticated();
+                })
                 .authenticationProvider(authenticationProvider)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 

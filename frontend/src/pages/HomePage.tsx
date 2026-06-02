@@ -6,7 +6,6 @@ import { CategoryChips } from "@/widgets/CategoryChips";
 import { CustomDesignCTASection } from "@/widgets/CustomDesignCTASection";
 import { HeroSection } from "@/widgets/HeroSection";
 import { ProductCatalogGrid } from "@/widgets/ProductCatalogGrid";
-import { TrustStrip } from "@/widgets/TrustStrip";
 
 export function HomePage() {
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
@@ -14,7 +13,6 @@ export function HomePage() {
   return (
     <>
       <HeroSection />
-      <TrustStrip />
       <section className="py-8 md:pb-16" id="shop">
         <Container>
           <SectionHead

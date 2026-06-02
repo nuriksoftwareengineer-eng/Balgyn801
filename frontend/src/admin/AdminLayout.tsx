@@ -29,6 +29,9 @@ export function AdminLayout() {
           <NavLink to="/admin/products" className={navClass}>
             Товары
           </NavLink>
+          <NavLink to="/admin/customers" className={navClass}>
+            Клиенты
+          </NavLink>
         </nav>
         <div className="mt-auto border-t border-white/10 pt-4">
           <p className="truncate text-xs text-zinc-500">{user?.email}</p>

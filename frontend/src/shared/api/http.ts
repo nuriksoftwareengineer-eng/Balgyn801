@@ -19,7 +19,24 @@ export function getApiBaseUrl(): string {
 
 type FetchInit = RequestInit & { token?: string | null };
 
+/** Выставляется из `AuthProvider`: при 401 пробуем обновить access по refresh и повторить запрос один раз. */
+let accessTokenRefresher: (() => Promise<string | null>) | null = null;
+
+export function setAccessTokenRefresher(
+  fn: (() => Promise<string | null>) | null,
+): void {
+  accessTokenRefresher = fn;
+}
+
 export async function apiFetch<T>(path: string, init?: FetchInit): Promise<T> {
+  return apiFetchInternal<T>(path, init, false);
+}
+
+async function apiFetchInternal<T>(
+  path: string,
+  init: FetchInit | undefined,
+  retried: boolean,
+): Promise<T> {
   const url = `${getApiBaseUrl()}${path.startsWith("/") ? path : `/${path}`}`;
   const headers = new Headers(init?.headers);
   const bearer = init?.token;
@@ -35,6 +52,20 @@ export async function apiFetch<T>(path: string, init?: FetchInit): Promise<T> {
   delete (fetchInit as FetchInit).token;
 
   const response = await fetch(url, { ...fetchInit, headers });
+
+  const isRefreshPath = path.includes("/auth/refresh");
+  if (
+    response.status === 401 &&
+    !retried &&
+    !isRefreshPath &&
+    init?.token &&
+    accessTokenRefresher
+  ) {
+    const next = await accessTokenRefresher();
+    if (next) {
+      return apiFetchInternal<T>(path, { ...init, token: next }, true);
+    }
+  }
 
   if (!response.ok) {
     let body: unknown;

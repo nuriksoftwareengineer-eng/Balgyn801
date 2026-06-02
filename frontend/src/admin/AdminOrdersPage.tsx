@@ -21,6 +21,11 @@ function formatDate(iso: string | undefined) {
   }
 }
 
+function resolveItemsTotal(totalPrice: number, deliveryFee?: number | null): number {
+  const fee = deliveryFee ?? 0;
+  return Math.max(0, totalPrice - fee);
+}
+
 export function AdminOrdersPage() {
   const { token } = useAuth();
 
@@ -92,7 +97,15 @@ export function AdminOrdersPage() {
                     {orderStatusLabel(o.status)}
                   </td>
                   <td className="px-4 py-3 tabular-nums text-zinc-300">
-                    {formatMoney(o.totalPrice)} ₸
+                    <p className="m-0 text-xs text-zinc-500">
+                      Товары: {formatMoney(resolveItemsTotal(o.totalPrice, o.deliveryFee))} ₸
+                    </p>
+                    <p className="m-0 text-xs text-zinc-500">
+                      Доставка: {formatMoney(o.deliveryFee ?? 0)} ₸
+                    </p>
+                    <p className="m-0 font-semibold text-zinc-200">
+                      Итого: {formatMoney(o.totalPrice)} ₸
+                    </p>
                   </td>
                   <td className="px-4 py-3">
                     <Link

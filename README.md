@@ -1,204 +1,178 @@
-# Balgyn801
+# Balgyn801 — Осталось сделать
 
-Монолитный backend на **Spring Boot** и SPA на **React + Vite + Tailwind**, общение по REST (`/api/v1`). База данных — **PostgreSQL**. Опционально всё поднимается через **Docker Compose**.
+Полный порядок и схемы: `docs/PLAN_AND_ARCHITECTURE.md`.
 
-Используйте этот файл как **пошаговый ориентир**: что уже есть, как запустить, куда двигаться дальше.
+## Этап 2 — Медиа (хвост после того, что уже в коде)
 
-**Чёткий порядок следующих задач и схемы архитектуры (бэк + фронт):**  
-→ [docs/PLAN_AND_ARCHITECTURE.md](docs/PLAN_AND_ARCHITECTURE.md)
+В репозитории уже есть MinIO в `docker-compose.yml`, загрузка `POST /api/v1/media/upload` и кнопка загрузки в админке товаров. Дальше по смыслу плана:
 
----
+- [ ] Прод: секреты и URL MinIO/S3 только через env, согласованный публичный доступ к файлам.
+- [ ] При необходимости: presigned URL, учёт `objectKey` у товара, отказ от ручного URL в админке как основного сценария.
 
-## Структура репозитория
+## Этап 4 — Учётные записи и прод-безопасность
 
-| Путь | Назначение |
-|------|------------|
-| `src/main/java/com/nurba/java/` | Backend: API (контракты), контроллеры, сервисы, JPA, DTO, мапперы |
-| `frontend/` | Витрина: React Router, TanStack Query, виджеты, страницы |
-| `docker-compose.yml` | Сервисы `db`, `app`, `frontend` |
-| `Dockerfile` | Многоэтапная сборка: Gradle внутри образа, артефакт `app.jar` |
+- [ ] Безопасный сценарий выдачи роли ADMIN.
+- [ ] Стратегия сессий: refresh-токены или короткий TTL access.
+- [ ] Прод: сильный `JWT_SECRET`, ограничение Swagger, CORS только для боевых origin, HTTPS.
 
----
+## Этап 5 — Доставка и оплата
 
-## Что уже реализовано (кратко)
+Детальный чеклист (СДЭК v2, ЮKassa, PayPal, Kaspi, вебхуки, env, сквозной поток) — в **`docs/PLAN_AND_ARCHITECTURE.md`**, раздел **«Этап 5»**.
 
-- REST-слой в стиле `*Api` + реализация в контроллерах, OpenAPI (springdoc).
-- Заказы, клиенты, товары, часть сущностей под доставку и СДЭК (без полной интеграции с API перевозчика).
-- Единый обработчик ошибок (`ProblemDetail`).
-- Auth: JWT, роли USER/ADMIN; фронт: вход/регистрация, **`/admin`**, CRUD товаров в админке; корзина с позициями.
-- Docker: multi-stage сборка backend; frontend в Compose на порту **5174** снаружи.
+## Следующий шаг
 
----
+Закрыть хвост этапа 2 (прод и политика медиа), затем этап 4 (безопасность и прод).
 
-## Требования к окружению
+## CDEK runtime checklist (env + security)
 
-- **Java 21** (Gradle toolchain).
-- **Node.js 20+** (для локальной работы с `frontend/`).
-- **Docker Desktop** (если запуск через Compose).
+Чтобы расчёт СДЭК работал стабильно и одинаково в checkout:
 
----
+- Backend должен быть пересобран после изменений security/доставки (`docker compose up -d --build app`).
+- Публичные маршруты доставки должны быть открыты в `SecurityConfig`:
+  - `GET /api/v1/delivery/cdek/**`
+  - `POST /api/v1/delivery/cdek/calculate`
+  - `POST /api/v1/delivery/cdek/calculate-order`
+- Для реального CDEK API задайте env:
+  - `CDEK_BASE_URL` (`https://api.edu.cdek.ru/v2` sandbox или `https://api.cdek.ru/v2` prod)
+  - `CDEK_CLIENT_ID`
+  - `CDEK_CLIENT_SECRET`
+  - `CDEK_SENDER_CITY`
+  - `CDEK_DEFAULT_TARIFF`
+- Если ключи не заданы, сервис работает в stub-режиме (`sourcedFromStub: true`), что подходит для локальной разработки.
 
-## Шаг 1. Backend локально (без Docker)
+## Как проверить СДЭК (smoke)
 
-1. Поднимите PostgreSQL и создайте БД (или используйте свои параметры).
-
-2. Скопируйте настройки подключения в  
-   `src/main/resources/application.properties`  
-   (URL, пользователь, пароль).
-
-3. Сборка и тесты:
-
-   ```bash
-   ./gradlew test bootJar
-   ```
-
-4. Запуск приложения:
-
-   ```bash
-   ./gradlew bootRun
-   ```
-
-   API по умолчанию: `http://localhost:8080/api/v1`  
-   Swagger UI (если подключён springdoc): обычно `http://localhost:8080/swagger-ui.html`.
-
----
-
-## Шаг 2. Frontend локально
+### 1) Поднять окружение
 
 ```bash
-cd frontend
-cp .env.example .env   # при необходимости поправьте VITE_API_BASE_URL
-npm install
-npm run dev
+docker compose up -d --build app db minio
 ```
 
-Dev-сервер Vite: `http://localhost:5173`  
-Укажите в backend **CORS** нужный origin (сейчас учитываются типичные порты для dev и Docker).
-
----
-
-## Шаг 3. Запуск через Docker Compose
-
-Образ **app** собирается в Dockerfile через `./gradlew bootJar` (локальный `bootJar` перед этим не обязателен).
+### 2) Проверить справочники СДЭК
 
 ```bash
-docker compose build app
-docker compose up -d
+curl --get "http://localhost:8080/api/v1/delivery/cdek/cities" \
+  --data-urlencode "q=Алм" \
+  --data "limit=5"
 ```
 
-При проблемах со слоями кеша Docker:
+Ожидаемо: массив городов, например `Алматы`.
+
+### 3) Проверить расчёт доставки по корзине
 
 ```bash
-docker compose build --no-cache app && docker compose up -d
+curl -X POST "http://localhost:8080/api/v1/delivery/cdek/calculate-order" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "toCityCode": 270,
+    "items": [
+      { "productId": 4, "quantity": 1 }
+    ]
+  }'
 ```
 
-| Сервис | Назначение |
-|--------|------------|
-| `db` | PostgreSQL `5432` |
-| `app` | Spring Boot `8080` |
-| `frontend` | Vite dev `5174` → контейнерный порт `5173` |
+Ожидаемо в ответе:
+- `deliveryPrice`
+- `itemsTotal`
+- `orderTotal`
+- `estimatedWeightGrams`
 
-Проверка API:
+И `orderTotal = itemsTotal + deliveryPrice`.
+
+### 4) Проверить создание заказа CDEK
+
+В `POST /api/v1/order` передаётся `deliveryFee` из расчёта (`deliveryPrice`).
+Если отправить подменённую сумму — бэкенд должен вернуть `400`.
+
+## Как проверить оплату (текущий stub-пайплайн)
+
+Сейчас реализован каркас оплаты: `init` + `webhook`, без реального эквайринга.
+
+## Оплата: классы и ответственность
+
+Ниже текущая структура payment-модуля на бэкенде:
+
+- `domain/Payment.java`
+  - сущность платежа (`order`, `provider`, `status`, `amount`, `currency`, `providerPaymentId`, `paymentUrl`, webhook-поля, timestamps).
+- `enums/PaymentProvider.java`
+  - поддерживаемые провайдеры: `KASPI`, `YOOKASSA`, `PAYPAL`.
+- `enums/PaymentStatus.java`
+  - внутренние статусы: `PENDING`, `SUCCEEDED`, `CANCELLED`, `FAILED`, `REFUNDED`.
+- `repositories/PaymentRepository.java`
+  - доступ к платежам (`findById`, `findByProviderPaymentId` и т.д.).
+
+API-контракт:
+
+- `api/PaymentApi.java`
+  - `POST /api/v1/payments/init`
+  - `POST /api/v1/payments/webhook/{provider}`
+- `controller/PaymentController.java`
+  - тонкий слой: принимает HTTP и делегирует в сервис.
+
+DTO:
+
+- `dto/request/PaymentInitRequest.java`
+  - вход для инициализации (`orderId`, `provider`, `returnUrl`).
+- `dto/request/PaymentWebhookRequest.java`
+  - вход для вебхука (`paymentId`/`providerPaymentId`, `status`, `eventId`, `payload`).
+- `dto/responce/PaymentResponse.java`
+  - унифицированный ответ в API.
+
+Бизнес-логика:
+
+- `service/PaymentService.java`
+  - интерфейс use-case’ов оплаты (`initPayment`, `handleWebhook`).
+- `service/Impl/PaymentServiceImpl.java`
+  - основная логика:
+    - проверка заказа перед init;
+    - создание `Payment` со статусом `PENDING`;
+    - генерация stub `providerPaymentId` и `paymentUrl`;
+    - обработка webhook, маппинг внешнего статуса в `PaymentStatus`;
+    - при `SUCCEEDED` перевод заказа `NEW -> CONFIRMED`.
+
+Безопасность:
+
+- `security/SecurityConfig.java`
+  - `POST /api/v1/payments/init` открыт для checkout;
+  - `POST /api/v1/payments/webhook/**` открыт для callback’ов провайдеров.
+
+### 1) Инициализация платежа
 
 ```bash
-curl -s http://localhost:8080/api/v1/product
+curl -X POST "http://localhost:8080/api/v1/payments/init" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "orderId": 7,
+    "provider": "KASPI",
+    "returnUrl": "http://localhost:5174/payment-return"
+  }'
 ```
 
-Проверка фронта: откройте `http://localhost:5174`.
+Ожидаемо:
+- `status = "PENDING"`
+- есть `providerPaymentId`
+- есть `paymentUrl`
 
-Проверка lint/build фронта **внутри** контейнера Node:
+### 2) Вебхук оплаты (ручной smoke)
 
 ```bash
-docker compose run --rm --no-deps frontend sh -c "npm ci && npm run lint && npm run build"
+curl -X POST "http://localhost:8080/api/v1/payments/webhook/KASPI" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "paymentId": 1,
+    "eventId": "smoke-event-1",
+    "status": "succeeded",
+    "providerPaymentId": "stub-kaspi-...",
+    "orderId": 7
+  }'
 ```
 
-Если порт **5174** занят — поменяйте маппинг в `docker-compose.yml`.
+Ожидаемо:
+- платёж переходит в `SUCCEEDED`
+- если заказ был `NEW`, он становится `CONFIRMED`
 
----
+## Важно про оплату
 
-## Шаг 4. Пересборка backend после изменений кода
-
-```bash
-docker compose build --no-cache app
-docker compose up -d app
-```
-
-При ошибках старта смотрите логи:
-
-```bash
-docker compose logs app --tail=100
-```
-
----
-
-## Архитектура backend (ориентир)
-
-Сверху вниз:
-
-1. **`api/`** — контракт REST + аннотации OpenAPI.
-2. **`controller/`** — тонкая реализация интерфейсов API.
-3. **`service/`** — бизнес-логика; **`service/Impl/`** — реализации.
-4. **`repositories/`** — Spring Data JPA.
-5. **`domain/`** — сущности JPA.
-6. **`dto/`**, **`mapper/`** — запросы/ответы и MapStruct.
-7. **`exception/`**, **`config/`** — ошибки, CORS и др.
-
-Интеграции (**СДЭК**, **MinIO/S3**, оплата) логично выносить в отдельные пакеты уровня `integration/` или `client/` и не смешивать HTTP клиента с доменными сущностями наружу.
-
----
-
-## Дорожная карта по шагам (что делать дальше)
-
-Отмечайте галочками по мере выполнения.
-
-### Этап A — Безопасность и пользователь
-
-- [ ] Подключить **Spring Security** (JWT или cookie-сессия — одно решение на проект).
-- [ ] Модель **User** (логин, хеш пароля, роли), связь с бизнес-профилем при необходимости.
-- [ ] Эндпойнты: регистрация/вход/refresh (если JWT)/текущий пользователь.
-- [ ] Разделить **публичные** маршруты (каталог, расчёт доставки) и **защищённые** (админ, загрузка файлов).
-
-### Этап B — Хранение файлов (MinIO, S3-совместимо)
-
-- [ ] Добавить сервис **MinIO** в `docker-compose` (volume для данных, переменные окружения).
-- [ ] Зависимость **AWS SDK v2** в Gradle, конфиг endpoint для Docker (`http://minio:9000`) и локально.
-- [ ] Сервис **MediaStorageService**: загрузка (multipart или presigned URL).
-- [ ] В БД хранить **`objectKey`** или готовый **URL** для `Product` / дизайнов.
-
-### Этап C — СДЭК (доставка)
-
-- [ ] Клиент **CdekApiClient** + конфиг учётных данных (только из env).
-- [ ] Публичное или полупубличное API: **расчёт тарифа**, при необходимости **список ПВЗ**.
-- [ ] Создание отправления **после** условия «заказ можно отдавать в логистику» (оплата или правило магазина) — не блокировать длинной транзакцией БД.
-- [ ] Синхронизация статусов / трекинг в сущность **`CdekShipment`**.
-
-### Этап D — Оплата
-
-- [ ] Выбор провайдера и сценарий: оплата до отправки или наложка.
-- [ ] Таблица/модель **Payment**, webhook, смена статуса заказа → триггер для СДЭК при схеме «сначала оплата».
-
-### Этап E — Frontend
-
-- [ ] Хранение токена / cookie и заголовки для защищённых запросов.
-- [ ] Экраны входа/регистрации (если нужны покупателю).
-- [ ] Админ: загрузка изображений товара, при необходимости отдельный layout `/admin`.
-
----
-
-## Полезные команды (шпаргалка)
-
-| Действие | Команда |
-|----------|---------|
-| Тесты backend | `./gradlew test` |
-| Сборка JAR | `./gradlew bootJar` |
-| Lint фронта | `cd frontend && npm run lint` |
-| Production-сборка фронта | `cd frontend && npm run build` |
-| Compose: статус | `docker compose ps` |
-| Логи приложения | `docker compose logs -f app` |
-
----
-
-## Контакты и документы
-
-- Детали шаблона Vite см. [frontend/README.md](frontend/README.md).
-- Меняйте этот **README** по мере закрытия этапов дорожной карты — так команда всегда видит актуальный «следующий шаг».
+- Это пока **stub-реализация** для отладки флоу.
+- Реальный вызов Kaspi/YooKassa/PayPal API ещё не подключён.
+- Следующий шаг: подключение провайдерных клиентов, подпись вебхуков, идемпотентность, реальный redirect URL.

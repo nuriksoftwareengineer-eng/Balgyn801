@@ -1,9 +1,11 @@
 package com.nurba.java.api;
 
 import com.nurba.java.dto.request.CreateOrderRequest;
+import com.nurba.java.dto.request.UpdateOrderStatusRequest;
 import com.nurba.java.dto.responce.OrderResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,4 +25,11 @@ public interface OrderApi {
     @Operation(summary = "Заказ по ID")
     @GetMapping("/{id}")
     OrderResponse getOrderById(@PathVariable Long id);
+
+    @Operation(summary = "Изменить статус заказа (ADMIN)")
+    @PatchMapping("/{id}/status")
+    OrderResponse updateOrderStatus(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateOrderStatusRequest request
+    );
 }

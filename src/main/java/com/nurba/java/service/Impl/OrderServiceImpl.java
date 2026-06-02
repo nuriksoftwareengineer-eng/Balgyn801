@@ -5,10 +5,13 @@ import com.nurba.java.domain.DeliveryAddress;
 import com.nurba.java.domain.Order;
 import com.nurba.java.domain.OrderItem;
 import com.nurba.java.domain.Product;
+import com.nurba.java.dto.delivery.CdekOrderItemRequest;
+import com.nurba.java.dto.delivery.CdekOrderTariffRequest;
 import com.nurba.java.model.ProductColorOption;
 import com.nurba.java.dto.request.CreateOrderRequest;
 import com.nurba.java.dto.request.DeliveryAddressRequest;
 import com.nurba.java.dto.request.OrderItemRequest;
+import com.nurba.java.dto.request.UpdateOrderStatusRequest;
 import com.nurba.java.dto.responce.OrderResponse;
 import com.nurba.java.enums.DeliveryType;
 import com.nurba.java.enums.OrderStatus;
@@ -18,14 +21,17 @@ import com.nurba.java.mapper.DeliveryMapper;
 import com.nurba.java.mapper.OrderMapper;
 import com.nurba.java.repositories.*;
 import com.nurba.java.service.OrderService;
+import com.nurba.java.service.delivery.CdekDeliveryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 
 @Service
@@ -39,6 +45,7 @@ public class OrderServiceImpl implements OrderService {
     private final DeliveryAddressRepository deliveryAddressRepository;
     private final OrderMapper orderMapper;
     private final DeliveryMapper deliveryMapper;
+    private final CdekDeliveryService cdekDeliveryService;
 
 
     @Override
@@ -60,7 +67,7 @@ public class OrderServiceImpl implements OrderService {
 
         Order savedOrder = orderRepository.save(order);
 
-        BigDecimal totalPrice = BigDecimal.ZERO;
+        BigDecimal itemsTotal = BigDecimal.ZERO;
 
         for (OrderItemRequest itemRequest : request.getItems()) {
             Product product = productRepository.findById(itemRequest.getProductId())
@@ -89,10 +96,25 @@ public class OrderServiceImpl implements OrderService {
             orderItemRepository.save(orderItem);
 
             BigDecimal itemTotalPrice = product.getPrice().multiply(BigDecimal.valueOf(quantity));
-            totalPrice = totalPrice.add(itemTotalPrice);
+            itemsTotal = itemsTotal.add(itemTotalPrice);
         }
 
-        savedOrder.setTotalPrice(totalPrice);
+        BigDecimal deliveryFee = request.getDeliveryFee() != null
+                ? request.getDeliveryFee().setScale(2, RoundingMode.HALF_UP)
+                : BigDecimal.ZERO;
+        if (deliveryFee.signum() < 0) {
+            throw new BusinessRuleException("Стоимость доставки не может быть отрицательной");
+        }
+        if (request.getDeliveryType() == DeliveryType.CDEK && deliveryFee.signum() <= 0) {
+            throw new BusinessRuleException("Для доставки СДЭК сначала рассчитайте стоимость на сайте");
+        }
+        if (request.getDeliveryType() == DeliveryType.CDEK) {
+            assertExpectedCdekFee(request, deliveryFee);
+        }
+
+        BigDecimal grandTotal = itemsTotal.add(deliveryFee);
+        savedOrder.setDeliveryFee(deliveryFee.signum() > 0 ? deliveryFee : null);
+        savedOrder.setTotalPrice(grandTotal);
         savedOrder.setUpdatedAt(LocalDateTime.now());
 
         Order updatedOrder = orderRepository.save(savedOrder);
@@ -131,6 +153,30 @@ public class OrderServiceImpl implements OrderService {
                 .toList();
     }
 
+    @Override
+    @Transactional
+    public OrderResponse updateOrderStatus(Long id, UpdateOrderStatusRequest request) {
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Заказ не найден: " + id));
+        OrderStatus next = request.getStatus();
+        assertAllowedStatusTransition(order.getStatus(), next);
+        order.setStatus(next);
+        order.setUpdatedAt(LocalDateTime.now());
+        orderRepository.save(order);
+        Order reloaded = orderRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Заказ не найден после обновления: " + id));
+        return orderMapper.toResponse(reloaded);
+    }
+
+    private static void assertAllowedStatusTransition(OrderStatus current, OrderStatus next) {
+        if (current == OrderStatus.CANCELLED && next != OrderStatus.CANCELLED) {
+            throw new BusinessRuleException("Отменённый заказ нельзя вернуть в работу");
+        }
+        if (current == OrderStatus.DELIVERED && next != OrderStatus.DELIVERED) {
+            throw new BusinessRuleException("Доставленный заказ нельзя менять");
+        }
+    }
+
     private void validateCreateOrderRequest(CreateOrderRequest request) {
         if (request.getCustomerName() == null || request.getCustomerName().isBlank()) {
             throw new BusinessRuleException("Имя клиента обязательно");
@@ -152,6 +198,53 @@ public class OrderServiceImpl implements OrderService {
 
     private static boolean requiresDeliveryAddress(DeliveryType type) {
         return type == DeliveryType.TAXI || type == DeliveryType.CDEK;
+    }
+
+    private void assertExpectedCdekFee(CreateOrderRequest request, BigDecimal deliveryFee) {
+        DeliveryAddressRequest address = request.getAddress();
+        if (address == null) {
+            throw new BusinessRuleException("Для СДЭК укажите адрес ПВЗ");
+        }
+        validateDeliveryAddress(address);
+
+        Integer toCityCode = resolveCdekCityCode(address.getCity());
+        List<CdekOrderItemRequest> items = request.getItems().stream()
+                .map(i -> new CdekOrderItemRequest(i.getProductId(), i.getQuantity()))
+                .toList();
+        BigDecimal expected = cdekDeliveryService.calculateOrder(
+                        new CdekOrderTariffRequest(toCityCode, items, null))
+                .deliveryPrice()
+                .setScale(2, RoundingMode.HALF_UP);
+        BigDecimal actual = deliveryFee.setScale(2, RoundingMode.HALF_UP);
+        if (expected.compareTo(actual) != 0) {
+            throw new BusinessRuleException(
+                    "Стоимость доставки устарела или изменена. " +
+                            "Пересчитайте СДЭК (ожидалось " + expected + ", передано " + actual + ")");
+        }
+    }
+
+    private Integer resolveCdekCityCode(String rawCity) {
+        if (isBlank(rawCity)) {
+            throw new BusinessRuleException("Для СДЭК укажите город");
+        }
+        String cityName = rawCity.split(",")[0].trim();
+        if (cityName.isBlank()) {
+            throw new BusinessRuleException("Для СДЭК не удалось определить город");
+        }
+        var cities = cdekDeliveryService.searchCities(cityName, 10);
+        return cities.stream()
+                .filter(c -> c.city() != null)
+                .filter(c -> c.city().trim().equalsIgnoreCase(cityName))
+                .map(c -> c.code())
+                .findFirst()
+                .orElseGet(() -> cities.stream()
+                        .filter(c -> c.city() != null)
+                        .filter(c -> c.city().toLowerCase(Locale.ROOT)
+                                .startsWith(cityName.toLowerCase(Locale.ROOT)))
+                        .map(c -> c.code())
+                        .findFirst()
+                        .orElseThrow(() -> new BusinessRuleException(
+                                "Город СДЭК не найден по адресу: " + cityName)));
     }
 
     private void validateDeliveryAddress(DeliveryAddressRequest a) {

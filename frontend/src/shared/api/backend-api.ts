@@ -2,22 +2,36 @@ import { apiFetch, getApiBaseUrl, ApiError } from "@/shared/api/http";
 import type {
   AuthMeResponse,
   AuthResponse,
+  CdekCity,
+  CdekDeliveryPoint,
+  CdekOrderTariffRequest,
+  CdekOrderTariffResponse,
+  CdekTariffRequest,
+  CdekTariffResponse,
   CreateOrderRequest,
   CreateProductRequest,
+  CustomerRequest,
+  CustomerResponse,
   LoginRequest,
   MediaUploadResponse,
   OrderResponse,
+  PaymentInitRequest,
+  PaymentResponse,
+  PaymentWebhookRequest,
+  PaymentProvider,
   Product,
+  RefreshTokenRequest,
   RegisterRequest,
+  UpdateOrderStatusRequest,
 } from "@/shared/api/types";
 
 /**
  * Живая карта маршрутов бэкенда (Spring Security).
  *
- * Публично (без JWT): GET product/**, POST order, POST custom-design, POST auth/register|login,
+ * Публично (без JWT): GET product/**, POST order, POST custom-design, POST auth/register|login|refresh,
  * Swagger `/swagger-ui/**`, `/v3/api-docs/**`.
  *
- * Только ADMIN: GET order**, customer**, POST product, DELETE product/**, POST media/upload,
+ * Только ADMIN: GET/PATCH order**, GET/POST/PUT/DELETE customer**, POST product, DELETE product/**, POST media/upload,
  * GET custom-design**, cdek-shipment**, delivery-address**, order-item**.
  *
  * С JWT (любая авторизованная роль): всё остальное, в т.ч. GET /auth/me.
@@ -27,6 +41,7 @@ export const BACKEND_API = {
   auth: {
     register: "POST /auth/register",
     login: "POST /auth/login",
+    refresh: "POST /auth/refresh",
     me: "GET /auth/me (+ Bearer)",
   },
   product: {
@@ -39,9 +54,14 @@ export const BACKEND_API = {
     list: "GET /order (ADMIN)",
     create: "POST /order",
     getById: "GET /order/{id} (ADMIN)",
+    patchStatus: "PATCH /order/{id}/status (ADMIN)",
   },
   customer: {
-    crud: "/customer (ADMIN)",
+    list: "GET /customer (ADMIN)",
+    getById: "GET /customer/{id} (ADMIN)",
+    create: "POST /customer (ADMIN)",
+    update: "PUT /customer (ADMIN)",
+    delete: "DELETE /customer/{id} (ADMIN)",
   },
   customDesign: {
     create: "POST /custom-design",
@@ -50,8 +70,18 @@ export const BACKEND_API = {
   deliveryAddress: "/delivery-address/** (ADMIN)",
   orderItem: "/order-item/** (ADMIN)",
   cdekShipment: "/cdek-shipment/** (ADMIN)",
+  delivery: {
+    cities: "GET /delivery/cdek/cities?q=&limit=",
+    points: "GET /delivery/cdek/points?cityCode=",
+    calculate: "POST /delivery/cdek/calculate",
+    calculateOrder: "POST /delivery/cdek/calculate-order",
+  },
   media: {
     upload: "POST /media/upload (ADMIN, multipart file)",
+  },
+  payments: {
+    init: "POST /payments/init",
+    webhook: "POST /payments/webhook/{provider}",
   },
 } as const;
 
@@ -81,8 +111,41 @@ export async function login(body: LoginRequest): Promise<AuthResponse> {
   });
 }
 
+export async function refreshAuth(
+  body: RefreshTokenRequest,
+): Promise<AuthResponse> {
+  return apiFetch<AuthResponse>("/auth/refresh", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
 export async function getMe(token: string): Promise<AuthMeResponse> {
   return apiFetch<AuthMeResponse>("/auth/me", { token });
+}
+
+/** Выдать роль ADMIN существующему пользователю по email (только ADMIN). */
+export async function grantAdminRole(
+  email: string,
+  token: string,
+): Promise<AuthMeResponse> {
+  return apiFetch<AuthMeResponse>("/auth/admin/grant", {
+    method: "POST",
+    body: JSON.stringify({ email }),
+    token,
+  });
+}
+
+/** Снять роль ADMIN (нельзя у себя и у последнего админа). */
+export async function revokeAdminRole(
+  email: string,
+  token: string,
+): Promise<AuthMeResponse> {
+  return apiFetch<AuthMeResponse>("/auth/admin/revoke", {
+    method: "POST",
+    body: JSON.stringify({ email }),
+    token,
+  });
 }
 
 export async function createProduct(
@@ -157,4 +220,108 @@ export async function getOrderByIdAdmin(
   token: string,
 ): Promise<OrderResponse> {
   return apiFetch<OrderResponse>(`/order/${id}`, { token });
+}
+
+export async function patchOrderStatusAdmin(
+  id: number,
+  body: UpdateOrderStatusRequest,
+  token: string,
+): Promise<OrderResponse> {
+  return apiFetch<OrderResponse>(`/order/${id}/status`, {
+    method: "PATCH",
+    body: JSON.stringify(body),
+    token,
+  });
+}
+
+export async function getCustomers(token: string): Promise<CustomerResponse[]> {
+  return apiFetch<CustomerResponse[]>("/customer", { token });
+}
+
+export async function createCustomer(
+  body: CustomerRequest,
+  token: string,
+): Promise<CustomerResponse> {
+  return apiFetch<CustomerResponse>("/customer", {
+    method: "POST",
+    body: JSON.stringify(body),
+    token,
+  });
+}
+
+export async function updateCustomer(
+  body: CustomerRequest,
+  token: string,
+): Promise<CustomerResponse> {
+  return apiFetch<CustomerResponse>("/customer", {
+    method: "PUT",
+    body: JSON.stringify(body),
+    token,
+  });
+}
+
+export async function deleteCustomer(
+  id: number,
+  token: string,
+): Promise<void> {
+  return apiFetch<void>(`/customer/${id}`, { method: "DELETE", token });
+}
+
+/** Поиск городов СДЭК (для автодополнения на checkout). */
+export async function searchCdekCities(
+  query: string,
+  limit = 10,
+): Promise<CdekCity[]> {
+  const q = encodeURIComponent(query);
+  return apiFetch<CdekCity[]>(`/delivery/cdek/cities?q=${q}&limit=${limit}`);
+}
+
+/** Список ПВЗ СДЭК по коду города. */
+export async function listCdekDeliveryPoints(
+  cityCode: number,
+): Promise<CdekDeliveryPoint[]> {
+  return apiFetch<CdekDeliveryPoint[]>(
+    `/delivery/cdek/points?cityCode=${cityCode}`,
+  );
+}
+
+/** Расчёт стоимости и срока доставки. */
+export async function calculateCdekTariff(
+  body: CdekTariffRequest,
+): Promise<CdekTariffResponse> {
+  return apiFetch<CdekTariffResponse>("/delivery/cdek/calculate", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+/** Расчёт СДЭК по корзине: бэкенд сам считает сумму товаров и вес. */
+export async function calculateCdekTariffByOrder(
+  body: CdekOrderTariffRequest,
+): Promise<CdekOrderTariffResponse> {
+  return apiFetch<CdekOrderTariffResponse>("/delivery/cdek/calculate-order", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+/** Инициализация оплаты по заказу (публично). */
+export async function initPayment(
+  body: PaymentInitRequest,
+): Promise<PaymentResponse> {
+  return apiFetch<PaymentResponse>("/payments/init", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+/** Вебхук-пайплайн (для локального/интеграционного теста без провайдера). */
+export async function submitPaymentWebhook(
+  provider: PaymentProvider,
+  body: PaymentWebhookRequest,
+): Promise<PaymentResponse> {
+  return apiFetch<PaymentResponse>(`/payments/webhook/${provider}`, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
 }
