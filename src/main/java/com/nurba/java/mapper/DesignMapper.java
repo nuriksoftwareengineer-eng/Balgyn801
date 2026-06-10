@@ -1,0 +1,22 @@
+package com.nurba.java.mapper;
+
+import com.nurba.java.domain.Design;
+import com.nurba.java.dto.request.CreateDesignRequest;
+import com.nurba.java.dto.responce.DesignResponse;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+
+@Mapper(componentModel = "spring")
+public interface DesignMapper {
+
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "collection", ignore = true)
+    @Mapping(target = "garments", ignore = true)
+    Design toEntity(CreateDesignRequest request);
+
+    @Mapping(source = "collection.id", target = "collectionId")
+    @Mapping(source = "collection.name", target = "collectionName")
+    @Mapping(source = "collection.catalogGroup.name", target = "groupName")
+    DesignResponse toResponse(Design entity);
+}

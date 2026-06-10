@@ -14,5 +14,8 @@ public interface OrderService {
 
     List<OrderResponse> getAll();
 
+    /** Orders placed by the authenticated user identified by email. */
+    List<OrderResponse> getMyOrders(String userEmail);
+
     OrderResponse updateOrderStatus(Long id, UpdateOrderStatusRequest request);
 }

@@ -81,6 +81,11 @@ public class SecurityConfig {
 
                             .requestMatchers("/api/v1/auth/admin/**").hasRole("ADMIN")
 
+                            .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
+
+                            // Public storefront catalog — read-only, no auth required
+                            .requestMatchers(HttpMethod.GET, "/api/v1/catalog/**").permitAll()
+
                             .requestMatchers(HttpMethod.GET, "/api/v1/product/**").permitAll()
 
                             .requestMatchers(HttpMethod.POST, "/api/v1/order").permitAll()
@@ -111,7 +116,10 @@ public class SecurityConfig {
 
                             .requestMatchers("/api/v1/cdek-shipment/**").hasRole("ADMIN")
                             .requestMatchers("/api/v1/delivery-address/**").hasRole("ADMIN")
-                            .requestMatchers("/api/v1/order-item/**").hasRole("ADMIN");
+                            .requestMatchers("/api/v1/order-item/**").hasRole("ADMIN")
+
+                            // Authenticated-user self-service endpoints
+                            .requestMatchers("/api/v1/me/**").authenticated();
 
                     if (swaggerEnabled) {
                         auth.requestMatchers(

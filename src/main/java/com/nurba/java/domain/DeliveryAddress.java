@@ -25,4 +25,16 @@ public class DeliveryAddress {
     private String postalCode;     // VARCHAR (не Integer! бывает "050000")
     private String recipientName;  // VARCHAR
     private String recipientPhone; // VARCHAR
+
+    /** Код ПВЗ СДЭК (если выбран пункт выдачи). Снапшот на момент оформления. */
+    @Column(name = "pvz_code", length = 64)
+    private String pvzCode;
+
+    /** ISO2-код страны доставки (снапшот). */
+    @Column(name = "country_iso2", length = 2)
+    private String countryIso2;
+
+    /** Код города СДЭК (снапшот), если применимо. */
+    @Column(name = "city_code")
+    private Integer cityCode;
 }

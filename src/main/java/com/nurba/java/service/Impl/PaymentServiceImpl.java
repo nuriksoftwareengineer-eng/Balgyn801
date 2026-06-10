@@ -86,11 +86,15 @@ public class PaymentServiceImpl implements PaymentService {
 
         if (next == PaymentStatus.SUCCEEDED) {
             Order order = payment.getOrder();
-            if (order.getStatus() == OrderStatus.NEW) {
+            // Successful payment makes a pending order visible to admin. NEW is also accepted for
+            // manually-created/legacy orders. The transition is idempotent: a duplicate webhook
+            // finds the order already CONFIRMED and does nothing.
+            if (order.getStatus() == OrderStatus.PENDING_PAYMENT || order.getStatus() == OrderStatus.NEW) {
                 order.setStatus(OrderStatus.CONFIRMED);
                 order.setUpdatedAt(LocalDateTime.now());
                 orderRepository.save(order);
             }
+            // Inventory was already reserved (deducted under lock) at order creation — no action here.
         }
         return toResponse(paymentRepository.save(payment));
     }

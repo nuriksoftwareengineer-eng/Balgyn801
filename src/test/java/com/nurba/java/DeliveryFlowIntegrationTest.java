@@ -2,8 +2,18 @@ package com.nurba.java;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nurba.java.domain.Country;
 import com.nurba.java.domain.Product;
+import com.nurba.java.enums.ShippingZone;
+import com.nurba.java.repositories.CountryRepository;
+import com.nurba.java.repositories.CustomerRepository;
+import com.nurba.java.repositories.DeliveryAddressRepository;
+import com.nurba.java.repositories.OrderHistoryRepository;
+import com.nurba.java.repositories.OrderItemRepository;
+import com.nurba.java.repositories.OrderRepository;
+import com.nurba.java.repositories.PaymentRepository;
 import com.nurba.java.repositories.ProductRepository;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,6 +44,16 @@ class DeliveryFlowIntegrationTest {
     private ProductRepository productRepository;
 
     @Autowired
+    private CountryRepository countryRepository;
+
+    @Autowired private OrderHistoryRepository orderHistoryRepository;
+    @Autowired private OrderItemRepository orderItemRepository;
+    @Autowired private PaymentRepository paymentRepository;
+    @Autowired private DeliveryAddressRepository deliveryAddressRepository;
+    @Autowired private OrderRepository orderRepository;
+    @Autowired private CustomerRepository customerRepository;
+
+    @Autowired
     private ObjectMapper objectMapper;
 
     private Long productId;
@@ -41,7 +61,9 @@ class DeliveryFlowIntegrationTest {
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders.webAppContextSetup(context).build();
-        productRepository.deleteAll();
+        cleanup();
+        countryRepository.save(country("RU", "Россия", "Russia", ShippingZone.CIS));
+
         Product p = new Product();
         p.setTitle("Test hoodie");
         p.setDescription("integration");
@@ -49,6 +71,30 @@ class DeliveryFlowIntegrationTest {
         p.setInStock(true);
         p.setCategory("Худи");
         productId = productRepository.save(p).getId();
+    }
+
+    @AfterEach
+    void cleanup() {
+        // Bulk deletes avoid the eager Order<->DeliveryAddress OneToOne flush check, and the
+        // @AfterEach guarantees no rows leak into other test classes sharing the context.
+        orderHistoryRepository.deleteAllInBatch();
+        orderItemRepository.deleteAllInBatch();
+        paymentRepository.deleteAllInBatch();
+        deliveryAddressRepository.deleteAllInBatch();
+        orderRepository.deleteAllInBatch();
+        customerRepository.deleteAllInBatch();
+        productRepository.deleteAllInBatch();
+        countryRepository.deleteAllInBatch();
+    }
+
+    private Country country(String iso2, String ru, String en, ShippingZone zone) {
+        Country c = new Country();
+        c.setIso2(iso2);
+        c.setNameRu(ru);
+        c.setNameEn(en);
+        c.setShippingZone(zone);
+        c.setActive(true);
+        return c;
     }
 
     @Test
@@ -81,32 +127,47 @@ class DeliveryFlowIntegrationTest {
         assertThat(orderTotal).isEqualByComparingTo(itemsTotal.add(deliveryPrice));
     }
 
+    /**
+     * CDEK fee is now computed entirely on the backend from the destination + weight — the client
+     * no longer sends a delivery fee. The order is created (PENDING_PAYMENT) with a positive,
+     * server-computed fee folded into the total.
+     */
     @Test
-    void createOrderCdekWithoutDeliveryFeeReturnsBadRequest() throws Exception {
+    void createOrderCdek_backendComputesFee_andOrderSucceeds() throws Exception {
         String body = """
                 {
                   "customerName": "Test User",
                   "customerPhone": "+77001234567",
                   "deliveryType": "CDEK",
+                  "countryIso2": "RU",
                   "items": [
                     { "productId": %d, "quantity": 1 }
                   ],
                   "address": {
-                    "city": "Алматы",
-                    "street": "СДЭК ПВЗ \\"Smoke\\" [STUB-270-1]: ул. Тестовая, 1",
+                    "city": "Москва",
+                    "street": "ул. Тестовая, 1",
                     "apartment": "—",
-                    "postalCode": "050000",
+                    "postalCode": "101000",
                     "recipientName": "Test User",
                     "recipientPhone": "+77001234567"
                   }
                 }
                 """.formatted(productId);
 
-        mockMvc.perform(post("/api/v1/order")
+        String response = mockMvc.perform(post("/api/v1/order")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.detail")
-                        .value("Для доставки СДЭК сначала рассчитайте стоимость на сайте"));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("PENDING_PAYMENT"))
+                .andExpect(jsonPath("$.deliveryFee").isNumber())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        JsonNode json = objectMapper.readTree(response);
+        BigDecimal deliveryFee = json.get("deliveryFee").decimalValue();
+        BigDecimal totalPrice = json.get("totalPrice").decimalValue();
+        assertThat(deliveryFee).isGreaterThan(BigDecimal.ZERO);
+        assertThat(totalPrice).isEqualByComparingTo(new BigDecimal("33000.00").add(deliveryFee));
     }
 }
