@@ -2,6 +2,7 @@ package com.nurba.java.service.Impl;
 
 import com.nurba.java.dto.delivery.CdekTariffRequest;
 import com.nurba.java.dto.delivery.CdekTariffResponse;
+import com.nurba.java.dto.delivery.DeliveryMethodResponse;
 import com.nurba.java.dto.request.DeliveryAddressRequest;
 import com.nurba.java.enums.DeliveryType;
 import com.nurba.java.enums.ShippingZone;
@@ -20,15 +21,25 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
 /**
  * Backend delivery pricing. Resolves the zone from the destination country, enforces which methods
- * are allowed per zone, and computes the fee. Domestic (Kazakhstan) pricing is intentionally
- * trivial today (pickup free / flat delivery) but routed through this single point so future rule
- * changes — weight, city, thresholds — touch only the relevant branch.
+ * are allowed per zone, and computes the fee.
+ *
+ * <p><b>Zone → method matrix (authoritative):</b>
+ * <ul>
+ *   <li>KAZAKHSTAN → PICKUP, TAXI (Almaty only), POSTAL (Kazpost), CDEK</li>
+ *   <li>CIS → CDEK only</li>
+ *   <li>INTERNATIONAL → INTERNATIONAL only</li>
+ * </ul>
+ *
+ * <p>PICKUP is available to any KZ customer ("pickup in Almaty by agreement") — no city restriction.
+ * TAXI requires the delivery city to be Almaty.
  */
 @Service
 @RequiredArgsConstructor
@@ -36,11 +47,16 @@ public class DeliveryPricingServiceImpl implements DeliveryPricingService {
 
     private static final int MIN_SHIPMENT_GRAMS = 500;
 
+    /** City name used for TAXI restriction. Defined here so it surfaces in the API response — never hardcoded client-side. */
+    private static final String TAXI_CITY = "Алматы";
+
     private final CountryService countryService;
     private final DeliverySettingService deliverySettingService;
     private final CdekDeliveryService cdekDeliveryService;
     private final ShippingTariffService shippingTariffService;
     private final InternationalShippingService internationalShippingService;
+
+    // ── quote ────────────────────────────────────────────────────────────────────
 
     @Override
     public DeliveryQuote quote(DeliveryType method,
@@ -52,7 +68,7 @@ public class DeliveryPricingServiceImpl implements DeliveryPricingService {
         }
         BigDecimal weight = weightKg == null ? BigDecimal.ZERO : weightKg;
 
-        // PICKUP is always domestic and free — no country required.
+        // PICKUP is always domestic and free — no country required, no city restriction.
         if (method == DeliveryType.PICKUP) {
             return new DeliveryQuote(zero(), ShippingZone.KAZAKHSTAN, weight, null, null, null);
         }
@@ -60,21 +76,97 @@ public class DeliveryPricingServiceImpl implements DeliveryPricingService {
         ShippingZone zone = resolveZone(method, countryIso2);
         assertMethodAllowed(method, zone);
 
+        // TAXI requires Almaty delivery address.
+        if (method == DeliveryType.TAXI) {
+            assertTaxiCity(address);
+        }
+
         return switch (zone) {
-            case KAZAKHSTAN -> kazakhstanQuote(weight);          // TAXI → flat rate
-            case CIS -> cisQuote(method, address, weight);       // CDEK or POSTAL
-            case INTERNATIONAL -> internationalQuote(weight);    // single "International Shipping"
+            case KAZAKHSTAN -> kazakhstanQuote(method, address, weight);
+            case CIS        -> cisQuote(address, weight);
+            case INTERNATIONAL -> internationalQuote(weight);
         };
+    }
+
+    // ── availableMethods ─────────────────────────────────────────────────────────
+
+    @Override
+    public List<DeliveryMethodResponse> availableMethods(String countryIso2) {
+        if (isBlank(countryIso2)) {
+            throw new BusinessRuleException("Укажите страну доставки");
+        }
+        ShippingZone zone = countryService.resolveZone(countryIso2.trim().toUpperCase(Locale.ROOT));
+        Set<DeliveryType> allowed = allowedMethods(zone);
+
+        List<DeliveryMethodResponse> result = new ArrayList<>();
+
+        if (allowed.contains(DeliveryType.PICKUP)) {
+            result.add(new DeliveryMethodResponse(
+                    DeliveryType.PICKUP,
+                    "Самовывоз",
+                    false,   // requiresAddress
+                    false,   // requiresCitySearch
+                    false,   // requiresPvz
+                    null,    // cityRestriction — none, any KZ customer
+                    zero()   // free
+            ));
+        }
+        if (allowed.contains(DeliveryType.TAXI)) {
+            result.add(new DeliveryMethodResponse(
+                    DeliveryType.TAXI,
+                    "Курьер",
+                    true,
+                    false,
+                    false,
+                    TAXI_CITY,  // restriction surfaced from backend, never hardcoded client-side
+                    deliverySettingService.kzDeliveryFlatKzt().setScale(2, RoundingMode.HALF_UP)
+            ));
+        }
+        if (allowed.contains(DeliveryType.POSTAL)) {
+            result.add(new DeliveryMethodResponse(
+                    DeliveryType.POSTAL,
+                    "Казпочта",
+                    true,
+                    false,
+                    false,
+                    null,
+                    null   // weight-dependent, shown as variable on frontend
+            ));
+        }
+        if (allowed.contains(DeliveryType.CDEK)) {
+            result.add(new DeliveryMethodResponse(
+                    DeliveryType.CDEK,
+                    "СДЭК",
+                    true,
+                    true,   // requiresCitySearch
+                    true,   // requiresPvz
+                    null,
+                    null    // city+weight-dependent
+            ));
+        }
+        if (allowed.contains(DeliveryType.INTERNATIONAL)) {
+            result.add(new DeliveryMethodResponse(
+                    DeliveryType.INTERNATIONAL,
+                    "Международная доставка",
+                    true,
+                    false,
+                    false,
+                    null,
+                    null    // weight-dependent
+            ));
+        }
+
+        return result;
     }
 
     // ── zone resolution & method matrix ─────────────────────────────────────────
 
     private ShippingZone resolveZone(DeliveryType method, String countryIso2) {
         if (countryIso2 != null && !countryIso2.isBlank()) {
-            return countryService.resolveZone(countryIso2);   // validates the country is active
+            return countryService.resolveZone(countryIso2);
         }
         if (method == DeliveryType.TAXI) {
-            return ShippingZone.KAZAKHSTAN;                    // domestic delivery default
+            return ShippingZone.KAZAKHSTAN;
         }
         throw new BusinessRuleException("Укажите страну доставки");
     }
@@ -85,30 +177,61 @@ public class DeliveryPricingServiceImpl implements DeliveryPricingService {
         }
     }
 
-    /** The zone→method matrix is backend-authoritative; the frontend can never bypass it. */
+    private void assertTaxiCity(DeliveryAddressRequest address) {
+        if (address == null || isBlank(address.getCity())) {
+            throw new BusinessRuleException("Для курьерской доставки укажите город");
+        }
+        String city = address.getCity().trim();
+        if (!city.toLowerCase(Locale.ROOT).contains(TAXI_CITY.toLowerCase(Locale.ROOT))) {
+            throw new BusinessRuleException("Курьерская доставка доступна только по " + TAXI_CITY);
+        }
+    }
+
+    /**
+     * Zone → allowed delivery methods matrix.
+     * KAZAKHSTAN: PICKUP (any city), TAXI (Almaty only, enforced in assertTaxiCity), POSTAL (Kazpost), CDEK.
+     * CIS: CDEK only (POSTAL removed per business requirements).
+     * INTERNATIONAL: INTERNATIONAL only (Kazpost-backed, customer-facing label only).
+     */
     private static Set<DeliveryType> allowedMethods(ShippingZone zone) {
         return switch (zone) {
-            case KAZAKHSTAN -> EnumSet.of(DeliveryType.PICKUP, DeliveryType.TAXI);
-            case CIS -> EnumSet.of(DeliveryType.CDEK, DeliveryType.POSTAL);
+            case KAZAKHSTAN  -> EnumSet.of(DeliveryType.PICKUP, DeliveryType.TAXI,
+                                           DeliveryType.POSTAL, DeliveryType.CDEK);
+            case CIS         -> EnumSet.of(DeliveryType.CDEK);
             case INTERNATIONAL -> EnumSet.of(DeliveryType.INTERNATIONAL);
         };
     }
 
     // ── per-zone pricing ────────────────────────────────────────────────────────
 
-    private DeliveryQuote kazakhstanQuote(BigDecimal weight) {
-        // Flat Kazakhstan delivery — same for every destination; no weight/distance/city pricing.
-        BigDecimal fee = deliverySettingService.kzDeliveryFlatKzt().setScale(2, RoundingMode.HALF_UP);
-        return new DeliveryQuote(fee, ShippingZone.KAZAKHSTAN, weight, null, null, null);
+    private DeliveryQuote kazakhstanQuote(DeliveryType method, DeliveryAddressRequest address, BigDecimal weight) {
+        return switch (method) {
+            case PICKUP -> new DeliveryQuote(zero(), ShippingZone.KAZAKHSTAN, weight, null, null, null);
+            case TAXI   -> {
+                BigDecimal fee = deliverySettingService.kzDeliveryFlatKzt().setScale(2, RoundingMode.HALF_UP);
+                yield new DeliveryQuote(fee, ShippingZone.KAZAKHSTAN, weight, null, null, null);
+            }
+            case POSTAL -> {
+                BigDecimal fee = shippingTariffService.baseFeeKzt(TariffKind.POSTAL, weight)
+                        .setScale(2, RoundingMode.HALF_UP);
+                yield new DeliveryQuote(fee, ShippingZone.KAZAKHSTAN, weight, null, null, null);
+            }
+            case CDEK -> {
+                if (address == null || isBlank(address.getCity())) {
+                    throw new BusinessRuleException("Для доставки СДЭК укажите город");
+                }
+                int cityCode = resolveCdekCityCode(address.getCity());
+                CdekTariffResponse tariff = cdekDeliveryService.calculate(
+                        new CdekTariffRequest(cityCode, toGrams(weight), null));
+                BigDecimal fee = tariff.totalPrice().setScale(2, RoundingMode.HALF_UP);
+                yield new DeliveryQuote(fee, ShippingZone.KAZAKHSTAN, weight, cityCode, null, null);
+            }
+            default -> throw new BusinessRuleException("Способ доставки недоступен для Казахстана: " + method);
+        };
     }
 
-    private DeliveryQuote cisQuote(DeliveryType method, DeliveryAddressRequest address, BigDecimal weight) {
-        if (method == DeliveryType.POSTAL) {
-            BigDecimal fee = shippingTariffService.baseFeeKzt(TariffKind.POSTAL, weight)
-                    .setScale(2, RoundingMode.HALF_UP);
-            return new DeliveryQuote(fee, ShippingZone.CIS, weight, null, null, null);
-        }
-        // CDEK: backend computes the tariff from destination city + weight.
+    private DeliveryQuote cisQuote(DeliveryAddressRequest address, BigDecimal weight) {
+        // CIS zone: CDEK only. POSTAL was removed from CIS per business requirements.
         if (address == null || isBlank(address.getCity())) {
             throw new BusinessRuleException("Для доставки СДЭК укажите город");
         }

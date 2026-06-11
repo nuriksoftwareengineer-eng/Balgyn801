@@ -80,7 +80,7 @@ export function AdminOrderDetailPage() {
         <p className="text-red-400">Некорректная ссылка на заказ.</p>
         <Link
           to="/admin/orders"
-          className="mt-4 inline-block text-violet-400 hover:underline"
+          className="mt-4 inline-block text-zinc-300 hover:text-white hover:underline"
         >
           ← К списку заказов
         </Link>
@@ -100,7 +100,7 @@ export function AdminOrderDetailPage() {
         </p>
         <Link
           to="/admin/orders"
-          className="mt-4 inline-block text-violet-400 hover:underline"
+          className="mt-4 inline-block text-zinc-300 hover:text-white hover:underline"
         >
           ← К списку заказов
         </Link>
@@ -117,7 +117,7 @@ export function AdminOrderDetailPage() {
     <div>
       <Link
         to="/admin/orders"
-        className="mb-6 inline-block text-sm font-semibold text-violet-400 hover:underline"
+        className="mb-6 inline-block text-sm font-semibold text-zinc-300 hover:text-white hover:underline"
       >
         ← Все заказы
       </Link>
@@ -163,7 +163,7 @@ export function AdminOrderDetailPage() {
         </section>
       </div>
 
-      <section className="mb-8 rounded-[14px] border border-violet-500/25 bg-violet-500/[0.06] p-5">
+      <section className="mb-8 rounded-[14px] border border-white/15 bg-white/[0.04] p-5">
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-zinc-400">
           Смена статуса
         </h2>
@@ -176,7 +176,7 @@ export function AdminOrderDetailPage() {
                 const v = e.target.value as OrderStatus;
                 setStatusDraft(v === current ? null : v);
               }}
-              className="rounded-[10px] border border-white/15 bg-zinc-950 px-3 py-2.5 text-zinc-100 outline-none focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/25"
+              className="rounded-[10px] border border-white/15 bg-zinc-950 px-3 py-2.5 text-zinc-100 outline-none focus:border-white/40 focus:ring-2 focus:ring-white/20"
             >
               {ORDER_STATUS_VALUES.map((s) => (
                 <option key={s} value={s}>

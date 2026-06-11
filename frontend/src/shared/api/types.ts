@@ -69,7 +69,28 @@ export type PaymentStatus =
   | "FAILED"
   | "REFUNDED";
 
-export type DeliveryType = "PICKUP" | "TAXI" | "CDEK";
+export type DeliveryType = "PICKUP" | "TAXI" | "CDEK" | "POSTAL" | "INTERNATIONAL";
+
+/** One available delivery option returned by GET /api/v1/delivery/methods. */
+export type DeliveryMethodResponse = {
+  type: DeliveryType;
+  /** Russian display label — render this, never hardcode method names. */
+  labelRu: string;
+  /** False only for PICKUP. */
+  requiresAddress: boolean;
+  /** True for CDEK — show city autocomplete widget. */
+  requiresCitySearch: boolean;
+  /** True for CDEK — show PVZ picker. */
+  requiresPvz: boolean;
+  /**
+   * Non-null when the method is restricted to a specific city.
+   * Display as "Доступно только в: {cityRestriction}".
+   * Never hardcode city names in the frontend.
+   */
+  cityRestriction: string | null;
+  /** 0 for PICKUP (free), flat amount for TAXI, null for variable-price methods. */
+  estimatedFeeKzt: number | null;
+};
 
 export type OrderStatus =
   | "NEW"
@@ -78,7 +99,9 @@ export type OrderStatus =
   | "READY"
   | "SHIPPED"
   | "DELIVERED"
-  | "CANCELLED";
+  | "CANCELLED"
+  | "PENDING_PAYMENT"
+  | "EXPIRED";
 
 export type OrderItemResponse = {
   id: number;
@@ -108,11 +131,18 @@ export type DeliveryAddressResponse = {
 };
 
 export type OrderItemRequest = {
-  productId: number;
+  // Legacy product path
+  productId?: number | null;
   customDesignId?: number | null;
-  quantity: number;
   size?: string | null;
   color?: string | null;
+  // Design catalog path (mutually exclusive with productId)
+  designGarmentId?: number | null;
+  colorId?: number | null;
+  sizeId?: number | null;
+  currency?: string | null;
+  // Shared
+  quantity: number;
 };
 
 /** Тело `PATCH /order/{id}/status` (роль ADMIN). */
@@ -149,7 +179,8 @@ export type CdekTariffRequest = {
 
 /** Позиция корзины для расчёта СДЭК на бэкенде. */
 export type CdekOrderItemRequest = {
-  productId: number;
+  productId?: number | null;
+  designGarmentId?: number | null;
   quantity: number;
 };
 
@@ -193,8 +224,10 @@ export type CreateOrderRequest = {
   comment?: string | null;
   items: OrderItemRequest[];
   address?: DeliveryAddressRequest | null;
-  /** Для CDEK — сумма после «Рассчитать доставку»; для остальных не передаётся. */
-  deliveryFee?: number | null;
+  /** ISO-2 код страны доставки (например "KZ", "RU"). Обязателен для всех типов кроме PICKUP. */
+  countryIso2?: string | null;
+  /** Код ПВЗ СДЭК. Обязателен для CDEK-заказов. */
+  pvzCode?: string | null;
 };
 
 /** Ответ `GET /customer`, `POST /customer`, `PUT /customer` (ADMIN). */

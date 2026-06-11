@@ -24,7 +24,7 @@ export function TrustStrip() {
               delay: reduceMotion ? 0 : i * 0.08,
               ease: [0.22, 1, 0.36, 1],
             }}
-            className="rounded-[14px] border border-white/10 bg-zinc-900 px-5 py-5 text-center transition-colors hover:border-violet-500/25 hover:bg-zinc-900/95"
+            className="rounded-[14px] border border-white/10 bg-zinc-900 px-5 py-5 text-center transition-colors hover:border-white/25 hover:bg-zinc-900/95"
           >
             <strong className="mb-1.5 block text-xs font-bold uppercase tracking-[0.06em] text-zinc-100">
               {item.title}

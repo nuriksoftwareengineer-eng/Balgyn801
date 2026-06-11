@@ -20,14 +20,14 @@ export function AboutPage() {
         <section className="mb-14 grid gap-10 md:grid-cols-[minmax(0,280px)_1fr] md:items-center md:gap-12">
           <div className="mx-auto w-full max-w-[280px] md:mx-0">
             <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-zinc-900/60 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.65)] ring-1 ring-white/5">
-              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(139,92,246,0.35),transparent_65%)]" />
-              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom,rgba(76,29,149,0.45),transparent_72%)]" />
+              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(255,255,255,0.10),transparent_65%)]" />
+              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom,rgba(255,255,255,0.06),transparent_72%)]" />
               <div className="relative flex aspect-[4/5] items-center justify-center">
-                <div className="rounded-full border border-violet-300/35 bg-violet-500/15 px-8 py-8 text-center">
+                <div className="rounded-full border border-white/25 bg-white/10 px-8 py-8 text-center">
                   <p className="font-display text-5xl tracking-[0.08em] text-zinc-100">
                     DA
                   </p>
-                  <p className="mt-1 text-xs uppercase tracking-[0.2em] text-violet-200">
+                  <p className="mt-1 text-xs uppercase tracking-[0.2em] text-zinc-300">
                     Balgyn Studio
                   </p>
                 </div>
@@ -35,7 +35,7 @@ export function AboutPage() {
             </div>
           </div>
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-violet-400">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-400">
               CEO
             </p>
             <h2 className="font-display mt-2 text-3xl tracking-wide text-zinc-100 md:text-4xl">
@@ -53,7 +53,7 @@ export function AboutPage() {
             <div className="mt-6 flex flex-wrap gap-3">
               <Link
                 to="/custom-design"
-                className="inline-flex rounded-full bg-violet-500 px-6 py-2.5 text-sm font-semibold text-white transition hover:brightness-110"
+                className="inline-flex rounded-full bg-white px-6 py-2.5 text-sm font-semibold text-black transition hover:bg-zinc-200"
               >
                 Свой дизайн
               </Link>
@@ -76,14 +76,14 @@ export function AboutPage() {
           <ul className="list-inside list-disc space-y-2 text-zinc-400">
             <li>
               Заказ оформляется на сайте: вы выбираете модели в{" "}
-              <Link to="/catalog" className="text-violet-400 hover:underline">
+              <Link to="/catalog" className="text-zinc-200 underline underline-offset-2 hover:text-white">
                 каталоге
               </Link>
               , указываете способ получения и контакты.
             </li>
             <li>
               Индивидуальные макеты — через раздел{" "}
-              <Link to="/custom-design" className="text-violet-400 hover:underline">
+              <Link to="/custom-design" className="text-zinc-200 underline underline-offset-2 hover:text-white">
                 Свой дизайн
               </Link>{" "}
               или напрямую в Telegram.
@@ -112,7 +112,7 @@ export function AboutPage() {
               Email:{" "}
               <a
                 href={`mailto:${CONTACT_EMAIL}`}
-                className="font-medium text-violet-400 hover:underline"
+                className="font-medium text-zinc-200 underline underline-offset-2 hover:text-white"
               >
                 {CONTACT_EMAIL}
               </a>
@@ -123,7 +123,7 @@ export function AboutPage() {
                 href={STORE_TELEGRAM_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-medium text-violet-400 hover:underline"
+                className="font-medium text-zinc-200 underline underline-offset-2 hover:text-white"
               >
                 написать в магазин
               </a>

@@ -2,7 +2,10 @@ import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/app/auth-context";
 import { ApiError } from "@/shared/api/http";
-import { Button } from "@/shared/ui/button";
+import { Button } from "@/components/ui/button";
+
+const inputClass =
+  "rounded-none border border-[--color-border] bg-white px-3 py-2.5 text-sm text-black outline-none transition focus:border-black focus:ring-1 focus:ring-black";
 
 export function RegisterPage() {
   const { register, user, loading } = useAuth();
@@ -45,29 +48,32 @@ export function RegisterPage() {
   }
 
   return (
-    <div className="w-full max-w-[400px] rounded-[14px] border border-white/10 bg-zinc-900/80 p-8 shadow-[0_24px_80px_-32px_rgba(139,92,246,0.35)] backdrop-blur-md">
-      <h1 className="font-display mb-2 text-3xl tracking-wide text-zinc-100">
+    <div className="w-full max-w-[400px] border border-[--color-border] bg-white p-8">
+      <h1 className="mb-1 text-2xl font-semibold uppercase tracking-[0.04em] text-black">
         Регистрация
       </h1>
-      <p className="mb-6 text-sm text-zinc-500">
-        После регистрации вы получите роль USER. Админ создаётся отдельно (bootstrap
-        или назначение роли в БД).
+      <p className="mb-6 text-sm text-[--color-muted]">
+        После регистрации вы получите роль USER.
       </p>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <label className="flex flex-col gap-1.5 text-sm">
-          <span className="font-medium text-zinc-400">Email</span>
+        <label className="flex flex-col gap-1.5">
+          <span className="text-[0.65rem] font-medium uppercase tracking-[0.1em] text-[--color-muted]">
+            Email
+          </span>
           <input
             type="email"
             autoComplete="email"
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="rounded-[10px] border border-white/10 bg-zinc-950 px-3 py-2.5 text-zinc-100 outline-none ring-violet-500/40 focus:border-violet-500/40 focus:ring-2"
+            className={inputClass}
           />
         </label>
-        <label className="flex flex-col gap-1.5 text-sm">
-          <span className="font-medium text-zinc-400">Пароль (от 8 символов)</span>
+        <label className="flex flex-col gap-1.5">
+          <span className="text-[0.65rem] font-medium uppercase tracking-[0.1em] text-[--color-muted]">
+            Пароль <span className="normal-case font-normal">(от 8 символов)</span>
+          </span>
           <input
             type="password"
             autoComplete="new-password"
@@ -75,32 +81,32 @@ export function RegisterPage() {
             minLength={8}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="rounded-[10px] border border-white/10 bg-zinc-950 px-3 py-2.5 text-zinc-100 outline-none ring-violet-500/40 focus:border-violet-500/40 focus:ring-2"
+            className={inputClass}
           />
         </label>
 
         {error ? (
-          <p className="m-0 text-sm font-medium text-red-400" role="alert">
+          <p className="m-0 text-sm font-medium text-[--color-danger]" role="alert">
             {error}
           </p>
         ) : null}
 
         <Button
           type="submit"
-          variant="primary"
-          className="mt-2 w-full rounded-[10px]"
+          size="lg"
+          className="mt-2 w-full"
           disabled={submitting}
         >
           {submitting ? "Создаём…" : "Создать аккаунт"}
         </Button>
       </form>
 
-      <p className="mt-6 text-center text-sm text-zinc-500">
+      <p className="mt-6 text-center text-sm text-[--color-muted]">
         Уже есть аккаунт?{" "}
         <Link
           to="/login"
           state={from ? { from } : undefined}
-          className="font-semibold text-violet-400 hover:underline"
+          className="font-semibold text-black underline underline-offset-2 hover:text-[--color-muted]"
         >
           Войти
         </Link>

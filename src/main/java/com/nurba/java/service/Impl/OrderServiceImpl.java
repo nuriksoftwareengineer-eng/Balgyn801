@@ -43,6 +43,7 @@ import com.nurba.java.service.GarmentWeightService;
 import com.nurba.java.service.OrderService;
 import com.nurba.java.service.delivery.DeliveryPricingService;
 import com.nurba.java.service.delivery.DeliveryQuote;
+import com.nurba.java.service.Impl.OrderExpiryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -89,6 +90,8 @@ public class OrderServiceImpl implements OrderService {
 
     // ── Order history (audit log of status changes) ────────────────────────────
     private final OrderHistoryRepository orderHistoryRepository;
+
+    private final OrderExpiryService orderExpiryService;
 
 
     @Override
@@ -332,6 +335,14 @@ public class OrderServiceImpl implements OrderService {
                 .orElseThrow(() -> new NotFoundException("Заказ не найден: " + id));
         OrderStatus next = request.getStatus();
         assertAllowedStatusTransition(order.getStatus(), next);
+
+        // When admin cancels any non-already-cancelled order: release reserved inventory and
+        // cancel any PENDING payments so no dangling records remain.
+        if (next == OrderStatus.CANCELLED && order.getStatus() != OrderStatus.CANCELLED) {
+            orderExpiryService.releaseInventory(order);
+            orderExpiryService.cancelPendingPayments(order);
+        }
+
         order.setStatus(next);
         order.setUpdatedAt(LocalDateTime.now());
         orderRepository.save(order);

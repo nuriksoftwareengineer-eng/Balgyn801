@@ -120,7 +120,9 @@ public class CatalogStorefrontServiceImpl implements CatalogStorefrontService {
         response.setMainImageUrl(design.getMainImageUrl());
         response.setCollectionId(design.getCollection().getId());
         response.setCollectionName(design.getCollection().getName());
+        response.setCollectionSlug(design.getCollection().getSlug());
         response.setGroupName(design.getCollection().getCatalogGroup().getName());
+        response.setGroupSlug(design.getCollection().getCatalogGroup().getSlug());
         response.setGarments(garmentResponses);
         return response;
     }

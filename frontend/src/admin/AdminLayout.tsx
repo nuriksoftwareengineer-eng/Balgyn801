@@ -6,7 +6,7 @@ const navClass = ({ isActive }: { isActive: boolean }) =>
   cn(
     "block rounded-[10px] px-3 py-2 text-sm font-semibold transition",
     isActive
-      ? "bg-violet-500/20 text-violet-100"
+      ? "bg-white/15 text-white"
       : "text-zinc-400 hover:bg-white/5 hover:text-zinc-200",
   );
 
@@ -37,7 +37,7 @@ export function AdminLayout() {
           <p className="truncate text-xs text-zinc-500">{user?.email}</p>
           <button
             type="button"
-            className="mt-2 text-sm font-semibold text-violet-400 hover:text-violet-300"
+            className="mt-2 text-sm font-semibold text-zinc-300 hover:text-white"
             onClick={logout}
           >
             Выйти

@@ -4,11 +4,14 @@ import com.nurba.java.domain.Inventory;
 import com.nurba.java.domain.Order;
 import com.nurba.java.domain.OrderHistory;
 import com.nurba.java.domain.OrderItem;
+import com.nurba.java.domain.Payment;
 import com.nurba.java.enums.OrderStatus;
+import com.nurba.java.enums.PaymentStatus;
 import com.nurba.java.repositories.InventoryRepository;
 import com.nurba.java.repositories.OrderHistoryRepository;
 import com.nurba.java.repositories.OrderItemRepository;
 import com.nurba.java.repositories.OrderRepository;
+import com.nurba.java.repositories.PaymentRepository;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,6 +41,7 @@ public class OrderExpiryService {
     private final OrderItemRepository orderItemRepository;
     private final InventoryRepository inventoryRepository;
     private final OrderHistoryRepository orderHistoryRepository;
+    private final PaymentRepository paymentRepository;
 
     /** Minutes an order may remain unpaid before it expires. */
     @Value("${app.orders.payment-window-minutes:60}")
@@ -71,13 +75,18 @@ public class OrderExpiryService {
     @Transactional
     public void expire(Order order) {
         releaseInventory(order);
+        cancelPendingPayments(order);
         order.setStatus(OrderStatus.EXPIRED);
         order.setUpdatedAt(LocalDateTime.now());
         orderRepository.save(order);
         recordHistory(order);
     }
 
-    private void releaseInventory(Order order) {
+    /**
+     * Returns reserved inventory to stock for all design-based items in the order.
+     * Public so callers outside this class (payment webhook handler, admin cancel) can reuse it.
+     */
+    public void releaseInventory(Order order) {
         List<OrderItem> items = orderItemRepository.findByOrder_Id(order.getId());
         for (OrderItem item : items) {
             // Only design-based items reserve inventory; legacy product items hold none.
@@ -96,6 +105,19 @@ public class OrderExpiryService {
                         inv.setQuantity(inv.getQuantity() + qty);
                         inventoryRepository.save(inv);
                     });
+        }
+    }
+
+    /**
+     * Marks every PENDING payment for this order as CANCELLED.
+     * Public so the admin cancel path can also clean up dangling payments.
+     */
+    public void cancelPendingPayments(Order order) {
+        List<Payment> pending = paymentRepository.findByOrderAndStatus(order, PaymentStatus.PENDING);
+        for (Payment p : pending) {
+            p.setStatus(PaymentStatus.CANCELLED);
+            p.setUpdatedAt(LocalDateTime.now());
+            paymentRepository.save(p);
         }
     }
 

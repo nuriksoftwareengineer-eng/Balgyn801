@@ -17,7 +17,9 @@ public class DesignDetailResponse {
     private String mainImageUrl;
     private Long collectionId;
     private String collectionName;
+    private String collectionSlug;
     private String groupName;
+    private String groupSlug;
 
     /** Active garment variants; each carries its own prices / colors / sizes. */
     private List<DesignGarmentResponse> garments;

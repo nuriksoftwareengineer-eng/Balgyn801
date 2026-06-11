@@ -232,13 +232,12 @@ class InternationalShippingIntegrationTest {
     }
 
     @Test
-    void cisPostal_computesFee() throws Exception {
-        // POSTAL bracket upto 1.0 = 2800 KZT.
+    void cisPostal_rejectedForCis() throws Exception {
+        // Zone matrix change: CIS supports CDEK only. POSTAL is Kazakhstan-domestic only.
         mockMvc.perform(post("/api/v1/order")
                         .contentType(MediaType.APPLICATION_JSON).content(body("POSTAL", "RU")))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.deliveryFee").value(2800.0))
-                .andExpect(jsonPath("$.totalPrice").value(14800.0));
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value("Способ доставки недоступен для выбранной страны"));
     }
 
     @Test

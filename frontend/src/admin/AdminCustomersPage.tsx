@@ -205,7 +205,7 @@ export function AdminCustomersPage() {
                     <div className="flex flex-wrap gap-2">
                       <button
                         type="button"
-                        className="text-sm font-semibold text-violet-400 hover:text-violet-300"
+                        className="text-sm font-semibold text-zinc-300 hover:text-white"
                         onClick={() => openEdit(c)}
                       >
                         Изменить
@@ -282,7 +282,7 @@ export function AdminCustomersPage() {
                   onChange={(e) =>
                     setForm((f) => ({ ...f, name: e.target.value }))
                   }
-                  className="rounded-[10px] border border-white/10 bg-zinc-950 px-3 py-2 text-zinc-100 outline-none focus:border-violet-500/40 focus:ring-2 focus:ring-violet-500/30"
+                  className="rounded-[10px] border border-white/10 bg-zinc-950 px-3 py-2 text-zinc-100 outline-none focus:border-white/40 focus:ring-2 focus:ring-white/20"
                 />
               </label>
               <label className="flex flex-col gap-1 text-sm">
@@ -294,7 +294,7 @@ export function AdminCustomersPage() {
                   onChange={(e) =>
                     setForm((f) => ({ ...f, phone: e.target.value }))
                   }
-                  className="rounded-[10px] border border-white/10 bg-zinc-950 px-3 py-2 text-zinc-100 outline-none focus:border-violet-500/40 focus:ring-2 focus:ring-violet-500/30"
+                  className="rounded-[10px] border border-white/10 bg-zinc-950 px-3 py-2 text-zinc-100 outline-none focus:border-white/40 focus:ring-2 focus:ring-white/20"
                 />
               </label>
               <label className="flex flex-col gap-1 text-sm">
@@ -310,7 +310,7 @@ export function AdminCustomersPage() {
                       telegramUsername: e.target.value,
                     }))
                   }
-                  className="rounded-[10px] border border-white/10 bg-zinc-950 px-3 py-2 text-zinc-100 outline-none focus:border-violet-500/40 focus:ring-2 focus:ring-violet-500/30"
+                  className="rounded-[10px] border border-white/10 bg-zinc-950 px-3 py-2 text-zinc-100 outline-none focus:border-white/40 focus:ring-2 focus:ring-white/20"
                 />
               </label>
               {formError ? (

@@ -78,7 +78,7 @@ export function PaymentReturnPage() {
         <div className="mt-8 flex flex-wrap gap-3">
           <Link
             to="/cart"
-            className="inline-flex items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-purple-600 px-6 py-3 font-semibold text-white transition hover:-translate-y-0.5"
+            className="inline-flex items-center justify-center rounded-full bg-white px-6 py-3 font-semibold text-black transition hover:-translate-y-0.5 hover:bg-zinc-200"
           >
             Вернуться в корзину
           </Link>

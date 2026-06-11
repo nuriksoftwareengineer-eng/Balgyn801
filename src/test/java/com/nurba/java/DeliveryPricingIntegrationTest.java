@@ -231,15 +231,15 @@ class DeliveryPricingIntegrationTest {
     }
 
     @Test
-    void cdek_rejectedForKazakhstan() throws Exception {
+    void cdek_allowedForKazakhstan() throws Exception {
+        // Zone matrix change: KZ now supports CDEK (was rejected in old rules).
         String body = """
                 { "customerName": "T", "customerPhone": "+77000000000",
                   "deliveryType": "CDEK", "countryIso2": "KZ", "items": [ %s ], %s }
                 """.formatted(item(), addressBlock("Алматы"));
 
         mockMvc.perform(post("/api/v1/order").contentType(MediaType.APPLICATION_JSON).content(body))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.detail").value("Способ доставки недоступен для выбранной страны"));
+                .andExpect(status().isOk());
     }
 
     @Test

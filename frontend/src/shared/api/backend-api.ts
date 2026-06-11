@@ -12,6 +12,7 @@ import type {
   CreateProductRequest,
   CustomerRequest,
   CustomerResponse,
+  DeliveryMethodResponse,
   LoginRequest,
   MediaUploadResponse,
   OrderResponse,
@@ -24,6 +25,13 @@ import type {
   RegisterRequest,
   UpdateOrderStatusRequest,
 } from "@/shared/api/types";
+import type {
+  CatalogGroupSummary,
+  CatalogGroupDetail,
+  CollectionDetail,
+  DesignDetail,
+  DesignSummary,
+} from "@/shared/types/catalog";
 
 /**
  * Живая карта маршрутов бэкенда (Spring Security).
@@ -38,6 +46,13 @@ import type {
  */
 export const BACKEND_API = {
   baseUrl: "/api/v1",
+  catalog: {
+    groups:     "GET /catalog/groups (public)",
+    group:      "GET /catalog/groups/:slug (public)",
+    collection: "GET /catalog/collections/:slug (public)",
+    designs:    "GET /catalog/designs?collectionId= (public)",
+    design:     "GET /catalog/designs/:slug (public)",
+  },
   auth: {
     register: "POST /auth/register",
     login: "POST /auth/login",
@@ -71,6 +86,7 @@ export const BACKEND_API = {
   orderItem: "/order-item/** (ADMIN)",
   cdekShipment: "/cdek-shipment/** (ADMIN)",
   delivery: {
+    methods: "GET /delivery/methods?countryIso2= (public)",
     cities: "GET /delivery/cdek/cities?q=&limit=",
     points: "GET /delivery/cdek/points?cityCode=",
     calculate: "POST /delivery/cdek/calculate",
@@ -285,6 +301,15 @@ export async function listCdekDeliveryPoints(
   );
 }
 
+/** Доступные методы доставки для страны (публичный GET). */
+export async function getDeliveryMethods(
+  countryIso2: string,
+): Promise<DeliveryMethodResponse[]> {
+  return apiFetch<DeliveryMethodResponse[]>(
+    `/delivery/methods?countryIso2=${encodeURIComponent(countryIso2)}`,
+  );
+}
+
 /** Расчёт стоимости и срока доставки. */
 export async function calculateCdekTariff(
   body: CdekTariffRequest,
@@ -303,6 +328,11 @@ export async function calculateCdekTariffByOrder(
     method: "POST",
     body: JSON.stringify(body),
   });
+}
+
+/** История заказов текущего пользователя (с JWT). */
+export async function getMyOrders(token: string): Promise<OrderResponse[]> {
+  return apiFetch<OrderResponse[]>("/me/orders", { token });
 }
 
 /** Инициализация оплаты по заказу (публично). */
@@ -324,4 +354,34 @@ export async function submitPaymentWebhook(
     method: "POST",
     body: JSON.stringify(body),
   });
+}
+
+// ── Catalog storefront API (public, no auth required) ────────────────────────
+
+/** All active catalog groups (top-level navigation). */
+export async function getCatalogGroups(): Promise<CatalogGroupSummary[]> {
+  return apiFetch<CatalogGroupSummary[]>("/catalog/groups");
+}
+
+/** One group by slug, with its collections list. */
+export async function getCatalogGroup(slug: string): Promise<CatalogGroupDetail> {
+  return apiFetch<CatalogGroupDetail>(`/catalog/groups/${encodeURIComponent(slug)}`);
+}
+
+/** One collection by slug, with its designs list. */
+export async function getCatalogCollection(slug: string): Promise<CollectionDetail> {
+  return apiFetch<CollectionDetail>(`/catalog/collections/${encodeURIComponent(slug)}`);
+}
+
+/** All active designs, optionally filtered by collectionId. */
+export async function getCatalogDesigns(
+  collectionId?: number | null,
+): Promise<DesignSummary[]> {
+  const q = collectionId != null ? `?collectionId=${collectionId}` : "";
+  return apiFetch<DesignSummary[]>(`/catalog/designs${q}`);
+}
+
+/** One design by slug, with all garment variants, colors, sizes, and prices. */
+export async function getCatalogDesign(slug: string): Promise<DesignDetail> {
+  return apiFetch<DesignDetail>(`/catalog/designs/${encodeURIComponent(slug)}`);
 }

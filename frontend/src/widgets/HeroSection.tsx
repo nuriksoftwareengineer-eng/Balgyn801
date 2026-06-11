@@ -1,80 +1,107 @@
-import { motion, useReducedMotion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import { motion, useReducedMotion } from "framer-motion";
 import { Container } from "@/shared/ui/container";
-import { Button } from "@/shared/ui/button";
-import { cn } from "@/shared/lib/cn";
+import { Button } from "@/components/ui/button";
 
 export function HeroSection() {
   const navigate = useNavigate();
-  const reduceMotion = useReducedMotion();
-  const t = reduceMotion ? { duration: 0 } : { duration: 0.55, ease: [0.22, 1, 0.36, 1] as const };
+  const rm = useReducedMotion();
+  const dur = rm ? 0 : 0.65;
+  const ease = [0.22, 1, 0.36, 1] as const;
 
   return (
-    <section className="relative min-h-[min(78vh,700px)] overflow-hidden py-11 md:py-14">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_70%_65%_at_50%_40%,rgba(139,92,246,0.28),rgba(9,9,11,0)_70%)]" />
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(120deg,rgba(30,27,75,0.45),rgba(9,9,11,0.4),rgba(76,29,149,0.38))]" />
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_90%_75%_at_50%_110%,rgba(59,7,100,0.4),transparent_60%)]" />
-
-      <div
-        className="pointer-events-none absolute inset-0 opacity-[0.42]"
-        aria-hidden
-      >
-        <div className="hero-aurora absolute -left-1/4 top-0 h-[420px] w-[70%] rounded-full blur-[110px]" />
-        <div className="hero-aurora-delay absolute -right-1/4 bottom-0 h-[380px] w-[60%] rounded-full blur-[100px]" />
+    <section className="relative flex min-h-screen items-center justify-center overflow-hidden bg-white">
+      {/* ── Decorative background ── */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
+        {/* Dot grid */}
+        <div
+          className="absolute inset-0 opacity-40"
+          style={{
+            backgroundImage:
+              "radial-gradient(circle, rgba(0,0,0,0.1) 1px, transparent 1px)",
+            backgroundSize: "32px 32px",
+          }}
+        />
+        {/* Ring 1 — large, upper right */}
+        <motion.div
+          className="absolute right-[-12%] top-[-18%] h-[70vmax] w-[70vmax] rounded-full border border-black/[0.05]"
+          animate={rm ? {} : { rotate: 360 }}
+          transition={{ duration: 90, repeat: Infinity, ease: "linear" }}
+        />
+        {/* Ring 2 — large, lower left */}
+        <motion.div
+          className="absolute bottom-[-8%] left-[-8%] h-[55vmax] w-[55vmax] rounded-full border border-black/[0.04]"
+          animate={rm ? {} : { rotate: -360 }}
+          transition={{ duration: 120, repeat: Infinity, ease: "linear" }}
+        />
+        {/* Ring 3 — small, inner right */}
+        <motion.div
+          className="absolute right-[6%] top-[10%] h-[28vmax] w-[28vmax] rounded-full border border-black/[0.04]"
+          animate={rm ? {} : { rotate: 360 }}
+          transition={{ duration: 65, repeat: Infinity, ease: "linear" }}
+        />
       </div>
 
-      <Container className="relative z-[1] flex min-h-[min(60vh,540px)] items-center justify-center">
-        <div className="w-full max-w-2xl px-4 text-center md:max-w-3xl">
+      {/* ── Content ── */}
+      <Container className="relative z-10 pb-28 pt-20">
+        <div className="flex flex-col items-center text-center">
+          {/* Eyebrow */}
           <motion.p
-            className="mb-4 text-xs font-semibold uppercase tracking-[0.28em] text-violet-200/95"
-            initial={{ opacity: 0, y: reduceMotion ? 0 : 12 }}
+            className="text-[0.6rem] font-medium uppercase tracking-[0.32em] text-[--color-muted]"
+            initial={{ opacity: 0, y: rm ? 0 : 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ ...t, delay: reduceMotion ? 0 : 0.05 }}
+            transition={{ duration: dur, ease, delay: rm ? 0 : 0.08 }}
           >
-            Вышивка • Стритвир • Под заказ
+            Вышивка · Казахстан
           </motion.p>
+
+          {/* Brand name — primary focal point */}
           <motion.h1
-            className={cn(
-              "font-display mx-auto max-w-4xl text-[clamp(2rem,7.5vw,4.25rem)] leading-[0.98] tracking-[0.03em] md:text-[clamp(2.2rem,8vw,4.45rem)]",
-              "bg-gradient-to-br from-zinc-50 via-violet-200 to-purple-300 bg-clip-text text-transparent [text-shadow:0_0_26px_rgba(168,85,247,0.25)]",
-            )}
-            initial={{ opacity: 0, y: reduceMotion ? 0 : 18 }}
+            className="mt-4 font-sans font-semibold uppercase text-black"
+            style={{
+              fontSize: "clamp(3.75rem, 18vw, 13.5rem)",
+              lineHeight: 1,
+              letterSpacing: "0.14em",
+            }}
+            initial={{ opacity: 0, y: rm ? 0 : 24 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ ...t, delay: reduceMotion ? 0 : 0.12 }}
+            transition={{ duration: dur, ease, delay: rm ? 0 : 0.16 }}
           >
-            НОВЫЙ ДРОП —
-            <br />
-            ОДЕЖДА С
-            <br />
-            ХАРАКТЕРОМ
+            BALGYN
           </motion.h1>
-          <motion.p
-            className="mx-auto mt-4 max-w-md text-[0.98rem] leading-relaxed text-zinc-100/88 sm:max-w-lg sm:text-[1.025rem]"
-            initial={{ opacity: 0, y: reduceMotion ? 0 : 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ ...t, delay: reduceMotion ? 0 : 0.2 }}
-          >
-            Плотная вышивка и сочные принты на качественном трикотаже. Загляните в каталог
-            или пришлите референс — воплотим ваш макет.
-          </motion.p>
+
+          {/* Rule */}
           <motion.div
-            className="mt-8 flex flex-wrap items-center justify-center gap-3"
-            initial={{ opacity: 0, y: reduceMotion ? 0 : 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ ...t, delay: reduceMotion ? 0 : 0.28 }}
+            className="mt-8 h-px w-12 bg-black"
+            initial={{ scaleX: 0 }}
+            animate={{ scaleX: 1 }}
+            transition={{ duration: rm ? 0 : 0.5, ease, delay: rm ? 0 : 0.32 }}
+            style={{ transformOrigin: "center" }}
+          />
+
+          {/* Sub-headline */}
+          <motion.p
+            className="mt-5 text-[0.7rem] uppercase tracking-[0.2em] text-[--color-muted]"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: dur, delay: rm ? 0 : 0.42 }}
           >
-            <Button
-              type="button"
-              variant="primary"
-              className="group rounded-full shadow-[0_0_0_0_rgba(139,92,246,0)] transition-shadow hover:shadow-[0_12px_40px_-12px_rgba(139,92,246,0.65)]"
-              onClick={() => navigate("/catalog")}
-            >
-              Перейти в каталог
+            Эксклюзивная вышивка на одежде
+          </motion.p>
+
+          {/* CTA buttons */}
+          <motion.div
+            className="mt-10 flex flex-wrap items-center justify-center gap-3"
+            initial={{ opacity: 0, y: rm ? 0 : 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: dur, ease, delay: rm ? 0 : 0.52 }}
+          >
+            <Button size="lg" onClick={() => navigate("/catalog")}>
+              Каталог
             </Button>
             <Button
-              type="button"
+              size="lg"
               variant="outline"
-              className="rounded-full shadow-[0_4px_24px_rgba(0,0,0,0.5)]"
               onClick={() => navigate("/custom-design")}
             >
               Свой дизайн
@@ -82,6 +109,20 @@ export function HeroSection() {
           </motion.div>
         </div>
       </Container>
+
+      {/* ── Scroll indicator ── */}
+      <motion.div
+        className="absolute bottom-8 left-1/2 flex -translate-x-1/2 flex-col items-center"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.8, delay: rm ? 0 : 1.4 }}
+      >
+        <motion.div
+          className="h-12 w-px bg-gradient-to-b from-black/60 to-transparent"
+          animate={rm ? {} : { scaleY: [0.3, 1, 0.3], opacity: [0.4, 1, 0.4] }}
+          transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+        />
+      </motion.div>
     </section>
   );
 }

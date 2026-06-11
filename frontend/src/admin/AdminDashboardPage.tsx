@@ -56,7 +56,7 @@ export function AdminDashboardPage() {
       <div className="mt-8 flex flex-wrap gap-3">
         <Link
           to="/admin/orders"
-          className="inline-flex rounded-full border border-violet-500/35 bg-violet-500/10 px-6 py-3 text-sm font-semibold text-violet-200 transition hover:bg-violet-500/20"
+          className="inline-flex rounded-full border border-white/35 bg-white/10 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/20"
         >
           Заказы
         </Link>
@@ -90,7 +90,7 @@ export function AdminDashboardPage() {
               value={adminEmail}
               onChange={(e) => setAdminEmail(e.target.value)}
               placeholder="user@example.com"
-              className="rounded-[10px] border border-white/10 bg-zinc-950 px-3 py-2 text-zinc-100 outline-none focus:border-violet-500/40 focus:ring-2 focus:ring-violet-500/30"
+              className="rounded-[10px] border border-white/10 bg-zinc-950 px-3 py-2 text-zinc-100 outline-none focus:border-white/40 focus:ring-2 focus:ring-white/20"
             />
           </label>
           <div className="flex flex-wrap gap-2">

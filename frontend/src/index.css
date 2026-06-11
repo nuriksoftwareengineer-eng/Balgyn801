@@ -1,230 +1,56 @@
 @import "tailwindcss";
 
+/* ─── Design tokens ──────────────────────────────────────────────────────── */
 @theme {
-  --font-display: "Bebas Neue", ui-sans-serif, system-ui, sans-serif;
-  --font-sans:
-    "DM Sans", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji",
-    "Segoe UI Emoji", "Segoe UI Symbol";
+  /* Montserrat replaces Bebas Neue + DM Sans */
+  --font-sans: "Montserrat", ui-sans-serif, system-ui, sans-serif;
+
+  /* Palette */
+  --color-surface:    #f7f7f7;
+  --color-border:     #e8e8e8;
+  --color-muted:      #6b6b6b;
+  --color-danger:     #d00000;
 }
 
+/* ─── Base ───────────────────────────────────────────────────────────────── */
 html {
   scroll-behavior: smooth;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
 }
 
 body {
   margin: 0;
   font-family: var(--font-sans);
+  background: #ffffff;
+  color: #000000;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-@keyframes announcement-shimmer {
-  0% {
-    background-position: 0% 50%;
-  }
-  100% {
-    background-position: 200% 50%;
-  }
-}
-
-.announcement-shimmer {
-  background-size: 200% 100%;
-  animation: announcement-shimmer 14s linear infinite;
-}
-
+/* ─── Skeleton loader ────────────────────────────────────────────────────── */
 @keyframes skeleton-pulse {
-  0%,
-  100% {
-    opacity: 0.35;
-  }
-  50% {
-    opacity: 0.65;
-  }
+  0%, 100% { opacity: 0.35; }
+  50%       { opacity: 0.65; }
 }
 
 .skeleton-shimmer {
+  background: #ebebeb;
   animation: skeleton-pulse 1.35s ease-in-out infinite;
 }
 
-@keyframes hero-aurora-float {
-  0%,
-  100% {
-    transform: translate(0, 0) scale(1);
-    opacity: 0.45;
-  }
-  50% {
-    transform: translate(12px, -18px) scale(1.05);
-    opacity: 0.65;
-  }
-}
-
-.hero-aurora {
-  background: radial-gradient(
-    closest-side,
-    rgba(167, 139, 250, 0.45),
-    rgba(88, 28, 135, 0.08),
-    transparent
-  );
-  animation: hero-aurora-float 18s ease-in-out infinite;
-}
-
-.hero-aurora-delay {
-  background: radial-gradient(
-    closest-side,
-    rgba(124, 58, 237, 0.35),
-    rgba(59, 7, 100, 0.06),
-    transparent
-  );
-  animation: hero-aurora-float 22s ease-in-out infinite reverse;
-}
-
-@keyframes app-bg-drift-a {
-  0%,
-  100% {
-    transform: translate3d(-4%, 0, 0) scale(1);
-  }
-  50% {
-    transform: translate3d(5%, -4%, 0) scale(1.08);
-  }
-}
-
-@keyframes app-bg-drift-b {
-  0%,
-  100% {
-    transform: translate3d(0, -3%, 0) scale(1);
-  }
-  50% {
-    transform: translate3d(-5%, 6%, 0) scale(1.06);
-  }
-}
-
-@keyframes app-bg-grid-fade {
-  0%,
-  100% {
-    opacity: 0.32;
-  }
-  50% {
-    opacity: 0.5;
-  }
-}
-
-.app-bg-grid {
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-  background-size: 48px 48px;
-  mask-image: radial-gradient(
-    ellipse 95% 75% at 50% 10%,
-    rgba(0, 0, 0, 0.6),
-    transparent 78%
-  );
-  animation: app-bg-grid-fade 14s ease-in-out infinite;
-}
-
-.app-bg-orb {
-  position: absolute;
-  border-radius: 9999px;
-  filter: blur(90px);
-  opacity: 0.45;
-}
-
-.app-bg-orb-1 {
-  width: 34rem;
-  height: 34rem;
-  left: -12rem;
-  top: 4rem;
-  background: radial-gradient(
-    closest-side,
-    rgba(167, 139, 250, 0.5),
-    rgba(91, 33, 182, 0.12),
-    transparent
-  );
-  animation: app-bg-drift-a 24s ease-in-out infinite;
-}
-
-.app-bg-orb-2 {
-  width: 30rem;
-  height: 30rem;
-  right: -10rem;
-  top: 12rem;
-  background: radial-gradient(
-    closest-side,
-    rgba(244, 114, 182, 0.42),
-    rgba(147, 51, 234, 0.1),
-    transparent
-  );
-  animation: app-bg-drift-b 30s ease-in-out infinite;
-}
-
-.app-bg-orb-3 {
-  width: 38rem;
-  height: 38rem;
-  left: 20%;
-  bottom: -18rem;
-  background: radial-gradient(
-    closest-side,
-    rgba(99, 102, 241, 0.35),
-    rgba(49, 46, 129, 0.1),
-    transparent
-  );
-  animation: app-bg-drift-a 34s ease-in-out infinite reverse;
-}
-
-/* Текстура внутри букв (hero): обводка + тени для чёткого силуэта на сплит-фоне */
-.hero-title-clip {
-  background-repeat: no-repeat;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  -webkit-text-fill-color: transparent;
-  -webkit-text-stroke: 0.85px rgba(255, 250, 245, 0.42);
-  paint-order: stroke fill;
-  filter: drop-shadow(0 0 3px rgba(0, 0, 0, 0.95))
-    drop-shadow(0 0 1px rgba(0, 0, 0, 1))
-    drop-shadow(0 0 22px rgba(251, 146, 60, 0.65));
-}
-
+/* ─── Cart badge pop ─────────────────────────────────────────────────────── */
 @keyframes cart-badge-pop {
-  0% {
-    transform: scale(0.65);
-  }
-  70% {
-    transform: scale(1.08);
-  }
-  100% {
-    transform: scale(1);
-  }
+  0%   { transform: scale(0.65); }
+  70%  { transform: scale(1.08); }
+  100% { transform: scale(1); }
 }
 
+/* ─── Reduced motion ─────────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
-  .hero-title-clip {
-    background-image: none !important;
-    -webkit-text-fill-color: unset;
-    color: #f4f4f5;
-    filter: none;
-    -webkit-text-stroke: 0;
-    paint-order: normal;
-    -webkit-background-clip: unset;
-    background-clip: unset;
+  html {
+    scroll-behavior: auto;
   }
 
-  .announcement-shimmer,
-  .skeleton-shimmer,
-  .hero-aurora,
-  .hero-aurora-delay,
-  .app-bg-grid,
-  .app-bg-orb-1,
-  .app-bg-orb-2,
-  .app-bg-orb-3 {
+  .skeleton-shimmer {
     animation: none !important;
-  }
-
-  .announcement-shimmer {
-    background-size: 100% 100%;
   }
 }

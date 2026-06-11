@@ -35,7 +35,7 @@ export function CustomDesignPage() {
       <Container className="max-w-2xl">
         <Link
           to="/"
-          className="mb-6 inline-block text-sm font-semibold text-violet-400 hover:underline"
+          className="mb-6 inline-block text-sm font-semibold text-zinc-300 hover:text-white hover:underline"
         >
           ← На главную
         </Link>
@@ -49,15 +49,15 @@ export function CustomDesignPage() {
 
         <ol className="mt-8 space-y-3 text-sm text-zinc-500">
           <li>
-            <span className="font-semibold text-violet-400">1.</span> Текст,
+            <span className="font-semibold text-zinc-100">1.</span> Текст,
             логотип или ссылка на референс
           </li>
           <li>
-            <span className="font-semibold text-violet-400">2.</span> Желаемая
+            <span className="font-semibold text-zinc-100">2.</span> Желаемая
             вещь (худи, футболка, размер)
           </li>
           <li>
-            <span className="font-semibold text-violet-400">3.</span> Мы ответим
+            <span className="font-semibold text-zinc-100">3.</span> Мы ответим
             с ориентиром по цене и сроку
           </li>
         </ol>
@@ -72,7 +72,7 @@ export function CustomDesignPage() {
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="rounded-[10px] border border-white/10 bg-zinc-950 px-3 py-2.5 text-zinc-100 outline-none focus:border-violet-500/40 focus:ring-2 focus:ring-violet-500/25"
+              className="rounded-[10px] border border-white/10 bg-zinc-950 px-3 py-2.5 text-zinc-100 outline-none focus:border-white/40 focus:ring-2 focus:ring-white/20"
             />
           </label>
           <label className="flex flex-col gap-1.5 text-sm">
@@ -82,7 +82,7 @@ export function CustomDesignPage() {
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="+7 … или @username"
-              className="rounded-[10px] border border-white/10 bg-zinc-950 px-3 py-2.5 text-zinc-100 outline-none focus:border-violet-500/40 focus:ring-2 focus:ring-violet-500/25"
+              className="rounded-[10px] border border-white/10 bg-zinc-950 px-3 py-2.5 text-zinc-100 outline-none focus:border-white/40 focus:ring-2 focus:ring-white/20"
             />
           </label>
           <label className="flex flex-col gap-1.5 text-sm">
@@ -93,7 +93,7 @@ export function CustomDesignPage() {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Что вышить, цвета, размер, пожелания…"
-              className="resize-y rounded-[10px] border border-white/10 bg-zinc-950 px-3 py-2.5 text-zinc-100 outline-none focus:border-violet-500/40 focus:ring-2 focus:ring-violet-500/25"
+              className="resize-y rounded-[10px] border border-white/10 bg-zinc-950 px-3 py-2.5 text-zinc-100 outline-none focus:border-white/40 focus:ring-2 focus:ring-white/20"
             />
           </label>
           <label className="flex flex-col gap-1.5 text-sm">
@@ -103,7 +103,7 @@ export function CustomDesignPage() {
               value={referenceUrl}
               onChange={(e) => setReferenceUrl(e.target.value)}
               placeholder="https://…"
-              className="rounded-[10px] border border-white/10 bg-zinc-950 px-3 py-2.5 text-zinc-100 outline-none focus:border-violet-500/40 focus:ring-2 focus:ring-violet-500/25"
+              className="rounded-[10px] border border-white/10 bg-zinc-950 px-3 py-2.5 text-zinc-100 outline-none focus:border-white/40 focus:ring-2 focus:ring-white/20"
             />
           </label>
 
@@ -117,7 +117,7 @@ export function CustomDesignPage() {
                 href={STORE_TELEGRAM_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-semibold text-violet-400 hover:underline"
+                className="font-semibold text-zinc-100 underline underline-offset-2 hover:text-white"
               >
                 Telegram
               </a>

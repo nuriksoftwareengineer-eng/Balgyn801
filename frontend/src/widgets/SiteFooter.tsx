@@ -5,68 +5,156 @@ export function SiteFooter() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="border-t border-white/10 bg-[#080809] py-12 pb-8 pt-12">
-      <Container>
-        <div className="grid gap-8 md:grid-cols-[1.2fr_1fr_1fr]">
+    <footer className="border-t border-[--color-border] bg-white">
+      <Container className="py-14">
+        <div className="grid gap-10 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
+
+          {/* Brand */}
           <div>
-            <div className="font-display mb-2.5 text-2xl tracking-[0.06em] text-zinc-100">
-              BALG<span className="text-violet-400">YN</span>
-            </div>
-            <p className="m-0 max-w-sm text-sm leading-relaxed text-zinc-400">
-              Стритвир с вышивкой по мотивам игр, аниме и уличной культуры. Дизайн ваш — качество наше.
+            <p className="text-base font-semibold uppercase tracking-[0.18em] text-black">
+              BALGYN
+            </p>
+            <p className="mt-3 max-w-xs text-xs leading-relaxed text-[--color-muted]">
+              Вышивка и уличная культура. Дизайн ваш — качество наше.
             </p>
           </div>
+
+          {/* Buyers */}
           <div>
-            <h3 className="mb-3.5 text-[0.6875rem] font-bold uppercase tracking-[0.14em] text-zinc-400">
+            <p className="mb-4 text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-black">
               Покупателям
-            </h3>
-            <ul className="m-0 list-none space-y-2.5 p-0">
+            </p>
+            <ul className="space-y-3">
               <li>
-                <Link to="/catalog" className="text-sm text-zinc-400 hover:text-zinc-100">
+                <Link
+                  to="/catalog"
+                  className="text-xs text-[--color-muted] transition-colors hover:text-black"
+                >
                   Каталог
                 </Link>
               </li>
               <li>
-                <a href="#" className="text-sm text-zinc-400 hover:text-zinc-100">
+                <a
+                  href="#"
+                  className="text-xs text-[--color-muted] transition-colors hover:text-black"
+                >
                   Доставка
                 </a>
               </li>
               <li>
-                <a href="#" className="text-sm text-zinc-400 hover:text-zinc-100">
-                  Возврат
+                <a
+                  href="#"
+                  className="text-xs text-[--color-muted] transition-colors hover:text-black"
+                >
+                  Пользовательское соглашение
                 </a>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  className="text-xs text-[--color-muted] transition-colors hover:text-black"
+                >
+                  Политика конфиденциальности
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  className="text-xs text-[--color-muted] transition-colors hover:text-black"
+                >
+                  Возврат и обмен
+                </a>
+              </li>
+              <li>
+                <Link
+                  to="/orders"
+                  className="text-xs text-[--color-muted] transition-colors hover:text-black"
+                >
+                  Отследить заказ
+                </Link>
               </li>
             </ul>
           </div>
+
+          {/* Company */}
           <div>
-            <h3 className="mb-3.5 text-[0.6875rem] font-bold uppercase tracking-[0.14em] text-zinc-400">
+            <p className="mb-4 text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-black">
               Компания
-            </h3>
-            <ul className="m-0 list-none space-y-2.5 p-0">
+            </p>
+            <ul className="space-y-3">
               <li>
-                <Link to="/about" className="text-sm text-zinc-400 hover:text-zinc-100">
+                <Link
+                  to="/about"
+                  className="text-xs text-[--color-muted] transition-colors hover:text-black"
+                >
                   О нас
                 </Link>
               </li>
               <li>
-                <a href="#" className="text-sm text-zinc-400 hover:text-zinc-100">
+                <a
+                  href="#"
+                  className="text-xs text-[--color-muted] transition-colors hover:text-black"
+                >
                   Контакты
                 </a>
               </li>
               <li>
                 <Link
                   to="/custom-design"
-                  className="text-sm text-zinc-400 hover:text-zinc-100"
+                  className="text-xs text-[--color-muted] transition-colors hover:text-black"
                 >
                   Свой дизайн
                 </Link>
               </li>
             </ul>
           </div>
+
+          {/* Social */}
+          <div>
+            <p className="mb-4 text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-black">
+              Соцсети
+            </p>
+            <ul className="space-y-3">
+              <li>
+                <a
+                  href="https://instagram.com/balgyn_shop"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-[--color-muted] transition-colors hover:text-black"
+                >
+                  Instagram
+                </a>
+              </li>
+              <li>
+                <a
+                  href="https://tiktok.com/@balgyn_shop"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-[--color-muted] transition-colors hover:text-black"
+                >
+                  TikTok
+                </a>
+              </li>
+              <li>
+                <a
+                  href="https://instagram.com/balgyn_shop/reels/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-[--color-muted] transition-colors hover:text-black"
+                >
+                  Reels
+                </a>
+              </li>
+            </ul>
+          </div>
         </div>
-        <p className="mt-10 border-t border-white/10 pt-6 text-center text-xs text-zinc-400">
-          © {year} Balgyn. Каркас витрины на React Router и Tailwind.
-        </p>
+
+        {/* Bottom strip */}
+        <div className="mt-12 border-t border-[--color-border] pt-6">
+          <p className="text-[0.6rem] uppercase tracking-[0.14em] text-[--color-muted]">
+            © {year} Balgyn
+          </p>
+        </div>
       </Container>
     </footer>
   );

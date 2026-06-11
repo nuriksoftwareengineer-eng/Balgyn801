@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nurba.java.domain.Order;
 import com.nurba.java.domain.Payment;
+import com.nurba.java.domain.ProcessedWebhookEvent;
 import com.nurba.java.dto.request.PaymentInitRequest;
 import com.nurba.java.dto.request.PaymentWebhookRequest;
 import com.nurba.java.dto.responce.PaymentResponse;
@@ -14,7 +15,9 @@ import com.nurba.java.exception.BusinessRuleException;
 import com.nurba.java.exception.NotFoundException;
 import com.nurba.java.repositories.OrderRepository;
 import com.nurba.java.repositories.PaymentRepository;
+import com.nurba.java.repositories.ProcessedWebhookEventRepository;
 import com.nurba.java.service.PaymentService;
+import com.nurba.java.service.Impl.OrderExpiryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,9 +34,18 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class PaymentServiceImpl implements PaymentService {
 
+    /** Maximum tolerated difference between webhook amount and stored amount (0.01 KZT). */
+    private static final BigDecimal AMOUNT_TOLERANCE = new BigDecimal("0.01");
+
     private final OrderRepository orderRepository;
     private final PaymentRepository paymentRepository;
+    private final ProcessedWebhookEventRepository processedEventRepository;
     private final ObjectMapper objectMapper;
+    private final OrderExpiryService orderExpiryService;
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Init
+    // ─────────────────────────────────────────────────────────────────────────
 
     @Override
     @Transactional
@@ -45,13 +57,24 @@ public class PaymentServiceImpl implements PaymentService {
         Order order = orderRepository.findById(request.orderId())
                 .orElseThrow(() -> new NotFoundException("Заказ не найден: " + request.orderId()));
 
-        if (order.getStatus() == OrderStatus.CANCELLED || order.getStatus() == OrderStatus.DELIVERED) {
+        if (order.getStatus() == OrderStatus.CANCELLED
+                || order.getStatus() == OrderStatus.DELIVERED
+                || order.getStatus() == OrderStatus.EXPIRED) {
             throw new BusinessRuleException("Для этого заказа нельзя инициализировать оплату");
         }
         if (order.getTotalPrice() == null || order.getTotalPrice().signum() <= 0) {
             throw new BusinessRuleException("Некорректная сумма заказа для оплаты");
         }
 
+        // Idempotency: return an existing PENDING payment for the same order+provider
+        // instead of creating a duplicate. This makes the call safe to retry.
+        return paymentRepository
+                .findByOrderAndProviderAndStatus(order, request.provider(), PaymentStatus.PENDING)
+                .map(PaymentServiceImpl::toResponse)
+                .orElseGet(() -> toResponse(createNewPayment(order, request)));
+    }
+
+    private Payment createNewPayment(Order order, PaymentInitRequest request) {
         Payment payment = new Payment();
         payment.setOrder(order);
         payment.setProvider(request.provider());
@@ -64,8 +87,12 @@ public class PaymentServiceImpl implements PaymentService {
         Payment saved = paymentRepository.save(payment);
         saved.setPaymentUrl(buildStubPaymentUrl(saved, request.returnUrl()));
         saved.setUpdatedAt(LocalDateTime.now());
-        return toResponse(paymentRepository.save(saved));
+        return paymentRepository.save(saved);
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Webhook
+    // ─────────────────────────────────────────────────────────────────────────
 
     @Override
     @Transactional
@@ -75,28 +102,73 @@ public class PaymentServiceImpl implements PaymentService {
             throw new BusinessRuleException("Webhook провайдера не совпадает с провайдером платежа");
         }
 
-        if (request != null && request.eventId() != null && !request.eventId().isBlank()) {
-            payment.setWebhookEventId(request.eventId().trim());
+        String eventId = (request.eventId() != null) ? request.eventId().trim() : null;
+
+        // Replay protection: if we already processed this event, return the current state unchanged.
+        if (eventId != null && !eventId.isBlank()) {
+            if (processedEventRepository.existsByProviderAndEventId(provider, eventId)) {
+                return toResponse(payment);
+            }
+        }
+
+        // Amount validation: if the webhook reports an amount, it must match what we expect.
+        // Prevents attackers from claiming a $1 payment succeeded for a $1000 order.
+        if (request.amount() != null) {
+            validateAmount(payment, request.amount());
+        }
+
+        if (eventId != null && !eventId.isBlank()) {
+            payment.setWebhookEventId(eventId);
         }
         payment.setLastWebhookPayload(serializePayload(request));
 
-        PaymentStatus next = mapWebhookStatus(provider, request == null ? null : request.status());
+        PaymentStatus next = mapWebhookStatus(provider, request.status());
         payment.setStatus(next);
         payment.setUpdatedAt(LocalDateTime.now());
 
         if (next == PaymentStatus.SUCCEEDED) {
             Order order = payment.getOrder();
-            // Successful payment makes a pending order visible to admin. NEW is also accepted for
-            // manually-created/legacy orders. The transition is idempotent: a duplicate webhook
-            // finds the order already CONFIRMED and does nothing.
+            // Idempotent: if already CONFIRMED, skip.
             if (order.getStatus() == OrderStatus.PENDING_PAYMENT || order.getStatus() == OrderStatus.NEW) {
                 order.setStatus(OrderStatus.CONFIRMED);
                 order.setUpdatedAt(LocalDateTime.now());
                 orderRepository.save(order);
             }
-            // Inventory was already reserved (deducted under lock) at order creation — no action here.
         }
-        return toResponse(paymentRepository.save(payment));
+
+        Payment saved = paymentRepository.save(payment);
+
+        // Failed/cancelled payment: expire the order immediately so inventory is released at once
+        // rather than waiting up to 60 minutes for the scheduled expiry job.
+        if ((next == PaymentStatus.FAILED || next == PaymentStatus.CANCELLED)
+                && saved.getOrder().getStatus() == OrderStatus.PENDING_PAYMENT) {
+            orderExpiryService.expire(saved.getOrder());
+        }
+
+        // Record the processed event to prevent future replays.
+        if (eventId != null && !eventId.isBlank()) {
+            ProcessedWebhookEvent pwe = new ProcessedWebhookEvent();
+            pwe.setProvider(provider);
+            pwe.setEventId(eventId);
+            pwe.setPayment(saved);
+            pwe.setProcessedAt(LocalDateTime.now());
+            processedEventRepository.save(pwe);
+        }
+
+        return toResponse(saved);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Helpers
+    // ─────────────────────────────────────────────────────────────────────────
+
+    private void validateAmount(Payment payment, BigDecimal webhookAmount) {
+        BigDecimal stored   = payment.getAmount().setScale(2, RoundingMode.HALF_UP);
+        BigDecimal received = webhookAmount.setScale(2, RoundingMode.HALF_UP);
+        if (stored.subtract(received).abs().compareTo(AMOUNT_TOLERANCE) > 0) {
+            throw new BusinessRuleException(
+                    "Сумма в webhook (" + received + ") не совпадает с суммой платежа (" + stored + ")");
+        }
     }
 
     private Payment resolvePayment(PaymentWebhookRequest request) {
@@ -120,39 +192,39 @@ public class PaymentServiceImpl implements PaymentService {
         }
         String s = rawStatus.trim().toLowerCase(Locale.ROOT);
         return switch (provider) {
-            case KASPI -> mapKaspiStatus(s);
+            case KASPI    -> mapKaspiStatus(s);
             case YOOKASSA -> mapYookassaStatus(s);
-            case PAYPAL -> mapPaypalStatus(s);
+            case PAYPAL   -> mapPaypalStatus(s);
         };
     }
 
     private static PaymentStatus mapKaspiStatus(String status) {
         return switch (status) {
             case "succeeded", "success", "paid", "approved" -> PaymentStatus.SUCCEEDED;
-            case "cancelled", "canceled", "declined" -> PaymentStatus.CANCELLED;
-            case "refunded" -> PaymentStatus.REFUNDED;
-            case "failed", "error" -> PaymentStatus.FAILED;
-            default -> PaymentStatus.PENDING;
+            case "cancelled", "canceled", "declined"        -> PaymentStatus.CANCELLED;
+            case "refunded"                                  -> PaymentStatus.REFUNDED;
+            case "failed", "error"                           -> PaymentStatus.FAILED;
+            default                                          -> PaymentStatus.PENDING;
         };
     }
 
     private static PaymentStatus mapYookassaStatus(String status) {
         return switch (status) {
-            case "succeeded", "payment.succeeded" -> PaymentStatus.SUCCEEDED;
+            case "succeeded", "payment.succeeded"          -> PaymentStatus.SUCCEEDED;
             case "canceled", "cancelled", "payment.canceled" -> PaymentStatus.CANCELLED;
-            case "refund.succeeded", "refunded" -> PaymentStatus.REFUNDED;
-            case "failed", "error" -> PaymentStatus.FAILED;
-            default -> PaymentStatus.PENDING;
+            case "refund.succeeded", "refunded"            -> PaymentStatus.REFUNDED;
+            case "failed", "error"                         -> PaymentStatus.FAILED;
+            default                                        -> PaymentStatus.PENDING;
         };
     }
 
     private static PaymentStatus mapPaypalStatus(String status) {
         return switch (status) {
-            case "completed", "captured", "succeeded" -> PaymentStatus.SUCCEEDED;
+            case "completed", "captured", "succeeded"      -> PaymentStatus.SUCCEEDED;
             case "voided", "denied", "cancelled", "canceled" -> PaymentStatus.CANCELLED;
-            case "refunded" -> PaymentStatus.REFUNDED;
-            case "failed", "error" -> PaymentStatus.FAILED;
-            default -> PaymentStatus.PENDING;
+            case "refunded"                                -> PaymentStatus.REFUNDED;
+            case "failed", "error"                         -> PaymentStatus.FAILED;
+            default                                        -> PaymentStatus.PENDING;
         };
     }
 

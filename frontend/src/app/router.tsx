@@ -2,6 +2,7 @@ import { lazy, Suspense } from "react";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { AdminLayout } from "@/admin/AdminLayout";
 import { RequireAdmin } from "@/admin/RequireAdmin";
+import { RequireAuth } from "@/app/RequireAuth";
 import { AuthShellLayout } from "@/pages/AuthShellLayout";
 import { MainLayout } from "@/pages/MainLayout";
 import { PageLoadFallback } from "@/shared/ui/page-load-fallback";
@@ -9,11 +10,17 @@ import { PageLoadFallback } from "@/shared/ui/page-load-fallback";
 const HomePage = lazy(() =>
   import("@/pages/HomePage").then((m) => ({ default: m.HomePage })),
 );
-const CatalogPage = lazy(() =>
-  import("@/pages/CatalogPage").then((m) => ({ default: m.CatalogPage })),
+const CatalogIndexPage = lazy(() =>
+  import("@/pages/CatalogIndexPage").then((m) => ({ default: m.CatalogIndexPage })),
 );
-const ProductPage = lazy(() =>
-  import("@/pages/ProductPage").then((m) => ({ default: m.ProductPage })),
+const CatalogParamPage = lazy(() =>
+  import("@/pages/CatalogParamPage").then((m) => ({ default: m.CatalogParamPage })),
+);
+const CollectionPage = lazy(() =>
+  import("@/pages/CollectionPage").then((m) => ({ default: m.CollectionPage })),
+);
+const DesignPage = lazy(() =>
+  import("@/pages/DesignPage").then((m) => ({ default: m.DesignPage })),
 );
 const CartPage = lazy(() =>
   import("@/pages/CartPage").then((m) => ({ default: m.CartPage })),
@@ -36,6 +43,14 @@ const PaymentReturnPage = lazy(() =>
   import("@/pages/PaymentReturnPage").then((m) => ({
     default: m.PaymentReturnPage,
   })),
+);
+const OrderHistoryPage = lazy(() =>
+  import("@/pages/OrderHistoryPage").then((m) => ({
+    default: m.OrderHistoryPage,
+  })),
+);
+const ProfilePage = lazy(() =>
+  import("@/pages/ProfilePage").then((m) => ({ default: m.ProfilePage })),
 );
 const AdminDashboardPage = lazy(() =>
   import("@/admin/AdminDashboardPage").then((m) => ({
@@ -80,15 +95,31 @@ const router = createBrowserRouter([
         path: "catalog",
         element: (
           <Suspense fallback={<PageLoadFallback />}>
-            <CatalogPage />
+            <CatalogIndexPage />
           </Suspense>
         ),
       },
       {
-        path: "catalog/:productId",
+        path: "catalog/:param",
         element: (
           <Suspense fallback={<PageLoadFallback />}>
-            <ProductPage />
+            <CatalogParamPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "catalog/:groupSlug/:collectionSlug",
+        element: (
+          <Suspense fallback={<PageLoadFallback />}>
+            <CollectionPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "catalog/:groupSlug/:collectionSlug/:designSlug",
+        element: (
+          <Suspense fallback={<PageLoadFallback />}>
+            <DesignPage />
           </Suspense>
         ),
       },
@@ -123,6 +154,28 @@ const router = createBrowserRouter([
             <PaymentReturnPage />
           </Suspense>
         ),
+      },
+      // Auth-protected routes (inside MainLayout for header/footer)
+      {
+        element: <RequireAuth />,
+        children: [
+          {
+            path: "orders",
+            element: (
+              <Suspense fallback={<PageLoadFallback />}>
+                <OrderHistoryPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "profile",
+            element: (
+              <Suspense fallback={<PageLoadFallback />}>
+                <ProfilePage />
+              </Suspense>
+            ),
+          },
+        ],
       },
     ],
   },

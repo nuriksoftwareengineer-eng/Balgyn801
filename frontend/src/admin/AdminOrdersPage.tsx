@@ -110,7 +110,7 @@ export function AdminOrdersPage() {
                   <td className="px-4 py-3">
                     <Link
                       to={`/admin/orders/${o.id}`}
-                      className="font-semibold text-violet-400 hover:underline"
+                      className="font-semibold text-zinc-300 underline-offset-2 hover:text-white hover:underline"
                     >
                       Открыть
                     </Link>

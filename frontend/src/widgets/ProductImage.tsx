@@ -16,7 +16,7 @@ export function ProductImage({ product }: { product: Product }) {
   }
 
   return (
-    <div className="flex h-full w-full items-center justify-center font-display text-7xl text-violet-500/35">
+    <div className="flex h-full w-full items-center justify-center text-7xl font-semibold text-[--color-border]">
       {letter}
     </div>
   );
