@@ -27,47 +27,47 @@ export function SiteFooter() {
             <ul className="space-y-3">
               <li>
                 <Link
-                  to="/catalog"
-                  className="text-xs text-[--color-muted] transition-colors hover:text-black"
-                >
-                  Каталог
-                </Link>
-              </li>
-              <li>
-                <a
-                  href="#"
-                  className="text-xs text-[--color-muted] transition-colors hover:text-black"
-                >
-                  Доставка
-                </a>
-              </li>
-              <li>
-                <a
-                  href="#"
+                  to="/terms"
                   className="text-xs text-[--color-muted] transition-colors hover:text-black"
                 >
                   Пользовательское соглашение
-                </a>
-              </li>
-              <li>
-                <a
-                  href="#"
-                  className="text-xs text-[--color-muted] transition-colors hover:text-black"
-                >
-                  Политика конфиденциальности
-                </a>
-              </li>
-              <li>
-                <a
-                  href="#"
-                  className="text-xs text-[--color-muted] transition-colors hover:text-black"
-                >
-                  Возврат и обмен
-                </a>
+                </Link>
               </li>
               <li>
                 <Link
-                  to="/orders"
+                  to="/privacy"
+                  className="text-xs text-[--color-muted] transition-colors hover:text-black"
+                >
+                  Политика конфиденциальности
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/returns"
+                  className="text-xs text-[--color-muted] transition-colors hover:text-black"
+                >
+                  Возврат и обмен
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/delivery"
+                  className="text-xs text-[--color-muted] transition-colors hover:text-black"
+                >
+                  Доставка и оплата
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/contacts"
+                  className="text-xs text-[--color-muted] transition-colors hover:text-black"
+                >
+                  Контакты
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/track-order"
                   className="text-xs text-[--color-muted] transition-colors hover:text-black"
                 >
                   Отследить заказ
@@ -91,12 +91,20 @@ export function SiteFooter() {
                 </Link>
               </li>
               <li>
-                <a
-                  href="#"
+                <Link
+                  to="/contacts"
                   className="text-xs text-[--color-muted] transition-colors hover:text-black"
                 >
                   Контакты
-                </a>
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/catalog"
+                  className="text-xs text-[--color-muted] transition-colors hover:text-black"
+                >
+                  Каталог
+                </Link>
               </li>
               <li>
                 <Link

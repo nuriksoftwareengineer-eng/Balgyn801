@@ -16,6 +16,7 @@ import {
   type CartProductInput,
   type CartDesignInput,
 } from "@/app/cart-context";
+import { SESSION_CLEARED_EVENT } from "@/shared/lib/session-events";
 
 const STORAGE_KEY = "balgyn_cart_v3";
 const V2_STORAGE_KEY = "balgyn_cart_v2";
@@ -223,6 +224,24 @@ export function CartProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     persist(lines);
   }, [lines]);
+
+  // Logout (см. AuthProvider) полностью очищает сессию — корзина не должна
+  // доставаться следующему пользователю этого устройства.
+  useEffect(() => {
+    function onSessionCleared() {
+      setLines([]);
+      try {
+        sessionStorage.removeItem(STORAGE_KEY);
+        sessionStorage.removeItem(V2_STORAGE_KEY);
+        sessionStorage.removeItem(V1_STORAGE_KEY);
+      } catch {
+        /* ignore */
+      }
+    }
+    window.addEventListener(SESSION_CLEARED_EVENT, onSessionCleared);
+    return () =>
+      window.removeEventListener(SESSION_CLEARED_EVENT, onSessionCleared);
+  }, []);
 
   const totalQty = useMemo(
     () => lines.reduce((acc, l) => acc + l.qty, 0),

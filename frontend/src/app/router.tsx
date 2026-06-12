@@ -33,6 +33,28 @@ const CustomDesignPage = lazy(() =>
 const AboutPage = lazy(() =>
   import("@/pages/AboutPage").then((m) => ({ default: m.AboutPage })),
 );
+const TermsPage = lazy(() =>
+  import("@/pages/TermsPage").then((m) => ({ default: m.TermsPage })),
+);
+const PrivacyPage = lazy(() =>
+  import("@/pages/PrivacyPage").then((m) => ({ default: m.PrivacyPage })),
+);
+const ReturnsPage = lazy(() =>
+  import("@/pages/ReturnsPage").then((m) => ({ default: m.ReturnsPage })),
+);
+const DeliveryInfoPage = lazy(() =>
+  import("@/pages/DeliveryInfoPage").then((m) => ({
+    default: m.DeliveryInfoPage,
+  })),
+);
+const ContactsPage = lazy(() =>
+  import("@/pages/ContactsPage").then((m) => ({ default: m.ContactsPage })),
+);
+const TrackOrderPage = lazy(() =>
+  import("@/pages/TrackOrderPage").then((m) => ({
+    default: m.TrackOrderPage,
+  })),
+);
 const LoginPage = lazy(() =>
   import("@/pages/LoginPage").then((m) => ({ default: m.LoginPage })),
 );
@@ -144,6 +166,54 @@ const router = createBrowserRouter([
         element: (
           <Suspense fallback={<PageLoadFallback />}>
             <AboutPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "terms",
+        element: (
+          <Suspense fallback={<PageLoadFallback />}>
+            <TermsPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "privacy",
+        element: (
+          <Suspense fallback={<PageLoadFallback />}>
+            <PrivacyPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "returns",
+        element: (
+          <Suspense fallback={<PageLoadFallback />}>
+            <ReturnsPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "delivery",
+        element: (
+          <Suspense fallback={<PageLoadFallback />}>
+            <DeliveryInfoPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "contacts",
+        element: (
+          <Suspense fallback={<PageLoadFallback />}>
+            <ContactsPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "track-order",
+        element: (
+          <Suspense fallback={<PageLoadFallback />}>
+            <TrackOrderPage />
           </Suspense>
         ),
       },

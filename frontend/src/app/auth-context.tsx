@@ -7,6 +7,8 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { dispatchSessionCleared } from "@/shared/lib/session-events";
 import {
   AUTH_REFRESH_STORAGE_KEY,
   AUTH_TOKEN_STORAGE_KEY,
@@ -37,6 +39,7 @@ type AuthContextValue = {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const queryClient = useQueryClient();
   const [token, setToken] = useState<string | null>(() => readStoredToken());
   const [user, setUser] = useState<AuthMeResponse | null>(null);
   const [loading, setLoading] = useState(() => !!readStoredToken());
@@ -124,7 +127,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     clearStoredToken();
     setToken(null);
     setUser(null);
-  }, []);
+    // Полная очистка сессии: кэш запросов (профиль, история заказов) и
+    // данные провайдеров с собственным состоянием (корзина) — чтобы следующий
+    // пользователь на этом устройстве не увидел чужих данных.
+    queryClient.clear();
+    dispatchSessionCleared();
+  }, [queryClient]);
 
   const isAdmin = !!user?.roles?.includes("ADMIN");
 
