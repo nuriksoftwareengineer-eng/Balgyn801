@@ -8,7 +8,6 @@ import {
   type ReactNode,
 } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { dispatchSessionCleared } from "@/shared/lib/session-events";
 import {
   AUTH_REFRESH_STORAGE_KEY,
   AUTH_TOKEN_STORAGE_KEY,
@@ -127,11 +126,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     clearStoredToken();
     setToken(null);
     setUser(null);
-    // Полная очистка сессии: кэш запросов (профиль, история заказов) и
-    // данные провайдеров с собственным состоянием (корзина) — чтобы следующий
-    // пользователь на этом устройстве не увидел чужих данных.
+    // Очищаем кэш React Query (профиль, история заказов), чтобы следующий
+    // пользователь не увидел чужих данных. Корзину НЕ трогаем: она хранится
+    // по идентификатору пользователя и восстановится при повторном входе под
+    // тем же аккаунтом (переключение по identity — в CartProvider).
     queryClient.clear();
-    dispatchSessionCleared();
   }, [queryClient]);
 
   const isAdmin = !!user?.roles?.includes("ADMIN");

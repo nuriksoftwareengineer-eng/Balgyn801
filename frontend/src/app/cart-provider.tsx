@@ -2,9 +2,11 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
+import { useAuth } from "@/app/auth-context";
 import {
   CartContext,
   makeCartLineKey,
@@ -16,11 +18,27 @@ import {
   type CartProductInput,
   type CartDesignInput,
 } from "@/app/cart-context";
-import { SESSION_CLEARED_EVENT } from "@/shared/lib/session-events";
 
-const STORAGE_KEY = "balgyn_cart_v3";
-const V2_STORAGE_KEY = "balgyn_cart_v2";
-const V1_STORAGE_KEY = "balgyn_cart_v1";
+// Корзина хранится по идентификатору пользователя: у каждого аккаунта своя
+// корзина, плюс отдельная гостевая. Logout не удаляет пользовательскую корзину —
+// она восстанавливается при повторном входе под тем же аккаунтом. Чужая корзина
+// при этом не отображается, т.к. ключ хранилища привязан к email.
+const KEY_PREFIX = "balgyn_cart_v3";
+const GUEST_KEY = `${KEY_PREFIX}:guest`;
+// Старые ключи из прежней (единой, в sessionStorage) модели — мигрируем в гостевую.
+const LEGACY_SESSION_KEYS = [
+  "balgyn_cart_v3",
+  "balgyn_cart_v2",
+  "balgyn_cart_v1",
+];
+
+function userKey(email: string): string {
+  return `${KEY_PREFIX}:u:${email.trim().toLowerCase()}`;
+}
+
+function identityKey(identity: string | null): string {
+  return identity ? userKey(identity) : GUEST_KEY;
+}
 
 // ── Normalizers ───────────────────────────────────────────────────────────────
 
@@ -106,27 +124,15 @@ function normalizeCartLine(x: unknown): CartLine | null {
   if (!x || typeof x !== "object") return null;
   const l = x as Record<string, unknown>;
   if (l.kind === "design") return normalizeDesignLine(l);
-  // "legacy" or no kind (v2 migration)
+  // "legacy" или без kind (миграция со старой схемы)
   return normalizeLegacyLine(l);
 }
 
 // ── Storage ───────────────────────────────────────────────────────────────────
 
-function loadLines(): CartLine[] {
+function readCart(key: string): CartLine[] {
   try {
-    let raw = sessionStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      // v2 → v3 migration: read old lines, tag them as legacy
-      raw = sessionStorage.getItem(V2_STORAGE_KEY);
-      if (raw) {
-        sessionStorage.removeItem(V2_STORAGE_KEY);
-      }
-    }
-    if (!raw) {
-      // v1 → v3 (two-step migration path)
-      raw = sessionStorage.getItem(V1_STORAGE_KEY);
-      if (raw) sessionStorage.removeItem(V1_STORAGE_KEY);
-    }
+    const raw = localStorage.getItem(key);
     if (!raw) return [];
     const parsed = JSON.parse(raw) as unknown;
     if (!Array.isArray(parsed)) return [];
@@ -138,15 +144,64 @@ function loadLines(): CartLine[] {
   }
 }
 
-function persist(lines: CartLine[]) {
+function writeCart(key: string, lines: CartLine[]) {
   try {
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(lines));
+    localStorage.setItem(key, JSON.stringify(lines));
   } catch {
     /* ignore quota */
   }
 }
 
+function removeCart(key: string) {
+  try {
+    localStorage.removeItem(key);
+  } catch {
+    /* ignore */
+  }
+}
+
+let legacyMigrated = false;
+
+/** Однократно переносит корзину из старой единой схемы (sessionStorage) в гостевую. */
+function migrateLegacyGuestCart() {
+  if (legacyMigrated) return;
+  legacyMigrated = true;
+  try {
+    if (localStorage.getItem(GUEST_KEY)) return; // уже есть гостевая корзина
+    let legacyRaw: string | null = null;
+    for (const k of LEGACY_SESSION_KEYS) {
+      const v = sessionStorage.getItem(k);
+      if (v && legacyRaw == null) legacyRaw = v;
+      sessionStorage.removeItem(k);
+    }
+    if (!legacyRaw) return;
+    const parsed = JSON.parse(legacyRaw) as unknown;
+    if (!Array.isArray(parsed)) return;
+    const lines = parsed
+      .map((row) => normalizeCartLine(row))
+      .filter((row): row is CartLine => row != null);
+    if (lines.length > 0) writeCart(GUEST_KEY, lines);
+  } catch {
+    /* ignore */
+  }
+}
+
 // ── Merge helpers ─────────────────────────────────────────────────────────────
+
+/** Объединяет две корзины по lineKey, суммируя количество одинаковых позиций. */
+function mergeCarts(base: CartLine[], incoming: CartLine[]): CartLine[] {
+  const map = new Map<string, CartLine>();
+  for (const l of base) map.set(l.lineKey, { ...l });
+  for (const l of incoming) {
+    const existing = map.get(l.lineKey);
+    if (existing) {
+      map.set(l.lineKey, { ...existing, qty: existing.qty + l.qty });
+    } else {
+      map.set(l.lineKey, { ...l });
+    }
+  }
+  return Array.from(map.values());
+}
 
 function mergeAdd(
   lines: CartLine[],
@@ -217,31 +272,50 @@ function mergeAddDesign(lines: CartLine[], input: CartDesignInput): CartLine[] {
 // ── Provider ──────────────────────────────────────────────────────────────────
 
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [lines, setLines] = useState<CartLine[]>(() =>
-    typeof sessionStorage === "undefined" ? [] : loadLines(),
-  );
+  const { user } = useAuth();
+  const identity = user?.email ?? null; // null = гость
 
+  const [lines, setLines] = useState<CartLine[]>(() => {
+    if (typeof localStorage === "undefined") return [];
+    migrateLegacyGuestCart();
+    // На монтировании пользователь ещё не загружен (getMe асинхронный) — стартуем
+    // с гостевой корзины; когда identity появится, сработает мёрдж/переключение.
+    return readCart(GUEST_KEY);
+  });
+
+  // Ключ хранилища активной корзины. Ref (а не state), чтобы persist-эффект
+  // всегда писал в актуальный ключ без гонки с эффектом смены идентичности.
+  const activeKeyRef = useRef<string>(GUEST_KEY);
+
+  // Сохраняем активную корзину при любом изменении строк.
   useEffect(() => {
-    persist(lines);
+    writeCart(activeKeyRef.current, lines);
   }, [lines]);
 
-  // Logout (см. AuthProvider) полностью очищает сессию — корзина не должна
-  // доставаться следующему пользователю этого устройства.
+  // Вход/выход: переключаем активную корзину по идентификатору пользователя.
   useEffect(() => {
-    function onSessionCleared() {
-      setLines([]);
-      try {
-        sessionStorage.removeItem(STORAGE_KEY);
-        sessionStorage.removeItem(V2_STORAGE_KEY);
-        sessionStorage.removeItem(V1_STORAGE_KEY);
-      } catch {
-        /* ignore */
-      }
+    const nextKey = identityKey(identity);
+    const prevKey = activeKeyRef.current;
+    if (nextKey === prevKey) return;
+
+    if (prevKey === GUEST_KEY && nextKey !== GUEST_KEY) {
+      // Вход под аккаунтом: переносим гостевую корзину в пользовательскую
+      // (мёрдж по позициям) и очищаем гостевую.
+      const guestLines = readCart(GUEST_KEY);
+      const userLines = readCart(nextKey);
+      const merged = mergeCarts(userLines, guestLines);
+      activeKeyRef.current = nextKey;
+      writeCart(nextKey, merged);
+      removeCart(GUEST_KEY);
+      setLines(merged);
+    } else {
+      // Выход (-> гость) или смена аккаунта: показываем корзину новой
+      // идентичности. Прежняя пользовательская корзина остаётся в хранилище
+      // и восстановится при повторном входе.
+      activeKeyRef.current = nextKey;
+      setLines(readCart(nextKey));
     }
-    window.addEventListener(SESSION_CLEARED_EVENT, onSessionCleared);
-    return () =>
-      window.removeEventListener(SESSION_CLEARED_EVENT, onSessionCleared);
-  }, []);
+  }, [identity]);
 
   const totalQty = useMemo(
     () => lines.reduce((acc, l) => acc + l.qty, 0),
