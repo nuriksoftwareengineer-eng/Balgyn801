@@ -264,6 +264,33 @@ export type OrderResponse = {
   createdAt: string;
 };
 
+export type CdekShipmentStatus =
+  | "CREATED"
+  | "ACCEPTED"
+  | "IN_TRANSIT"
+  | "ARRIVED"
+  | "DELIVERED"
+  | "RETURNED"
+  | "CANCELLED";
+
+/** Ответ admin-эндпоинтов отправления СДЭК (`/api/v1/cdek-shipment/by-order/...`). */
+export type CdekShipmentResponse = {
+  orderId?: number | null;
+  cdekOrderUuid?: string | null;
+  trackingNumber?: string | null;
+  status?: CdekShipmentStatus | null;
+  estimatedDeliveryDate?: string | null;
+  tariffCode?: number | null;
+  cdekDeliveryMode?: string | null;
+  deliveryPointCode?: string | null;
+  deliveryPointAddress?: string | null;
+  deliveryPrice?: number | null;
+  invoiceUrl?: string | null;
+  barcodeUrl?: string | null;
+  /** true, если отправление создано mock-провайдером. */
+  mock: boolean;
+};
+
 export type PaymentInitRequest = {
   orderId: number;
   provider: PaymentProvider;

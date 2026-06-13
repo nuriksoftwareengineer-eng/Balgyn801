@@ -96,6 +96,7 @@ public class SecurityConfig {
                             .requestMatchers(HttpMethod.GET, "/api/v1/delivery/cdek/**").permitAll()
                             .requestMatchers(HttpMethod.POST, "/api/v1/delivery/cdek/calculate").permitAll()
                             .requestMatchers(HttpMethod.POST, "/api/v1/delivery/cdek/calculate-order").permitAll()
+                            .requestMatchers(HttpMethod.POST, "/api/v1/delivery/cdek/webhook").permitAll()
                             .requestMatchers(HttpMethod.POST, "/api/v1/payments/init").permitAll()
                             .requestMatchers(HttpMethod.POST, "/api/v1/payments/webhook/**").permitAll()
 

@@ -500,6 +500,8 @@ export function CartPage() {
   const [selectedPoint, setSelectedPoint] = useState<CdekDeliveryPoint | null>(
     null,
   );
+  // Локальный фильтр по уже загруженному списку ПВЗ (без доп. запросов к API).
+  const [pvzFilter, setPvzFilter] = useState("");
   const [cdekTariff, setCdekTariff] = useState<CdekOrderTariffResponse | null>(
     null,
   );
@@ -587,6 +589,7 @@ export function CartPage() {
       setSelectedPoint(null);
       setCdekTariff(null);
       setCdekCalcError(null);
+      setPvzFilter("");
     }
   }, [deliveryType]);
 
@@ -1069,6 +1072,7 @@ export function CartPage() {
                             onClick={() => {
                               setSelectedCity(c);
                               setCdekCitySearch(label);
+                              setPvzFilter("");
                             }}
                             className="w-full px-3 py-2.5 text-left text-sm text-black transition hover:bg-[--color-surface]"
                           >
@@ -1089,28 +1093,64 @@ export function CartPage() {
                     </p>
                   ) : null}
                   {pointsQuery.data && pointsQuery.data.length > 0 ? (
-                    <label className="flex flex-col gap-1.5">
-                      <FieldLabel>Пункт выдачи СДЭК *</FieldLabel>
-                      <select
-                        required
-                        value={selectedPoint?.code ?? ""}
-                        onChange={(e) => {
-                          const p =
-                            pointsQuery.data?.find(
-                              (x) => x.code === e.target.value,
-                            ) ?? null;
-                          setSelectedPoint(p);
-                        }}
-                        className={inputClass}
-                      >
-                        <option value="">Выберите ПВЗ</option>
-                        {pointsQuery.data.map((p) => (
-                          <option key={p.code} value={p.code}>
-                            {p.name} — {p.address}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
+                    (() => {
+                      const all = pointsQuery.data ?? [];
+                      const f = pvzFilter.trim().toLowerCase();
+                      // Локальная фильтрация по уже загруженному списку: код / адрес / имя.
+                      // Без обращений к API — список обновляется мгновенно при вводе.
+                      const filtered = f
+                        ? all.filter(
+                            (p) =>
+                              p.code.toLowerCase().includes(f) ||
+                              (p.address ?? "").toLowerCase().includes(f) ||
+                              (p.name ?? "").toLowerCase().includes(f),
+                          )
+                        : all;
+                      return (
+                        <div className="flex flex-col gap-2">
+                          <label className="flex flex-col gap-1.5">
+                            <FieldLabel>Поиск ПВЗ</FieldLabel>
+                            <input
+                              type="text"
+                              value={pvzFilter}
+                              onChange={(e) => setPvzFilter(e.target.value)}
+                              placeholder="Код, улица или адрес"
+                              autoComplete="off"
+                              className={inputClass}
+                            />
+                          </label>
+                          <label className="flex flex-col gap-1.5">
+                            <FieldLabel>
+                              Пункт выдачи СДЭК * ({filtered.length} из{" "}
+                              {all.length})
+                            </FieldLabel>
+                            <select
+                              required
+                              value={selectedPoint?.code ?? ""}
+                              onChange={(e) => {
+                                const p =
+                                  all.find((x) => x.code === e.target.value) ??
+                                  null;
+                                setSelectedPoint(p);
+                              }}
+                              className={inputClass}
+                            >
+                              <option value="">Выберите ПВЗ</option>
+                              {filtered.map((p) => (
+                                <option key={p.code} value={p.code}>
+                                  {p.code} — {p.address || p.name}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                          {filtered.length === 0 ? (
+                            <p className="text-xs text-amber-600">
+                              Ничего не найдено — измените запрос.
+                            </p>
+                          ) : null}
+                        </div>
+                      );
+                    })()
                   ) : pointsQuery.isSuccess ? (
                     <p className="text-sm text-amber-600">
                       Для этого города список ПВЗ пуст. Попробуйте другой

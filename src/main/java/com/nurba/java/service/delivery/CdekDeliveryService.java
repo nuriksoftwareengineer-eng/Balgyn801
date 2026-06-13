@@ -56,14 +56,14 @@ public class CdekDeliveryService {
         if (q.isBlank()) {
             return List.of();
         }
-        if (!client.isConfigured()) {
+        if (!client.useRealApi()) {
             return stubCities(q, size);
         }
         return client.searchCities(q, size);
     }
 
     public List<CdekDeliveryPointDto> deliveryPoints(int cityCode) {
-        if (!client.isConfigured()) {
+        if (!client.useRealApi()) {
             return stubDeliveryPoints(cityCode);
         }
         return client.deliveryPoints(cityCode);
@@ -74,7 +74,7 @@ public class CdekDeliveryService {
             throw new BusinessRuleException("Пустой запрос расчёта доставки");
         }
         Integer tariff = request.tariffCode() != null ? request.tariffCode() : defaultTariff();
-        if (!client.isConfigured()) {
+        if (!client.useRealApi()) {
             return stubTariff(request.weightGrams(), tariff);
         }
         Integer senderCity = client.senderCity();

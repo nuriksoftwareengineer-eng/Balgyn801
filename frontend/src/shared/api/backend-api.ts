@@ -6,6 +6,7 @@ import type {
   CdekDeliveryPoint,
   CdekOrderTariffRequest,
   CdekOrderTariffResponse,
+  CdekShipmentResponse,
   CdekTariffRequest,
   CdekTariffResponse,
   CreateOrderRequest,
@@ -354,6 +355,52 @@ export async function submitPaymentWebhook(
     method: "POST",
     body: JSON.stringify(body),
   });
+}
+
+// ── CDEK shipment (ADMIN) ───────────────────────────────────────────────────────
+
+/** Отправление СДЭК по заказу (undefined, если ещё не создано). */
+export async function getOrderShipment(
+  orderId: number,
+  token: string,
+): Promise<CdekShipmentResponse | undefined> {
+  return apiFetch<CdekShipmentResponse | undefined>(
+    `/cdek-shipment/by-order/${orderId}`,
+    { token },
+  );
+}
+
+/** Создать / повторить создание отправления СДЭК (ADMIN). */
+export async function createOrderShipment(
+  orderId: number,
+  token: string,
+): Promise<CdekShipmentResponse> {
+  return apiFetch<CdekShipmentResponse>(
+    `/cdek-shipment/by-order/${orderId}/create`,
+    { method: "POST", token },
+  );
+}
+
+/** Синхронизировать статус отправления с СДЭК (ADMIN). */
+export async function syncOrderShipment(
+  orderId: number,
+  token: string,
+): Promise<CdekShipmentResponse> {
+  return apiFetch<CdekShipmentResponse>(
+    `/cdek-shipment/by-order/${orderId}/sync`,
+    { method: "POST", token },
+  );
+}
+
+/** Отменить отправление СДЭК (ADMIN). */
+export async function cancelOrderShipment(
+  orderId: number,
+  token: string,
+): Promise<CdekShipmentResponse> {
+  return apiFetch<CdekShipmentResponse>(
+    `/cdek-shipment/by-order/${orderId}/cancel`,
+    { method: "POST", token },
+  );
 }
 
 // ── Catalog storefront API (public, no auth required) ────────────────────────
