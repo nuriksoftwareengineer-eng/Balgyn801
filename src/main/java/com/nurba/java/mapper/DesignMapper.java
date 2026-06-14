@@ -17,6 +17,8 @@ public interface DesignMapper {
 
     @Mapping(source = "collection.id", target = "collectionId")
     @Mapping(source = "collection.name", target = "collectionName")
+    @Mapping(source = "collection.slug", target = "collectionSlug")
     @Mapping(source = "collection.catalogGroup.name", target = "groupName")
+    @Mapping(source = "collection.catalogGroup.slug", target = "groupSlug")
     DesignResponse toResponse(Design entity);
 }

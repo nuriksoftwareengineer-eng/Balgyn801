@@ -231,9 +231,15 @@ export function AdminOrderDetailPage() {
           <p className="mt-3 text-lg font-bold text-zinc-100">
             Товары: {formatMoney(resolveItemsTotal(o.totalPrice, o.deliveryFee))} ₸
           </p>
-          <p className="mt-1 text-sm text-zinc-400">
-            Доставка: {formatMoney(o.deliveryFee ?? 0)} ₸
-          </p>
+          {o.deliveryType === "CDEK" ? (
+            <p className="mt-1 text-sm text-zinc-400">
+              Доставка СДЭК: оплата при получении
+            </p>
+          ) : (
+            <p className="mt-1 text-sm text-zinc-400">
+              Доставка: {formatMoney(o.deliveryFee ?? 0)} ₸
+            </p>
+          )}
           <p className="mt-2 text-lg font-bold text-zinc-100">
             Итого: {formatMoney(o.totalPrice)} ₸
           </p>

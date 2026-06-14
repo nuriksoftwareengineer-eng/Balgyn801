@@ -157,7 +157,7 @@ export function CartDrawer({ open, onClose }: CartDrawerProps) {
       onClose={onClose}
       side="right"
       sizeClass="w-full max-w-sm"
-      topOffset="top-[92px] md:top-[104px]"
+      topOffset="top-[72px] md:top-[96px]"
     >
       <SheetHeader>
         <SheetTitle>

@@ -26,7 +26,9 @@ export interface DesignSummary {
   mainImageUrl: string | null;
   collectionId: number;
   collectionName: string;
+  collectionSlug: string;
   groupName: string;
+  groupSlug: string;
   active: boolean;
 }
 

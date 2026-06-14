@@ -4,8 +4,7 @@ import { useSeoMeta } from "@/shared/hooks/useSeoMeta";
 import { Container } from "@/shared/ui/container";
 
 export function GroupPage() {
-  // groupSlug is set when rendered at /catalog/:groupSlug/:collectionSlug/...
-  // param is set when rendered via CatalogParamPage at /catalog/:param
+  // groupSlug is set on deep routes (/catalog/:groupSlug/...); param on /catalog/:param
   const { groupSlug: routeGroupSlug, param } = useParams<{ groupSlug?: string; param?: string }>();
   const groupSlug = routeGroupSlug ?? param;
   const { data: group, isLoading, error } = useCatalogGroup(groupSlug);
@@ -17,11 +16,28 @@ export function GroupPage() {
 
   if (isLoading) {
     return (
-      <div className="py-14">
-        <Container>
-          <p className="text-sm text-[--color-muted]">Загружаем…</p>
-        </Container>
-      </div>
+      <>
+        <div className="border-b border-[--color-border] bg-black">
+          <Container className="py-14 md:py-20">
+            <div className="mb-5 h-2 w-32 animate-pulse bg-white/10" />
+            <div className="h-10 w-48 animate-pulse bg-white/10 md:h-14" />
+          </Container>
+        </div>
+        <div className="py-10 md:py-14">
+          <Container>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="overflow-hidden border border-[--color-border]">
+                  <div className="aspect-[3/2] animate-pulse bg-[--color-surface]" />
+                  <div className="px-4 py-4">
+                    <div className="h-2 w-24 animate-pulse bg-[--color-surface]" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Container>
+        </div>
+      </>
     );
   }
 
@@ -39,41 +55,55 @@ export function GroupPage() {
   }
 
   return (
-    <div className="py-14">
-      <Container>
-        <nav className="mb-6 flex items-center gap-2 text-[0.6rem] uppercase tracking-[0.1em] text-[--color-muted]">
-          <Link to="/" className="hover:text-black transition">Главная</Link>
-          <span>›</span>
-          <Link to="/catalog" className="hover:text-black transition">Каталог</Link>
-          <span>›</span>
-          <span className="text-black">{group.name}</span>
-        </nav>
+    <>
+      {/* ── Hero ────────────────────────────────────────────── */}
+      <div className="border-b border-[--color-border] bg-black">
+        <Container className="py-14 md:py-20">
+          <nav className="mb-5 flex items-center gap-2 text-[0.55rem] uppercase tracking-[0.16em] text-white/40">
+            <Link to="/" className="transition hover:text-white/70">Главная</Link>
+            <span>/</span>
+            <Link to="/catalog" className="transition hover:text-white/70">Каталог</Link>
+            <span>/</span>
+            <span className="text-white/70">{group.name}</span>
+          </nav>
+          <h1 className="text-5xl font-semibold uppercase tracking-[0.04em] text-white md:text-7xl">
+            {group.name}
+          </h1>
+        </Container>
+      </div>
 
-        <h1 className="mb-8 text-4xl font-semibold uppercase tracking-[0.04em] text-black">
-          {group.name}
-        </h1>
-
-        {group.collections.length > 0 ? (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
-            {group.collections.map((col) => (
-              <Link
-                key={col.id}
-                to={`/catalog/${groupSlug}/${col.slug}`}
-                className="group flex flex-col justify-between border border-[--color-border] bg-white px-6 py-8 transition-shadow hover:shadow-sm"
-              >
-                <p className="text-lg font-semibold text-black group-hover:underline underline-offset-4">
-                  {col.name}
-                </p>
-                <p className="mt-4 text-[0.6rem] font-medium uppercase tracking-[0.12em] text-[--color-muted] transition group-hover:text-black">
-                  Смотреть →
-                </p>
-              </Link>
-            ))}
-          </div>
-        ) : (
-          <p className="text-sm text-[--color-muted]">В этой группе пока нет коллекций.</p>
-        )}
-      </Container>
-    </div>
+      {/* ── Collections grid ────────────────────────────────── */}
+      <div className="py-10 md:py-14">
+        <Container>
+          {group.collections.length > 0 ? (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
+              {group.collections.map((col) => (
+                <Link
+                  key={col.id}
+                  to={`/catalog/${groupSlug}/${col.slug}`}
+                  className="group block overflow-hidden border border-[--color-border] bg-white transition-shadow hover:shadow-md"
+                >
+                  <div className="aspect-[3/2] flex items-center justify-center bg-zinc-800">
+                    <span className="text-7xl font-bold uppercase text-white/10 select-none">
+                      {col.name.charAt(0)}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between px-4 py-3.5">
+                    <p className="text-sm font-semibold uppercase tracking-[0.06em] text-black">
+                      {col.name}
+                    </p>
+                    <span className="text-[0.6rem] font-medium uppercase tracking-[0.14em] text-[--color-muted] transition group-hover:text-black">
+                      →
+                    </span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-[--color-muted]">В этой группе пока нет коллекций.</p>
+          )}
+        </Container>
+      </div>
+    </>
   );
 }

@@ -7,7 +7,6 @@ import { useProduct } from "@/shared/api/queries";
 import type { Product } from "@/shared/api/types";
 import { formatMoney } from "@/shared/lib/format-money";
 import { cn } from "@/shared/lib/cn";
-import { Button } from "@/components/ui/button";
 import { Container } from "@/shared/ui/container";
 import { ProductImage } from "@/widgets/ProductImage";
 
@@ -61,11 +60,11 @@ function ProductBuyColumn({ product }: { product: Product }) {
       ) : null}
 
       <h1
-        className="mt-3 font-semibold uppercase text-black"
+        className="mt-3 font-extrabold uppercase text-black"
         style={{
           fontSize: "clamp(1.75rem, 4vw, 3rem)",
-          lineHeight: 1.1,
-          letterSpacing: "0.03em",
+          lineHeight: 1.05,
+          letterSpacing: "-0.02em",
         }}
       >
         {product.title}
@@ -164,23 +163,21 @@ function ProductBuyColumn({ product }: { product: Product }) {
 
       {/* CTA buttons */}
       <div className="mt-10 flex flex-wrap gap-3">
-        <Button
+        <button
           type="button"
-          size="lg"
           disabled={!canAdd}
           onClick={handleAddToCart}
-          className="flex-1 sm:min-w-[200px] sm:flex-none"
+          className="flex-1 bg-black py-4 text-[13px] font-bold uppercase tracking-[0.14em] text-white transition hover:bg-zinc-800 disabled:opacity-40 sm:min-w-[200px] sm:flex-none sm:px-8"
         >
           {product.inStock ? "В корзину" : "Нет в наличии"}
-        </Button>
-        <Button
+        </button>
+        <button
           type="button"
-          variant="outline"
-          size="lg"
           onClick={() => navigate("/catalog")}
+          className="border border-[--color-border] px-6 py-4 text-[13px] font-bold uppercase tracking-[0.14em] text-black transition hover:border-black"
         >
           К каталогу
-        </Button>
+        </button>
       </div>
     </div>
   );
@@ -201,14 +198,13 @@ export function ProductPage() {
     return (
       <Container className="py-16">
         <p className="text-[--color-muted]">Некорректная ссылка на товар.</p>
-        <Button
+        <button
           type="button"
-          variant="outline"
-          className="mt-6"
           onClick={() => navigate("/catalog")}
+          className="mt-6 bg-black px-6 py-3 text-[12px] font-bold uppercase tracking-[0.14em] text-white transition hover:bg-zinc-800"
         >
           В каталог
-        </Button>
+        </button>
       </Container>
     );
   }
@@ -286,7 +282,7 @@ export function ProductPage() {
           transition={{ duration: reduceMotion ? 0 : 0.45, ease: [0.22, 1, 0.36, 1] }}
         >
           {/* Image — sticky on desktop */}
-          <div className="lg:sticky lg:top-[104px] lg:py-12">
+          <div className="lg:sticky lg:top-[96px] lg:py-12">
             <div className="aspect-[4/5] overflow-hidden bg-[--color-surface]">
               <ProductImage product={product} />
             </div>

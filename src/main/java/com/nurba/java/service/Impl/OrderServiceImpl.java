@@ -157,6 +157,11 @@ public class OrderServiceImpl implements OrderService {
                 request.getDeliveryType(), request.getCountryIso2(), addrReq, weightKg);
         BigDecimal deliveryFee = quote.feeKzt();
 
+        // CDEK: доставка оплачивается при получении в ПВЗ — не включаем в сумму заказа на сайте
+        if (request.getDeliveryType() == DeliveryType.CDEK) {
+            deliveryFee = BigDecimal.ZERO;
+        }
+
         BigDecimal grandTotal = itemsTotal.add(deliveryFee);
         savedOrder.setDeliveryFee(deliveryFee.signum() > 0 ? deliveryFee : null);
         savedOrder.setTotalPrice(grandTotal);

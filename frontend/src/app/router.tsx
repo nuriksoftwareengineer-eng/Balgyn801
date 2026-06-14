@@ -99,6 +99,11 @@ const AdminCustomersPage = lazy(() =>
     default: m.AdminCustomersPage,
   })),
 );
+const AdminSizeChartsPage = lazy(() =>
+  import("@/admin/AdminSizeChartsPage").then((m) => ({
+    default: m.AdminSizeChartsPage,
+  })),
+);
 
 const router = createBrowserRouter([
   {
@@ -314,6 +319,14 @@ const router = createBrowserRouter([
             element: (
               <Suspense fallback={<PageLoadFallback />}>
                 <AdminCustomersPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "size-charts",
+            element: (
+              <Suspense fallback={<PageLoadFallback />}>
+                <AdminSizeChartsPage />
               </Suspense>
             ),
           },

@@ -14,7 +14,7 @@ export function DesignGrid({ designs, groupSlug, collectionSlug }: DesignGridPro
     );
   }
   return (
-    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
+    <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 md:grid-cols-4">
       {designs.map((d) => (
         <DesignCard
           key={d.id}

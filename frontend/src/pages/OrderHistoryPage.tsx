@@ -4,6 +4,7 @@ import { useAuth } from "@/app/auth-context";
 import { getMyOrders } from "@/shared/api/backend-api";
 import { ApiError } from "@/shared/api/http";
 import type { OrderResponse, OrderStatus, DeliveryType } from "@/shared/api/types";
+import { Container } from "@/shared/ui/container";
 
 const STATUS_LABEL: Record<OrderStatus, string> = {
   NEW: "Новый",
@@ -17,16 +18,16 @@ const STATUS_LABEL: Record<OrderStatus, string> = {
   EXPIRED: "Просрочен",
 };
 
-const STATUS_COLOR: Record<OrderStatus, string> = {
-  NEW: "bg-blue-50 text-blue-700",
-  CONFIRMED: "bg-amber-50 text-amber-700",
-  IN_PRODUCTION: "bg-zinc-100 text-zinc-700",
-  READY: "bg-emerald-50 text-emerald-700",
-  SHIPPED: "bg-sky-50 text-sky-700",
-  DELIVERED: "bg-emerald-100 text-emerald-800",
-  CANCELLED: "bg-red-50 text-red-700",
-  PENDING_PAYMENT: "bg-zinc-100 text-zinc-600",
-  EXPIRED: "bg-gray-100 text-gray-500",
+const STATUS_DOT: Record<OrderStatus, string> = {
+  NEW: "bg-blue-500",
+  CONFIRMED: "bg-amber-500",
+  IN_PRODUCTION: "bg-zinc-400",
+  READY: "bg-emerald-500",
+  SHIPPED: "bg-sky-500",
+  DELIVERED: "bg-emerald-600",
+  CANCELLED: "bg-red-500",
+  PENDING_PAYMENT: "bg-zinc-300",
+  EXPIRED: "bg-gray-300",
 };
 
 const DELIVERY_LABEL: Record<DeliveryType, string> = {
@@ -64,56 +65,60 @@ export function OrderHistoryPage() {
   }, [token]);
 
   return (
-    <div className="min-h-screen bg-white">
-      <div className="mx-auto max-w-[900px] px-5 py-12">
-        <h1 className="mb-8 text-2xl font-semibold uppercase tracking-[0.06em] text-black">
-          Мои заказы
-        </h1>
+    <>
+      {/* ── Hero ────────────────────────────────────────────── */}
+      <div className="border-b border-[--color-border] bg-black">
+        <Container className="py-12 md:py-16">
+          <h1 className="text-4xl font-extrabold uppercase tracking-[-0.01em] text-white md:text-5xl">
+            Мои заказы
+          </h1>
+        </Container>
+      </div>
 
+      {/* ── Orders list ─────────────────────────────────────── */}
+      <Container className="py-10 md:py-14">
         {error ? (
-          <p className="text-sm text-[--color-danger]">{error}</p>
+          <p className="text-[14px] text-[--color-danger]">{error}</p>
         ) : orders === null ? (
-          <ul className="flex flex-col gap-4">
+          <div className="flex flex-col gap-3">
             {[0, 1, 2].map((i) => (
-              <li key={i} className="h-28 animate-pulse rounded-none border border-[--color-border] bg-[--color-surface]" />
+              <div key={i} className="h-28 animate-pulse border border-[--color-border] bg-[--color-surface]" />
             ))}
-          </ul>
+          </div>
         ) : orders.length === 0 ? (
-          <div className="flex flex-col items-start gap-4">
-            <p className="text-sm text-[--color-muted]">Заказов пока нет.</p>
+          <div className="flex flex-col gap-5">
+            <p className="text-[15px] text-[--color-muted]">Заказов пока нет.</p>
             <Link
               to="/catalog"
-              className="text-[0.7rem] font-medium uppercase tracking-[0.14em] text-black underline underline-offset-2 hover:text-[--color-muted]"
+              className="inline-block bg-black px-6 py-3 text-[12px] font-bold uppercase tracking-[0.14em] text-white transition hover:bg-zinc-800"
             >
               Перейти в каталог
             </Link>
           </div>
         ) : (
-          <ul className="flex flex-col gap-4">
+          <ul className="flex flex-col divide-y divide-[--color-border] border border-[--color-border]">
             {orders.map((order) => (
-              <li
-                key={order.id}
-                className="border border-[--color-border] bg-white px-6 py-5"
-              >
+              <li key={order.id} className="bg-white px-5 py-5 md:px-6 md:py-6">
                 {/* Header row */}
-                <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <span className="text-sm font-semibold text-black">
-                      Заказ #{order.id}
+                    <span className="text-[15px] font-bold text-black">
+                      #{order.id}
                     </span>
                     {order.status ? (
-                      <span
-                        className={`px-2 py-0.5 text-[0.6rem] font-medium uppercase tracking-[0.1em] ${STATUS_COLOR[order.status]}`}
-                      >
-                        {STATUS_LABEL[order.status]}
+                      <span className="flex items-center gap-1.5">
+                        <span className={`h-2 w-2 rounded-full ${STATUS_DOT[order.status]}`} />
+                        <span className="text-[11px] font-semibold uppercase tracking-[0.1em] text-[--color-muted]">
+                          {STATUS_LABEL[order.status]}
+                        </span>
                       </span>
                     ) : null}
                   </div>
                   <div className="flex items-center gap-4">
-                    <span className="text-[0.65rem] text-[--color-muted]">
+                    <span className="text-[12px] text-[--color-muted]">
                       {fmtDate(order.createdAt)}
                     </span>
-                    <span className="text-sm font-semibold text-black">
+                    <span className="text-[15px] font-bold text-black">
                       {fmt(order.totalPrice)}
                     </span>
                   </div>
@@ -121,15 +126,15 @@ export function OrderHistoryPage() {
 
                 {/* Items */}
                 {order.items && order.items.length > 0 ? (
-                  <ul className="mb-3 flex flex-col gap-1.5 border-t border-[--color-border] pt-3">
+                  <ul className="mb-4 flex flex-col gap-1.5 border-t border-[--color-border] pt-4">
                     {order.items.map((item) => (
-                      <li key={item.id} className="flex items-center justify-between gap-4 text-sm">
-                        <span className="text-black">
+                      <li key={item.id} className="flex items-center justify-between gap-4">
+                        <span className="text-[13px] text-black">
                           {item.productTitle}
                           {item.sizeLabel ? ` · ${item.sizeLabel}` : ""}
                           {item.colorName ? ` · ${item.colorName}` : ""}
                         </span>
-                        <span className="shrink-0 text-[--color-muted]">
+                        <span className="shrink-0 text-[12px] text-[--color-muted]">
                           {item.quantity} × {fmt(item.unitPrice)}
                         </span>
                       </li>
@@ -138,20 +143,28 @@ export function OrderHistoryPage() {
                 ) : null}
 
                 {/* Footer row */}
-                <div className="flex flex-wrap gap-4 border-t border-[--color-border] pt-3 text-[0.65rem] text-[--color-muted]">
-                  <span>{DELIVERY_LABEL[order.deliveryType]}</span>
-                  {order.deliveryFee != null && order.deliveryFee > 0 ? (
-                    <span>Доставка: {fmt(order.deliveryFee)}</span>
+                <div className="flex flex-wrap gap-4 border-t border-[--color-border] pt-3">
+                  <span className="text-[11px] uppercase tracking-[0.1em] text-[--color-muted]">
+                    {order.deliveryType === "CDEK"
+                      ? "СДЭК · оплата при получении"
+                      : DELIVERY_LABEL[order.deliveryType]}
+                  </span>
+                  {order.deliveryType !== "CDEK" && order.deliveryFee != null && order.deliveryFee > 0 ? (
+                    <span className="text-[11px] uppercase tracking-[0.1em] text-[--color-muted]">
+                      Доставка: {fmt(order.deliveryFee)}
+                    </span>
                   ) : null}
                   {order.comment ? (
-                    <span className="italic">"{order.comment}"</span>
+                    <span className="text-[11px] italic text-[--color-muted]">
+                      "{order.comment}"
+                    </span>
                   ) : null}
                 </div>
               </li>
             ))}
           </ul>
         )}
-      </div>
-    </div>
+      </Container>
+    </>
   );
 }

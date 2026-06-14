@@ -2,17 +2,15 @@ import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/app/auth-context";
 import { ApiError } from "@/shared/api/http";
-import { Button } from "@/components/ui/button";
 
 const inputClass =
-  "rounded-none border border-[--color-border] bg-white px-3 py-2.5 text-sm text-black outline-none transition focus:border-black focus:ring-1 focus:ring-black";
+  "w-full border-b border-[--color-border] bg-transparent py-3 text-[15px] text-black outline-none transition placeholder:text-[--color-muted] focus:border-black";
 
 export function RegisterPage() {
   const { register, user, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const from =
-    (location.state as { from?: string } | null)?.from ?? undefined;
+  const from = (location.state as { from?: string } | null)?.from ?? undefined;
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -24,9 +22,7 @@ export function RegisterPage() {
     if (!afterAuth || loading) return;
     if (!user) return;
     let dest = from ?? "/";
-    if (dest.startsWith("/admin") && !user.roles.includes("ADMIN")) {
-      dest = "/";
-    }
+    if (dest.startsWith("/admin") && !user.roles.includes("ADMIN")) dest = "/";
     navigate(dest, { replace: true });
     queueMicrotask(() => setAfterAuth(false));
   }, [afterAuth, loading, user, from, navigate]);
@@ -48,37 +44,50 @@ export function RegisterPage() {
   }
 
   return (
-    <div className="w-full max-w-[400px] border border-[--color-border] bg-white p-8">
-      <h1 className="mb-1 text-2xl font-semibold uppercase tracking-[0.04em] text-black">
-        Регистрация
+    <>
+      <h1 className="mb-2 text-[32px] font-extrabold uppercase tracking-[-0.02em] text-black">
+        Создать аккаунт
       </h1>
-      <p className="mb-6 text-sm text-[--color-muted]">
-        После регистрации вы получите роль USER.
+      <p className="mb-8 text-[13px] text-[--color-muted]">
+        Уже есть аккаунт?{" "}
+        <Link
+          to="/login"
+          state={from ? { from } : undefined}
+          className="font-semibold text-black underline underline-offset-2 hover:opacity-70"
+        >
+          Войти
+        </Link>
       </p>
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <label className="flex flex-col gap-1.5">
-          <span className="text-[0.65rem] font-medium uppercase tracking-[0.1em] text-[--color-muted]">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+        <label className="flex flex-col gap-1">
+          <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[--color-muted]">
             Email
           </span>
           <input
             type="email"
             autoComplete="email"
             required
+            placeholder="you@example.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className={inputClass}
           />
         </label>
-        <label className="flex flex-col gap-1.5">
-          <span className="text-[0.65rem] font-medium uppercase tracking-[0.1em] text-[--color-muted]">
-            Пароль <span className="normal-case font-normal">(от 8 символов)</span>
+
+        <label className="flex flex-col gap-1">
+          <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[--color-muted]">
+            Пароль{" "}
+            <span className="normal-case font-normal tracking-normal">
+              (от 8 символов)
+            </span>
           </span>
           <input
             type="password"
             autoComplete="new-password"
             required
             minLength={8}
+            placeholder="••••••••"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className={inputClass}
@@ -86,31 +95,19 @@ export function RegisterPage() {
         </label>
 
         {error ? (
-          <p className="m-0 text-sm font-medium text-[--color-danger]" role="alert">
+          <p className="text-[13px] font-medium text-[--color-danger]" role="alert">
             {error}
           </p>
         ) : null}
 
-        <Button
+        <button
           type="submit"
-          size="lg"
-          className="mt-2 w-full"
           disabled={submitting}
+          className="mt-2 w-full bg-black py-4 text-[13px] font-bold uppercase tracking-[0.14em] text-white transition hover:bg-zinc-800 disabled:opacity-50"
         >
           {submitting ? "Создаём…" : "Создать аккаунт"}
-        </Button>
+        </button>
       </form>
-
-      <p className="mt-6 text-center text-sm text-[--color-muted]">
-        Уже есть аккаунт?{" "}
-        <Link
-          to="/login"
-          state={from ? { from } : undefined}
-          className="font-semibold text-black underline underline-offset-2 hover:text-[--color-muted]"
-        >
-          Войти
-        </Link>
-      </p>
-    </div>
+    </>
   );
 }

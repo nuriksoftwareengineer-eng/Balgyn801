@@ -26,7 +26,6 @@ import type {
 import { ApiError } from "@/shared/api/http";
 import { formatMoney } from "@/shared/lib/format-money";
 import { cn } from "@/shared/lib/cn";
-import { Button } from "@/components/ui/button";
 import { Container } from "@/shared/ui/container";
 
 // Static display-only labels — used after order is placed and cart state is cleared.
@@ -51,7 +50,7 @@ const DELIVERY_REGIONS: { iso2: string; label: string; hint: string }[] = [
 const STEP_LABELS = ["Контакты", "Регион", "Доставка", "Детали", "Итог"] as const;
 
 const inputClass =
-  "w-full rounded-none border border-[--color-border] bg-white px-3 py-2.5 text-sm text-black outline-none transition focus:border-black focus:ring-1 focus:ring-black";
+  "w-full border-b border-[--color-border] bg-transparent py-3 text-sm text-black outline-none transition placeholder:text-[--color-muted] focus:border-black";
 
 // ── Utils ──────────────────────────────────────────────────────────────────────
 
@@ -232,17 +231,15 @@ function SummarySidebar({
   lines,
   subtotal,
   deliveryType,
-  cdekTariff,
   selectedMethod,
 }: {
   lines: SidebarLine[];
   subtotal: number;
   deliveryType: DeliveryType | null;
-  cdekTariff: CdekOrderTariffResponse | null;
   selectedMethod: DeliveryMethodResponse | null;
 }) {
-  const grandTotal =
-    deliveryType === "CDEK" && cdekTariff ? cdekTariff.orderTotal : subtotal;
+  // CDEK: delivery at pickup — show items total only
+  const grandTotal = subtotal;
 
   const deliveryLabel =
     selectedMethod?.labelRu ??
@@ -250,7 +247,7 @@ function SummarySidebar({
 
   return (
     <aside className="w-72 shrink-0">
-      <div className="sticky top-[104px] border border-[--color-border] bg-[--color-surface] p-5">
+      <div className="sticky top-[96px] border border-[--color-border] bg-[--color-surface] p-5">
         <p className="mb-4 text-[0.6rem] font-semibold uppercase tracking-[0.16em] text-black">
           Ваш заказ
         </p>
@@ -283,12 +280,10 @@ function SummarySidebar({
             <span className="font-medium text-black">{formatMoney(subtotal)} ₸</span>
           </div>
 
-          {deliveryType === "CDEK" && cdekTariff ? (
+          {deliveryType === "CDEK" ? (
             <div className="flex justify-between text-sm">
               <span className="text-[--color-muted]">Доставка СДЭК</span>
-              <span className="font-medium text-black">
-                {formatMoney(cdekTariff.deliveryPrice)} ₸
-              </span>
+              <span className="text-[--color-muted]">при получении</span>
             </div>
           ) : selectedMethod?.estimatedFeeKzt === 0 ? (
             <div className="flex justify-between text-sm">
@@ -389,7 +384,12 @@ function OrderSuccess({
                   {formatMoney(order.totalPrice)} ₸
                 </strong>
               </div>
-              {deliveryLabel ? (
+              {order.deliveryType === "CDEK" ? (
+                <div className="flex justify-between">
+                  <span className="text-[--color-muted]">Доставка СДЭК</span>
+                  <span className="text-[--color-muted]">оплата при получении</span>
+                </div>
+              ) : deliveryLabel ? (
                 <div className="flex justify-between">
                   <span className="text-[--color-muted]">Доставка</span>
                   <span className="text-black">{deliveryLabel}</span>
@@ -435,9 +435,14 @@ function OrderSuccess({
             <option value="YOOKASSA">YooKassa</option>
             <option value="PAYPAL">PayPal</option>
           </select>
-          <Button type="button" disabled={paymentBusy} onClick={onPay}>
+          <button
+            type="button"
+            disabled={paymentBusy}
+            onClick={onPay}
+            className="bg-black px-6 py-2.5 text-[13px] font-bold uppercase tracking-[0.14em] text-white transition hover:bg-zinc-800 disabled:opacity-50"
+          >
             {paymentBusy ? "Переходим…" : "Оплатить"}
-          </Button>
+          </button>
         </div>
         {paymentError ? (
           <p className="mt-2 text-sm text-[--color-danger]">{paymentError}</p>
@@ -452,9 +457,13 @@ function OrderSuccess({
         >
           В каталог
         </Link>
-        <Button variant="outline" type="button" onClick={onContinue}>
+        <button
+          type="button"
+          onClick={onContinue}
+          className="border border-[--color-border] px-6 py-2.5 text-[13px] font-bold uppercase tracking-[0.14em] text-black transition hover:border-black"
+        >
           Закрыть
-        </Button>
+        </button>
       </div>
     </motion.div>
   );
@@ -502,6 +511,7 @@ export function CartPage() {
   );
   // Локальный фильтр по уже загруженному списку ПВЗ (без доп. запросов к API).
   const [pvzFilter, setPvzFilter] = useState("");
+  const [pvzOpen, setPvzOpen] = useState(false);
   const [cdekTariff, setCdekTariff] = useState<CdekOrderTariffResponse | null>(
     null,
   );
@@ -560,8 +570,8 @@ export function CartPage() {
     ? selectedMethod.requiresAddress
     : deliveryType !== "PICKUP";
 
-  const grandTotal =
-    deliveryType === "CDEK" && cdekTariff ? cdekTariff.orderTotal : subtotal;
+  // CDEK: delivery paid at pickup — order total is items only
+  const grandTotal = subtotal;
 
   // ── Effects ───────────────────────────────────────────────────────────────────
 
@@ -590,12 +600,57 @@ export function CartPage() {
       setCdekTariff(null);
       setCdekCalcError(null);
       setPvzFilter("");
+      setPvzOpen(false);
     }
   }, [deliveryType]);
 
+  // Auto-calculate CDEK tariff whenever city/PVZ/cart changes — no button needed
   useEffect(() => {
     setCdekTariff(null);
-  }, [linesSig, selectedCity?.code, selectedPoint?.code]);
+    setCdekCalcError(null);
+
+    if (
+      deliveryType !== "CDEK" ||
+      !selectedCity ||
+      !selectedPoint ||
+      lines.length === 0
+    ) {
+      setCdekCalcPending(false);
+      return;
+    }
+
+    let cancelled = false;
+    setCdekCalcPending(true);
+
+    calculateCdekTariffByOrder({
+      toCityCode: selectedCity.code,
+      items: lines.map((l) =>
+        isDesignLine(l)
+          ? { designGarmentId: l.designGarmentId, quantity: l.qty }
+          : { productId: l.productId, quantity: l.qty },
+      ),
+    })
+      .then((t) => {
+        if (!cancelled) setCdekTariff(t);
+      })
+      .catch((err) => {
+        if (!cancelled)
+          setCdekCalcError(
+            err instanceof ApiError
+              ? err.message
+              : "Не удалось рассчитать сроки доставки СДЭК",
+          );
+      })
+      .finally(() => {
+        if (!cancelled) setCdekCalcPending(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+    // linesSig tracks lines changes; lines itself used inside via closure
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deliveryType, selectedPoint?.code, selectedCity?.code, linesSig]);
 
   useEffect(() => {
     if (step === 4) {
@@ -633,7 +688,7 @@ export function CartPage() {
           return (
             !!selectedCity &&
             !!selectedPoint &&
-            !!cdekTariff &&
+            !cdekCalcPending &&
             cdekRecipientName.trim().length > 0 &&
             cdekRecipientPhone.trim().length > 0
           );
@@ -657,9 +712,11 @@ export function CartPage() {
   function handleNext() {
     if (!canAdvance()) {
       setFormError(
-        step === 4 && selectedMethod?.requiresCitySearch && !cdekTariff
-          ? "Нажмите «Рассчитать доставку» и дождитесь результата"
-          : "Заполните все обязательные поля",
+        step === 4 && selectedMethod?.requiresCitySearch && cdekCalcPending
+          ? "Подождите, рассчитываем сроки доставки…"
+          : step === 4 && selectedMethod?.requiresCitySearch && !selectedPoint
+            ? "Выберите пункт выдачи СДЭК"
+            : "Заполните все обязательные поля",
       );
       return;
     }
@@ -682,34 +739,6 @@ export function CartPage() {
       return;
     }
     setStep((s) => Math.max(s - 1, 1));
-  }
-
-  // ── CDEK calculate ────────────────────────────────────────────────────────────
-
-  async function handleCalculateCdek() {
-    if (!selectedCity || !selectedPoint) return;
-    setCdekCalcError(null);
-    setCdekCalcPending(true);
-    try {
-      const t = await calculateCdekTariffByOrder({
-        toCityCode: selectedCity.code,
-        items: lines.map((l) =>
-          isDesignLine(l)
-            ? { designGarmentId: l.designGarmentId, quantity: l.qty }
-            : { productId: l.productId, quantity: l.qty },
-        ),
-      });
-      setCdekTariff(t);
-    } catch (err: unknown) {
-      setCdekTariff(null);
-      setCdekCalcError(
-        err instanceof ApiError
-          ? err.message
-          : "Не удалось рассчитать доставку СДЭК",
-      );
-    } finally {
-      setCdekCalcPending(false);
-    }
   }
 
   // ── Order mutation ────────────────────────────────────────────────────────────
@@ -745,10 +774,8 @@ export function CartPage() {
     let pvzCode: string | null = null;
 
     if (selectedMethod?.requiresCitySearch) {
-      if (!selectedCity || !selectedPoint || !cdekTariff) {
-        setFormError(
-          "Вернитесь к шагу 4 и рассчитайте стоимость доставки СДЭК",
-        );
+      if (!selectedCity || !selectedPoint) {
+        setFormError("Выберите город и пункт выдачи СДЭК");
         return;
       }
       address = buildCdekAddress(
@@ -1034,8 +1061,8 @@ export function CartPage() {
           return (
             <div className="flex flex-col gap-5">
               <p className="text-sm text-[--color-muted]">
-                Введите название города, выберите пункт выдачи СДЭК и
-                рассчитайте стоимость доставки.
+                Введите название города и выберите пункт выдачи СДЭК.
+                Сроки доставки рассчитываются автоматически.
               </p>
 
               <div className="flex flex-col gap-2">
@@ -1073,6 +1100,7 @@ export function CartPage() {
                               setSelectedCity(c);
                               setCdekCitySearch(label);
                               setPvzFilter("");
+                              setPvzOpen(false);
                             }}
                             className="w-full px-3 py-2.5 text-left text-sm text-black transition hover:bg-[--color-surface]"
                           >
@@ -1108,46 +1136,69 @@ export function CartPage() {
                         : all;
                       return (
                         <div className="flex flex-col gap-2">
-                          <label className="flex flex-col gap-1.5">
-                            <FieldLabel>Поиск ПВЗ</FieldLabel>
-                            <input
-                              type="text"
-                              value={pvzFilter}
-                              onChange={(e) => setPvzFilter(e.target.value)}
-                              placeholder="Код, улица или адрес"
-                              autoComplete="off"
-                              className={inputClass}
-                            />
-                          </label>
-                          <label className="flex flex-col gap-1.5">
-                            <FieldLabel>
-                              Пункт выдачи СДЭК * ({filtered.length} из{" "}
-                              {all.length})
-                            </FieldLabel>
-                            <select
-                              required
-                              value={selectedPoint?.code ?? ""}
-                              onChange={(e) => {
-                                const p =
-                                  all.find((x) => x.code === e.target.value) ??
-                                  null;
-                                setSelectedPoint(p);
+                          <FieldLabel>
+                            Пункт выдачи СДЭК * ({filtered.length} из {all.length})
+                          </FieldLabel>
+                          {/* Custom click-to-open PVZ dropdown */}
+                          <div className="relative">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setPvzOpen((o) => !o);
+                                setPvzFilter("");
                               }}
-                              className={inputClass}
+                              className="flex w-full items-center justify-between border border-[--color-border] bg-white px-3 py-2.5 text-sm text-left transition focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
                             >
-                              <option value="">Выберите ПВЗ</option>
-                              {filtered.map((p) => (
-                                <option key={p.code} value={p.code}>
-                                  {p.code} — {p.address || p.name}
-                                </option>
-                              ))}
-                            </select>
-                          </label>
-                          {filtered.length === 0 ? (
-                            <p className="text-xs text-amber-600">
-                              Ничего не найдено — измените запрос.
-                            </p>
-                          ) : null}
+                              <span className={selectedPoint ? "text-black" : "text-[--color-muted]"}>
+                                {selectedPoint
+                                  ? `${selectedPoint.code} — ${selectedPoint.address || selectedPoint.name}`
+                                  : "Выберите пункт выдачи…"}
+                              </span>
+                              <svg width="8" height="5" viewBox="0 0 8 5" fill="none" aria-hidden="true"
+                                className={cn("shrink-0 ml-2 transition-transform duration-150", pvzOpen && "rotate-180")}>
+                                <path d="M1 1l3 3 3-3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                              </svg>
+                            </button>
+                            {pvzOpen && (
+                              <div className="absolute z-20 left-0 right-0 top-full mt-0.5 border border-[--color-border] bg-white shadow-md">
+                                <div className="border-b border-[--color-border] p-2">
+                                  <input
+                                    type="text"
+                                    value={pvzFilter}
+                                    onChange={(e) => setPvzFilter(e.target.value)}
+                                    placeholder="Код, улица или адрес"
+                                    autoComplete="off"
+                                    autoFocus
+                                    className="w-full border border-[--color-border] px-3 py-2 text-sm outline-none focus:border-black focus:ring-1 focus:ring-black"
+                                  />
+                                </div>
+                                <ul className="m-0 max-h-52 overflow-y-auto list-none p-0">
+                                  {filtered.length === 0 ? (
+                                    <li className="px-3 py-2.5 text-xs text-amber-600">Ничего не найдено</li>
+                                  ) : filtered.map((p) => (
+                                    <li key={p.code}>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setSelectedPoint(p);
+                                          setPvzOpen(false);
+                                          setPvzFilter("");
+                                        }}
+                                        className={cn(
+                                          "w-full px-3 py-2.5 text-left text-sm transition hover:bg-[--color-surface]",
+                                          selectedPoint?.code === p.code ? "bg-[--color-surface] font-medium text-black" : "text-black",
+                                        )}
+                                      >
+                                        <span className="font-medium">{p.code}</span>
+                                        {" — "}
+                                        {p.address || p.name}
+                                      </button>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       );
                     })()
@@ -1159,52 +1210,31 @@ export function CartPage() {
                   ) : null}
 
                   {selectedPoint ? (
-                    <div className="flex flex-col gap-3">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        disabled={cdekCalcPending || totalQty < 1}
-                        onClick={() => void handleCalculateCdek()}
-                      >
-                        {cdekCalcPending
-                          ? "Рассчитываем…"
-                          : "Рассчитать доставку"}
-                      </Button>
-                      {cdekCalcError ? (
-                        <p className="text-sm text-[--color-danger]">
-                          {cdekCalcError}
+                    <div className="flex flex-col gap-2">
+                      {cdekCalcPending ? (
+                        <p className="text-xs text-[--color-muted]">
+                          Рассчитываем сроки доставки…
                         </p>
-                      ) : null}
-                      {cdekTariff ? (
-                        <div className="border border-emerald-200 bg-emerald-50 px-4 py-4">
-                          <div className="flex items-baseline justify-between gap-2">
+                      ) : cdekCalcError ? (
+                        <p className="text-xs text-amber-600">{cdekCalcError}</p>
+                      ) : cdekTariff ? (
+                        <div className="border border-[--color-border] bg-[--color-surface] px-4 py-3">
+                          <div className="flex items-center justify-between">
                             <span className="text-sm text-black">
-                              Стоимость доставки
-                            </span>
-                            <strong className="text-lg text-black">
-                              {formatMoney(cdekTariff.deliveryPrice)} ₸
-                            </strong>
-                          </div>
-                          <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[0.65rem] text-[--color-muted]">
-                            <span>
-                              Товары: {formatMoney(cdekTariff.itemsTotal)} ₸
-                            </span>
-                            <span>
-                              Итого: {formatMoney(cdekTariff.orderTotal)} ₸
-                            </span>
-                            <span>Вес: {cdekTariff.estimatedWeightGrams} г</span>
-                            {cdekTariff.minDays && cdekTariff.maxDays ? (
-                              <span>
-                                Срок: {cdekTariff.minDays}–{cdekTariff.maxDays}{" "}
-                                дн.
+                              Стоимость доставки:{" "}
+                              <span className="font-semibold">
+                                {formatMoney(cdekTariff.deliveryPrice)} ₸
                               </span>
-                            ) : null}
-                            {cdekTariff.sourcedFromStub ? (
-                              <span className="text-amber-600">
-                                (оценка без ключей СДЭК API)
-                              </span>
-                            ) : null}
+                            </span>
+                            <span className="text-[0.65rem] uppercase tracking-[0.08em] text-[--color-muted]">
+                              оплата при получении
+                            </span>
                           </div>
+                          {cdekTariff.minDays && cdekTariff.maxDays ? (
+                            <p className="mt-1 text-[0.65rem] text-[--color-muted]">
+                              Срок: {cdekTariff.minDays}–{cdekTariff.maxDays} дн.
+                            </p>
+                          ) : null}
                         </div>
                       ) : null}
                     </div>
@@ -1439,11 +1469,13 @@ export function CartPage() {
                     </div>
                   </>
                 ) : null}
-                {selectedMethod?.requiresCitySearch && cdekTariff ? (
+                {selectedMethod?.requiresCitySearch ? (
                   <div className="flex justify-between gap-4 border-t border-[--color-border] pt-2">
-                    <dt className="text-[--color-muted]">Стоимость доставки</dt>
-                    <dd className="m-0 font-semibold text-black">
-                      {formatMoney(cdekTariff.deliveryPrice)} ₸
+                    <dt className="text-[--color-muted]">Доставка СДЭК</dt>
+                    <dd className="m-0 text-right text-[--color-muted]">
+                      {cdekTariff
+                        ? `${formatMoney(cdekTariff.deliveryPrice)} ₸ · оплата при получении`
+                        : "оплата при получении"}
                     </dd>
                   </div>
                 ) : selectedMethod?.estimatedFeeKzt === 0 ? (
@@ -1514,12 +1546,10 @@ export function CartPage() {
                     {formatMoney(subtotal)} ₸
                   </span>
                 </div>
-                {selectedMethod?.requiresCitySearch && cdekTariff ? (
+                {deliveryType === "CDEK" ? (
                   <div className="flex justify-between">
                     <span className="text-[--color-muted]">Доставка СДЭК</span>
-                    <span className="font-medium text-black">
-                      {formatMoney(cdekTariff.deliveryPrice)} ₸
-                    </span>
+                    <span className="text-[--color-muted]">при получении</span>
                   </div>
                 ) : null}
                 <div className="flex justify-between border-t border-[--color-border] pt-2">
@@ -1580,7 +1610,7 @@ export function CartPage() {
       <div className="py-14">
         <Container>
           <motion.h1
-            className="mb-6 text-4xl font-semibold uppercase tracking-[0.04em] text-black"
+            className="mb-6 text-4xl font-extrabold uppercase tracking-[-0.02em] text-black md:text-5xl"
             initial={{ opacity: 0, y: reduceMotion ? 0 : 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: reduceMotion ? 0 : 0.3 }}
@@ -1608,9 +1638,13 @@ export function CartPage() {
               <p className="m-0 text-sm text-[--color-muted]">
                 Пока пусто — загляните в каталог.
               </p>
-              <Button className="mt-6" onClick={() => navigate("/catalog")}>
+              <button
+                type="button"
+                onClick={() => navigate("/catalog")}
+                className="mt-6 bg-black px-6 py-3 text-[12px] font-bold uppercase tracking-[0.14em] text-white transition hover:bg-zinc-800"
+              >
                 В каталог
-              </Button>
+              </button>
             </div>
           ) : (
             <div className="mx-auto max-w-2xl">
@@ -1706,15 +1740,16 @@ export function CartPage() {
                   >
                     Очистить
                   </button>
-                  <Button
-                    size="lg"
+                  <button
+                    type="button"
                     onClick={() => {
                       setPhase("checkout");
                       setStep(1);
                     }}
+                    className="bg-black px-8 py-4 text-[13px] font-bold uppercase tracking-[0.14em] text-white transition hover:bg-zinc-800"
                   >
                     Оформить заказ
-                  </Button>
+                  </button>
                 </div>
               </div>
 
@@ -1737,7 +1772,7 @@ export function CartPage() {
     <div className="py-10">
       <Container>
         <div className="mb-2">
-          <h1 className="text-2xl font-semibold uppercase tracking-[0.05em] text-black">
+          <h1 className="text-3xl font-extrabold uppercase tracking-[-0.02em] text-black md:text-4xl">
             Оформление заказа
           </h1>
           <p className="mt-1 text-sm text-[--color-muted]">
@@ -1791,20 +1826,24 @@ export function CartPage() {
                   </button>
 
                   {step < 5 ? (
-                    <Button type="button" size="lg" onClick={handleNext}>
-                      Продолжить
-                    </Button>
-                  ) : (
-                    <Button
+                    <button
                       type="button"
-                      size="lg"
+                      onClick={handleNext}
+                      className="bg-black px-8 py-4 text-[13px] font-bold uppercase tracking-[0.14em] text-white transition hover:bg-zinc-800"
+                    >
+                      Продолжить
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
                       disabled={orderMutation.isPending}
                       onClick={handleSubmitOrder}
+                      className="bg-black px-8 py-4 text-[13px] font-bold uppercase tracking-[0.14em] text-white transition hover:bg-zinc-800 disabled:opacity-50"
                     >
                       {orderMutation.isPending
                         ? "Отправляем…"
                         : "Подтвердить заказ"}
-                    </Button>
+                    </button>
                   )}
                 </div>
               </motion.div>
@@ -1816,7 +1855,6 @@ export function CartPage() {
               lines={lines.map(toSidebarLine)}
               subtotal={subtotal}
               deliveryType={deliveryType}
-              cdekTariff={cdekTariff}
               selectedMethod={selectedMethod}
             />
           </div>

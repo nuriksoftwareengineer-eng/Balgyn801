@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "@/app/auth-context";
-import { Button } from "@/components/ui/button";
+import { Container } from "@/shared/ui/container";
 
 export function ProfilePage() {
   const { user, logout } = useAuth();
@@ -8,29 +8,36 @@ export function ProfilePage() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-white">
-      <div className="mx-auto max-w-[520px] px-5 py-12">
-        <h1 className="mb-8 text-2xl font-semibold uppercase tracking-[0.06em] text-black">
-          Профиль
-        </h1>
+    <>
+      {/* ── Hero ────────────────────────────────────────────── */}
+      <div className="border-b border-[--color-border] bg-black">
+        <Container className="py-12 md:py-16">
+          <h1 className="text-4xl font-extrabold uppercase tracking-[-0.01em] text-white md:text-5xl">
+            Профиль
+          </h1>
+        </Container>
+      </div>
 
-        <div className="border border-[--color-border] bg-white px-6 py-6">
-          <dl className="flex flex-col gap-4">
+      {/* ── Content ─────────────────────────────────────────── */}
+      <Container className="py-10 md:py-14">
+        <div className="max-w-[480px]">
+          {/* User info */}
+          <dl className="flex flex-col gap-6 border-b border-[--color-border] pb-8">
             <div>
-              <dt className="text-[0.6rem] font-medium uppercase tracking-[0.14em] text-[--color-muted]">
+              <dt className="mb-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[--color-muted]">
                 Email
               </dt>
-              <dd className="mt-1 text-sm text-black">{user.email}</dd>
+              <dd className="text-[15px] text-black">{user.email}</dd>
             </div>
             <div>
-              <dt className="text-[0.6rem] font-medium uppercase tracking-[0.14em] text-[--color-muted]">
+              <dt className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[--color-muted]">
                 Роли
               </dt>
-              <dd className="mt-1 flex flex-wrap gap-2">
+              <dd className="flex flex-wrap gap-2">
                 {user.roles.map((role) => (
                   <span
                     key={role}
-                    className="border border-[--color-border] px-2 py-0.5 text-[0.6rem] font-medium uppercase tracking-[0.1em] text-black"
+                    className="border border-black px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-black"
                   >
                     {role}
                   </span>
@@ -39,24 +46,24 @@ export function ProfilePage() {
             </div>
           </dl>
 
-          <div className="mt-6 flex flex-col gap-3 border-t border-[--color-border] pt-6">
+          {/* Actions */}
+          <div className="mt-8 flex flex-col gap-4">
             <Link
               to="/orders"
-              className="text-[0.7rem] font-medium uppercase tracking-[0.14em] text-black underline underline-offset-2 hover:text-[--color-muted]"
+              className="text-[13px] font-semibold uppercase tracking-[0.1em] text-black underline underline-offset-4 hover:opacity-60 transition-opacity"
             >
-              Мои заказы
+              Мои заказы →
             </Link>
-            <Button
-              variant="outline"
-              size="sm"
+            <button
+              type="button"
               onClick={logout}
-              className="w-fit"
+              className="w-fit text-[13px] font-semibold uppercase tracking-[0.1em] text-[--color-muted] underline underline-offset-4 hover:text-black transition-colors"
             >
               Выйти из аккаунта
-            </Button>
+            </button>
           </div>
         </div>
-      </div>
-    </div>
+      </Container>
+    </>
   );
 }

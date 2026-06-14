@@ -32,6 +32,9 @@ export function AdminLayout() {
           <NavLink to="/admin/customers" className={navClass}>
             Клиенты
           </NavLink>
+          <NavLink to="/admin/size-charts" className={navClass}>
+            Размерные сетки
+          </NavLink>
         </nav>
         <div className="mt-auto border-t border-white/10 pt-4">
           <p className="truncate text-xs text-zinc-500">{user?.email}</p>

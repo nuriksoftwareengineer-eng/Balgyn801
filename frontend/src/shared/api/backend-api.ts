@@ -432,3 +432,37 @@ export async function getCatalogDesigns(
 export async function getCatalogDesign(slug: string): Promise<DesignDetail> {
   return apiFetch<DesignDetail>(`/catalog/designs/${encodeURIComponent(slug)}`);
 }
+
+// ── Size chart images ────────────────────────────────────────────────────────
+
+export interface SizeChartImage {
+  id: number;
+  garmentType: string;
+  imageUrl: string;
+  title: string | null;
+}
+
+/** All active size chart images (public). */
+export async function getSizeCharts(): Promise<SizeChartImage[]> {
+  return apiFetch<SizeChartImage[]>("/catalog/size-charts");
+}
+
+/** Admin: create or replace size chart for a garment type. */
+export async function upsertSizeChart(
+  body: { garmentType: string; imageUrl: string; title?: string },
+  token: string,
+): Promise<SizeChartImage> {
+  return apiFetch<SizeChartImage>("/admin/size-charts", {
+    method: "POST",
+    body: JSON.stringify(body),
+    token,
+  });
+}
+
+/** Admin: soft-delete size chart for a garment type. */
+export async function deleteSizeChart(garmentType: string, token: string): Promise<void> {
+  return apiFetch<void>(`/admin/size-charts/${encodeURIComponent(garmentType)}`, {
+    method: "DELETE",
+    token,
+  });
+}

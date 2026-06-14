@@ -1,169 +1,75 @@
 import { Link } from "react-router-dom";
-import { Container } from "@/shared/ui/container";
+import { Marquee } from "@/widgets/home/Marquee";
+
+const linkClass =
+  "text-[14px] text-[#D9D9D9] transition-colors hover:text-white";
 
 export function SiteFooter() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="border-t border-[--color-border] bg-white">
-      <Container className="py-14">
-        <div className="grid gap-10 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
+    <footer className="bg-black text-white">
+      <div className="border-y border-white/20 py-4 md:py-6">
+        <Marquee
+          items={["balgyn", "✸", "оставайся свежей", "✸", "вышивка · алматы", "✸"]}
+          speed={70}
+        />
+      </div>
 
-          {/* Brand */}
-          <div>
-            <p className="text-base font-semibold uppercase tracking-[0.18em] text-black">
-              BALGYN
-            </p>
-            <p className="mt-3 max-w-xs text-xs leading-relaxed text-[--color-muted]">
-              Вышивка и уличная культура. Дизайн ваш — качество наше.
-            </p>
+      <div className="container mx-auto px-4 pb-12 pt-20 md:px-8 md:pt-24">
+        <div className="mb-20 grid grid-cols-2 gap-12 md:grid-cols-4 md:mb-24">
+          <div className="flex flex-col gap-4">
+            <h4 className="mb-2 text-[12px] font-semibold uppercase tracking-wider">Магазин</h4>
+            <Link to="/catalog" className={linkClass}>Каталог</Link>
+            <Link to="/custom-design" className={linkClass}>Свой дизайн</Link>
+            <Link to="/about" className={linkClass}>О нас</Link>
           </div>
 
-          {/* Buyers */}
-          <div>
-            <p className="mb-4 text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-black">
-              Покупателям
-            </p>
-            <ul className="space-y-3">
-              <li>
-                <Link
-                  to="/terms"
-                  className="text-xs text-[--color-muted] transition-colors hover:text-black"
-                >
-                  Пользовательское соглашение
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/privacy"
-                  className="text-xs text-[--color-muted] transition-colors hover:text-black"
-                >
-                  Политика конфиденциальности
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/returns"
-                  className="text-xs text-[--color-muted] transition-colors hover:text-black"
-                >
-                  Возврат и обмен
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/delivery"
-                  className="text-xs text-[--color-muted] transition-colors hover:text-black"
-                >
-                  Доставка и оплата
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/contacts"
-                  className="text-xs text-[--color-muted] transition-colors hover:text-black"
-                >
-                  Контакты
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/track-order"
-                  className="text-xs text-[--color-muted] transition-colors hover:text-black"
-                >
-                  Отследить заказ
-                </Link>
-              </li>
-            </ul>
+          <div className="flex flex-col gap-4">
+            <h4 className="mb-2 text-[12px] font-semibold uppercase tracking-wider">Помощь</h4>
+            <Link to="/delivery" className={linkClass}>Доставка и оплата</Link>
+            <Link to="/returns" className={linkClass}>Возврат и обмен</Link>
+            <Link to="/track-order" className={linkClass}>Отследить заказ</Link>
+            <Link to="/contacts" className={linkClass}>Контакты</Link>
           </div>
 
-          {/* Company */}
-          <div>
-            <p className="mb-4 text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-black">
-              Компания
-            </p>
-            <ul className="space-y-3">
-              <li>
-                <Link
-                  to="/about"
-                  className="text-xs text-[--color-muted] transition-colors hover:text-black"
-                >
-                  О нас
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/contacts"
-                  className="text-xs text-[--color-muted] transition-colors hover:text-black"
-                >
-                  Контакты
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/catalog"
-                  className="text-xs text-[--color-muted] transition-colors hover:text-black"
-                >
-                  Каталог
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/custom-design"
-                  className="text-xs text-[--color-muted] transition-colors hover:text-black"
-                >
-                  Свой дизайн
-                </Link>
-              </li>
-            </ul>
+          <div className="flex flex-col gap-4">
+            <h4 className="mb-2 text-[12px] font-semibold uppercase tracking-wider">Соцсети</h4>
+            <a href="https://instagram.com/balgyn_shop" target="_blank" rel="noopener noreferrer" className={linkClass}>Instagram</a>
+            <a href="https://tiktok.com/@balgyn_shop" target="_blank" rel="noopener noreferrer" className={linkClass}>TikTok</a>
+            <a href="https://instagram.com/balgyn_shop/reels/" target="_blank" rel="noopener noreferrer" className={linkClass}>Reels</a>
           </div>
 
-          {/* Social */}
-          <div>
-            <p className="mb-4 text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-black">
-              Соцсети
-            </p>
-            <ul className="space-y-3">
-              <li>
-                <a
-                  href="https://instagram.com/balgyn_shop"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs text-[--color-muted] transition-colors hover:text-black"
-                >
-                  Instagram
-                </a>
-              </li>
-              <li>
-                <a
-                  href="https://tiktok.com/@balgyn_shop"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs text-[--color-muted] transition-colors hover:text-black"
-                >
-                  TikTok
-                </a>
-              </li>
-              <li>
-                <a
-                  href="https://instagram.com/balgyn_shop/reels/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs text-[--color-muted] transition-colors hover:text-black"
-                >
-                  Reels
-                </a>
-              </li>
-            </ul>
+          <div className="col-span-2 flex flex-col gap-4 md:col-span-1">
+            <h4 className="mb-2 text-[12px] font-semibold uppercase tracking-wider">Рассылка</h4>
+            <p className="mb-2 text-[14px] text-[#D9D9D9]">Только обновления и дроп-релизы.</p>
+            <a
+              href="https://instagram.com/balgyn_shop"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex w-fit items-center gap-2 border-b border-[#7A7A7A] pb-2 text-[14px] text-[#D9D9D9] transition-colors hover:border-white hover:text-white"
+            >
+              Подписаться в Instagram →
+            </a>
           </div>
         </div>
 
-        {/* Bottom strip */}
-        <div className="mt-12 border-t border-[--color-border] pt-6">
-          <p className="text-[0.6rem] uppercase tracking-[0.14em] text-[--color-muted]">
-            © {year} Balgyn
+        <div className="flex flex-col gap-8 border-t border-[#2A2A2A] pt-8">
+          <p className="text-[44px] font-extrabold uppercase leading-none tracking-[-0.04em] md:text-[72px]">
+            BALGYN
           </p>
+          <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
+            <p className="text-center text-[12px] uppercase tracking-wider text-[#7A7A7A] md:text-left">
+              © {year} BALGYN · Все права защищены · Алматы, KZ
+            </p>
+            <div className="flex flex-wrap justify-center gap-6 text-[10px] uppercase tracking-[0.2em] text-[#7A7A7A]">
+              <Link to="/privacy" className="transition-colors hover:text-white">Политика</Link>
+              <Link to="/terms" className="transition-colors hover:text-white">Оферта</Link>
+              <Link to="/returns" className="transition-colors hover:text-white">Возврат</Link>
+            </div>
+          </div>
         </div>
-      </Container>
+      </div>
     </footer>
   );
 }
