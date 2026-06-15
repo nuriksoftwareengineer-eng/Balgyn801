@@ -218,13 +218,19 @@ export async function uploadMedia(
   return JSON.parse(text) as MediaUploadResponse;
 }
 
-/** Оформление заказа (публичный POST). Удобно вызвать из корзины, когда заполнены контакты и адрес. */
+/**
+ * Оформление заказа. Checkout доступен только авторизованным пользователям (гейт во фронте),
+ * поэтому передаём JWT — бэкенд привяжет заказ к аккаунту, и он попадёт в историю заказов.
+ * `token` опционален для обратной совместимости; при его отсутствии заказ создаётся анонимно.
+ */
 export async function createOrder(
   body: CreateOrderRequest,
+  token?: string | null,
 ): Promise<OrderResponse> {
   return apiFetch<OrderResponse>("/order", {
     method: "POST",
     body: JSON.stringify(body),
+    token,
   });
 }
 

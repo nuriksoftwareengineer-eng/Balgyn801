@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/app/auth-context";
 import { ApiError } from "@/shared/api/http";
@@ -7,7 +7,7 @@ const inputClass =
   "w-full border-b border-[--color-border] bg-transparent py-3 text-[15px] text-black outline-none transition placeholder:text-[--color-muted] focus:border-black";
 
 export function RegisterPage() {
-  const { register, user, loading } = useAuth();
+  const { register } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const from = (location.state as { from?: string } | null)?.from ?? undefined;
@@ -16,16 +16,6 @@ export function RegisterPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [afterAuth, setAfterAuth] = useState(false);
-
-  useEffect(() => {
-    if (!afterAuth || loading) return;
-    if (!user) return;
-    let dest = from ?? "/";
-    if (dest.startsWith("/admin") && !user.roles.includes("ADMIN")) dest = "/";
-    navigate(dest, { replace: true });
-    queueMicrotask(() => setAfterAuth(false));
-  }, [afterAuth, loading, user, from, navigate]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -33,7 +23,10 @@ export function RegisterPage() {
     setSubmitting(true);
     try {
       await register(email.trim(), password);
-      setAfterAuth(true);
+      // Успешная регистрация НЕ авторизует пользователя автоматически.
+      // Перенаправляем на страницу входа; `from` сохраняем, чтобы после входа
+      // вернуть пользователя в исходное место (например, в корзину/checkout).
+      navigate("/login", { replace: true, state: { from, registered: true } });
     } catch (err) {
       setError(
         err instanceof ApiError ? err.message : "Не удалось зарегистрироваться",

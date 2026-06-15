@@ -2,6 +2,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "@/app/auth-context";
 import { useCart } from "@/app/use-cart";
 import { isLegacyLine, isDesignLine } from "@/app/cart-context";
 import {
@@ -48,6 +49,10 @@ const DELIVERY_REGIONS: { iso2: string; label: string; hint: string }[] = [
 ];
 
 const STEP_LABELS = ["Контакты", "Регион", "Доставка", "Детали", "Итог"] as const;
+
+// Флаг «намерения оформить заказ»: ставится при попытке checkout без авторизации,
+// переживает редирект на /login и читается после возврата на /cart.
+const CHECKOUT_INTENT_KEY = "balgyn_checkout_intent";
 
 const inputClass =
   "w-full border-b border-[--color-border] bg-transparent py-3 text-sm text-black outline-none transition placeholder:text-[--color-muted] focus:border-black";
@@ -476,6 +481,7 @@ export function CartPage() {
   const location = useLocation();
   const { lines, totalQty, subtotal, increment, decrement, removeLine, clear } =
     useCart();
+  const { user, token } = useAuth();
   const reduceMotion = useReducedMotion();
 
   // ── UI phase ─────────────────────────────────────────────────────────────────
@@ -582,6 +588,20 @@ export function CartPage() {
       navigate(location.pathname, { replace: true, state: {} });
     }
   }, [location.pathname, location.state, navigate]);
+
+  // Возврат в checkout после авторизации: гость, нажавший «Оформить заказ»,
+  // был отправлен на /login с выставленным флагом. После успешного входа он
+  // возвращается на /cart — здесь подхватываем намерение и открываем оформление.
+  useEffect(() => {
+    if (!user) return;
+    if (sessionStorage.getItem(CHECKOUT_INTENT_KEY)) {
+      sessionStorage.removeItem(CHECKOUT_INTENT_KEY);
+      if (lines.length > 0) {
+        setPhase("checkout");
+        setStep(1);
+      }
+    }
+  }, [user, lines.length]);
 
   // Reset delivery type when country changes and the current type is unavailable.
   useEffect(() => {
@@ -744,7 +764,7 @@ export function CartPage() {
   // ── Order mutation ────────────────────────────────────────────────────────────
 
   const orderMutation = useMutation({
-    mutationFn: (body: CreateOrderRequest) => createOrder(body),
+    mutationFn: (body: CreateOrderRequest) => createOrder(body, token),
     onSuccess: (order) => {
       setFormError(null);
       setPaymentError(null);
@@ -1743,6 +1763,13 @@ export function CartPage() {
                   <button
                     type="button"
                     onClick={() => {
+                      // Checkout доступен только авторизованным. Гостя отправляем
+                      // на вход/регистрацию и возвращаем в checkout после входа.
+                      if (!user) {
+                        sessionStorage.setItem(CHECKOUT_INTENT_KEY, "1");
+                        navigate("/login", { state: { from: "/cart" } });
+                        return;
+                      }
                       setPhase("checkout");
                       setStep(1);
                     }}

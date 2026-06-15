@@ -117,9 +117,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const register = useCallback(async (email: string, password: string) => {
-    const res = await registerApi({ email, password });
-    writeStoredTokens(res.accessToken, res.refreshToken);
-    setToken(res.accessToken);
+    // Регистрация НЕ выполняет автоматический вход. Бэкенд возвращает токены,
+    // но мы их намеренно игнорируем: пользователь должен явно войти на /login.
+    // Это убирает «тихую» авторизацию сразу после создания аккаунта.
+    await registerApi({ email, password });
   }, []);
 
   const logout = useCallback(() => {

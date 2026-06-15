@@ -12,8 +12,15 @@ import java.util.Optional;
 @Data
 public class PaymentWebhookProperties {
 
-    /** Per-provider HMAC-SHA256 signing secret. Empty value = bypass check (dev/stub mode). */
+    /** Per-provider HMAC-SHA256 signing secret. Empty value = подпись не настроена для провайдера. */
     private Map<String, String> secrets = new HashMap<>();
+
+    /**
+     * Разрешать webhook без подписи, когда секрет провайдера пуст.
+     * Безопасный дефолт — {@code false} (прод: неподписанный webhook отклоняется).
+     * Включать только в локальном dev/stub-режиме.
+     */
+    private boolean allowUnsigned = false;
 
     /** Max payment init calls per minute per remote IP. */
     private int initRateLimitPerMinute = 10;

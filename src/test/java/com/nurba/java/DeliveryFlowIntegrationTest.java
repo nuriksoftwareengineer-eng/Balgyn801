@@ -133,7 +133,7 @@ class DeliveryFlowIntegrationTest {
      * server-computed fee folded into the total.
      */
     @Test
-    void createOrderCdek_backendComputesFee_andOrderSucceeds() throws Exception {
+    void createOrderCdek_deliveryPaidOnPickup_feeNotIncludedInTotal() throws Exception {
         String body = """
                 {
                   "customerName": "Test User",
@@ -154,20 +154,24 @@ class DeliveryFlowIntegrationTest {
                 }
                 """.formatted(productId);
 
+        // Бизнес-правило СДЭК: доставка оплачивается при получении в ПВЗ. Бэкенд намеренно
+        // НЕ включает стоимость доставки в сумму заказа (OrderServiceImpl обнуляет deliveryFee
+        // для CDEK), поэтому deliveryFee == null, а totalPrice = только стоимость товаров.
         String response = mockMvc.perform(post("/api/v1/order")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("PENDING_PAYMENT"))
-                .andExpect(jsonPath("$.deliveryFee").isNumber())
+                .andExpect(jsonPath("$.deliveryType").value("CDEK"))
+                .andExpect(jsonPath("$.deliveryFee").isEmpty())
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
 
         JsonNode json = objectMapper.readTree(response);
-        BigDecimal deliveryFee = json.get("deliveryFee").decimalValue();
+        assertThat(json.get("deliveryFee").isNull()).isTrue();
         BigDecimal totalPrice = json.get("totalPrice").decimalValue();
-        assertThat(deliveryFee).isGreaterThan(BigDecimal.ZERO);
-        assertThat(totalPrice).isEqualByComparingTo(new BigDecimal("33000.00").add(deliveryFee));
+        // Товары = 33000.00; доставка СДЭК при получении → totalPrice без доставки.
+        assertThat(totalPrice).isEqualByComparingTo(new BigDecimal("33000.00"));
     }
 }

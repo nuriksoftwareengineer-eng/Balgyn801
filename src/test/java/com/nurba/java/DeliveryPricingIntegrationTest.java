@@ -243,23 +243,26 @@ class DeliveryPricingIntegrationTest {
     }
 
     @Test
-    void cdek_forCisCountry_computesPositiveFee() throws Exception {
+    void cdek_forCisCountry_deliveryPaidOnPickup_feeNotInTotal() throws Exception {
         String body = """
                 { "customerName": "T", "customerPhone": "+77000000000",
                   "deliveryType": "CDEK", "countryIso2": "RU", "items": [ %s ], %s }
                 """.formatted(item(), addressBlock("Москва"));
 
+        // СДЭК оплачивается при получении: deliveryFee намеренно не включается в сумму заказа
+        // (OrderServiceImpl обнуляет фи для CDEK) → deliveryFee == null, totalPrice = стоимость товаров.
         String response = mockMvc.perform(post("/api/v1/order")
                         .contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.deliveryFee").isNumber())
+                .andExpect(jsonPath("$.deliveryType").value("CDEK"))
+                .andExpect(jsonPath("$.deliveryFee").isEmpty())
                 .andReturn().getResponse().getContentAsString();
 
         JsonNode json = objectMapper.readTree(response);
-        BigDecimal deliveryFee = json.get("deliveryFee").decimalValue();
+        org.assertj.core.api.Assertions.assertThat(json.get("deliveryFee").isNull()).isTrue();
         BigDecimal totalPrice = json.get("totalPrice").decimalValue();
-        org.assertj.core.api.Assertions.assertThat(deliveryFee).isGreaterThan(BigDecimal.ZERO);
+        // Товары = 12000.00; доставка СДЭК при получении → totalPrice без доставки.
         org.assertj.core.api.Assertions.assertThat(totalPrice)
-                .isEqualByComparingTo(new BigDecimal("12000.00").add(deliveryFee));
+                .isEqualByComparingTo(new BigDecimal("12000.00"));
     }
 }

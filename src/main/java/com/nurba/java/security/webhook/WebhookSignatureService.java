@@ -21,8 +21,9 @@ import java.util.Optional;
  * The HMAC is computed over the raw UTF-8 request body using the per-provider secret
  * configured in {@code app.payment.webhook.secrets.<PROVIDER>}.</p>
  *
- * <p>If no secret is configured for a provider the check is bypassed — this allows
- * local development and stub testing without real provider credentials.</p>
+ * <p>If no secret is configured for a provider the webhook is rejected by default
+ * (prod-safe). Unsigned webhooks are only accepted when {@code app.payment.webhook.allow-unsigned=true}
+ * is explicitly set — for local development and stub testing without real provider credentials.</p>
  */
 @Service
 @RequiredArgsConstructor
@@ -35,13 +36,16 @@ public class WebhookSignatureService {
     private final PaymentWebhookProperties properties;
 
     /**
-     * Returns {@code true} if the signature is valid or if no secret is configured.
-     * Returns {@code false} if a secret is configured but the header is absent/wrong.
+     * Returns {@code true} only if the signature is valid. If no secret is configured,
+     * returns {@code allow-unsigned} (false in prod → reject). Returns {@code false} if a
+     * secret is configured but the header is absent/wrong.
      */
     public boolean isValid(PaymentProvider provider, byte[] body, String signatureHeader) {
         Optional<String> secret = properties.getSecret(provider);
         if (secret.isEmpty()) {
-            return true;  // dev/stub mode — bypass
+            // Секрет не настроен: в проде (allow-unsigned=false) отклоняем неподписанный webhook,
+            // чтобы исключить подделку «оплачено». Bypass возможен только явным opt-in в dev/stub.
+            return properties.isAllowUnsigned();
         }
         if (signatureHeader == null || !signatureHeader.startsWith(PREFIX)) {
             return false;

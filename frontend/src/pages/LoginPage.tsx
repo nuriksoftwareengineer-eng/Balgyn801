@@ -11,6 +11,8 @@ export function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const from = (location.state as { from?: string } | null)?.from ?? undefined;
+  const registered =
+    (location.state as { registered?: boolean } | null)?.registered ?? false;
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -56,6 +58,15 @@ export function LoginPage() {
           Регистрация
         </Link>
       </p>
+
+      {registered ? (
+        <p
+          className="mb-6 border border-emerald-200 bg-emerald-50 px-4 py-3 text-[13px] font-medium text-emerald-700"
+          role="status"
+        >
+          Аккаунт создан. Войдите, пожалуйста.
+        </p>
+      ) : null}
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-6">
         <label className="flex flex-col gap-1">
