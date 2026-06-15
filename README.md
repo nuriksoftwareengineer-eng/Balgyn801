@@ -1,5 +1,38 @@
 # Balgyn801 — Осталось сделать
 
+## 🚀 Быстрый старт (одна команда, без ручного ввода переменных)
+
+Конфигурация читается из файла `.env` в корне проекта — экспортировать `JWT_SECRET` вручную в
+PowerShell/Linux **не нужно**.
+
+### Вариант A — Docker (рекомендуется)
+
+```bash
+git clone <repo-url> balgyn && cd balgyn
+cp .env.example .env          # Windows PowerShell: copy .env.example .env
+docker compose up --build
+```
+
+Бэкенд — http://localhost:8080 · фронтенд — http://localhost:5174 · Swagger — http://localhost:8080/swagger-ui.html
+
+### Вариант B — Локально, без Docker (нужны JDK 21 и PostgreSQL на :5432)
+
+```bash
+cp .env.example .env          # Windows PowerShell: copy .env.example .env
+./gradlew bootRun             # Windows: .\gradlew.bat bootRun
+```
+
+Spring Boot сам подхватывает `.env` (см. `DotenvEnvironmentPostProcessor`) — переменные в терминал вводить не нужно.
+
+### Про `.env`
+
+- `JWT_SECRET` — единственная обязательная переменная (HS256, ≥ 32 байт). В `.env.example` лежит готовое
+  DEV-значение; для прода сгенерируйте своё: `openssl rand -base64 48`.
+- Если `JWT_SECRET` не задан — приложение не стартует и выводит понятную подсказку (дефолта в коде нет).
+- `.env` в `.gitignore` и не коммитится. CDEK работает в stub-режиме, реальные ключи не нужны.
+
+---
+
 Полный порядок и схемы: `docs/PLAN_AND_ARCHITECTURE.md`.
 
 ## Этап 2 — Медиа (хвост после того, что уже в коде)
