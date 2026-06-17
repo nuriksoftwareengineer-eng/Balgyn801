@@ -14,5 +14,8 @@ public class CollectionDetailResponse {
     private String groupName;
     private String name;
     private String slug;
+    private String description;
+    private String coverImageUrl;
+    private String bannerImageUrl;
     private List<DesignResponse> designs;
 }

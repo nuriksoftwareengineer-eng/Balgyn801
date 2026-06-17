@@ -9,17 +9,16 @@ import {
 } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
-  AUTH_REFRESH_STORAGE_KEY,
   AUTH_TOKEN_STORAGE_KEY,
   clearStoredToken,
-  readStoredRefresh,
   readStoredToken,
-  writeStoredTokens,
+  writeStoredToken,
 } from "@/shared/lib/auth-storage";
 import {
   getMe,
   login as loginApi,
-  refreshAuth,
+  logoutAuth,
+  refreshCookieAuth,
   register as registerApi,
 } from "@/shared/api/backend-api";
 import { ApiError, setAccessTokenRefresher } from "@/shared/api/http";
@@ -47,13 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     function onStorage(e: StorageEvent) {
       if (e.storageArea !== localStorage) return;
-      if (
-        e.key !== null &&
-        e.key !== AUTH_TOKEN_STORAGE_KEY &&
-        e.key !== AUTH_REFRESH_STORAGE_KEY
-      ) {
-        return;
-      }
+      if (e.key !== null && e.key !== AUTH_TOKEN_STORAGE_KEY) return;
       setToken(readStoredToken());
     }
     window.addEventListener("storage", onStorage);
@@ -62,11 +55,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     setAccessTokenRefresher(async () => {
-      const refresh = readStoredRefresh();
-      if (!refresh) return null;
       try {
-        const res = await refreshAuth({ refreshToken: refresh });
-        writeStoredTokens(res.accessToken, res.refreshToken);
+        const res = await refreshCookieAuth();
+        writeStoredToken(res.accessToken);
         setToken(res.accessToken);
         return res.accessToken;
       } catch {
@@ -112,7 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(async (email: string, password: string) => {
     const res = await loginApi({ email, password });
-    writeStoredTokens(res.accessToken, res.refreshToken);
+    writeStoredToken(res.accessToken);
     setToken(res.accessToken);
   }, []);
 
@@ -127,6 +118,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     clearStoredToken();
     setToken(null);
     setUser(null);
+    // Сервер очищает HttpOnly refresh-cookie; ошибки игнорируем (уже вышли локально).
+    logoutAuth().catch(() => undefined);
     // Очищаем кэш React Query (профиль, история заказов), чтобы следующий
     // пользователь не увидел чужих данных. Корзину НЕ трогаем: она хранится
     // по идентификатору пользователя и восстановится при повторном входе под

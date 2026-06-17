@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -35,6 +37,11 @@ public class Design {
 
     @Column(name = "main_image_url", length = 512)
     private String mainImageUrl;
+
+    /** Галерея дополнительных изображений (список URL). Главное фото — отдельно в mainImageUrl. */
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    private List<String> gallery = new ArrayList<>();
 
     @Column(nullable = false)
     private Boolean active = true;

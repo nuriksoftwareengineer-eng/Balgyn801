@@ -16,5 +16,13 @@ public class CreateCollectionRequest {
     @NotBlank
     private String slug;
 
+    private String description;
+
+    /** URL обложки коллекции (через POST /api/v1/media/upload). */
+    private String coverImageUrl;
+
+    /** URL баннера коллекции (через POST /api/v1/media/upload). */
+    private String bannerImageUrl;
+
     private Integer sortOrder = 0;
 }

@@ -4,6 +4,9 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Data
 public class CreateDesignRequest {
 
@@ -19,4 +22,7 @@ public class CreateDesignRequest {
     private String description;
 
     private String mainImageUrl;
+
+    /** Дополнительные изображения галереи (список URL). Главное фото — в mainImageUrl. */
+    private List<String> gallery = new ArrayList<>();
 }

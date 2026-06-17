@@ -15,6 +15,7 @@ public class DesignDetailResponse {
     private String slug;
     private String description;
     private String mainImageUrl;
+    private List<String> gallery;
     private Long collectionId;
     private String collectionName;
     private String collectionSlug;

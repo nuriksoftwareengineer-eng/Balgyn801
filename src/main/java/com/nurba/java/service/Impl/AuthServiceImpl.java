@@ -86,6 +86,20 @@ public class AuthServiceImpl implements AuthService {
         return buildAuthResponse(user);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public AuthResponse refreshWithToken(String rawToken) {
+        String email;
+        try {
+            email = jwtService.validateRefreshToken(rawToken.trim());
+        } catch (RuntimeException ex) {
+            throw new BusinessRuleException("Невалидный или просроченный refresh-токен");
+        }
+        AppUser user = appUserRepository.findByEmailIgnoreCase(email)
+                .orElseThrow(() -> new NotFoundException("Пользователь не найден"));
+        return buildAuthResponse(user);
+    }
+
     private AuthResponse buildAuthResponse(AppUser user) {
         return AuthResponse.builder()
                 .accessToken(jwtService.generateAccessToken(user))

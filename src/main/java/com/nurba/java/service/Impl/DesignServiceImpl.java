@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -59,6 +60,7 @@ public class DesignServiceImpl implements DesignService {
         entity.setSlug(request.getSlug());
         entity.setDescription(request.getDescription());
         entity.setMainImageUrl(request.getMainImageUrl());
+        entity.setGallery(request.getGallery() != null ? request.getGallery() : new ArrayList<>());
         entity.setCollection(collection);
         return mapper.toResponse(repository.save(entity));
     }

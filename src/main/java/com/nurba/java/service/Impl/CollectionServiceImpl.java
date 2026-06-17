@@ -57,6 +57,9 @@ public class CollectionServiceImpl implements CollectionService {
                 .orElseThrow(() -> new NotFoundException("Catalog group not found: " + request.getGroupId()));
         entity.setName(request.getName());
         entity.setSlug(request.getSlug());
+        entity.setDescription(request.getDescription());
+        entity.setCoverImageUrl(request.getCoverImageUrl());
+        entity.setBannerImageUrl(request.getBannerImageUrl());
         entity.setCatalogGroup(group);
         if (request.getSortOrder() != null) {
             entity.setSortOrder(request.getSortOrder());

@@ -94,6 +94,26 @@ const AdminProductsPage = lazy(() =>
     default: m.AdminProductsPage,
   })),
 );
+const AdminCategoriesPage = lazy(() =>
+  import("@/admin/AdminCategoriesPage").then((m) => ({
+    default: m.AdminCategoriesPage,
+  })),
+);
+const AdminCollectionsPage = lazy(() =>
+  import("@/admin/AdminCollectionsPage").then((m) => ({
+    default: m.AdminCollectionsPage,
+  })),
+);
+const AdminDesignsPage = lazy(() =>
+  import("@/admin/AdminDesignsPage").then((m) => ({
+    default: m.AdminDesignsPage,
+  })),
+);
+const AdminDesignVariantsPage = lazy(() =>
+  import("@/admin/AdminDesignVariantsPage").then((m) => ({
+    default: m.AdminDesignVariantsPage,
+  })),
+);
 const AdminCustomersPage = lazy(() =>
   import("@/admin/AdminCustomersPage").then((m) => ({
     default: m.AdminCustomersPage,
@@ -303,6 +323,38 @@ const router = createBrowserRouter([
             element: (
               <Suspense fallback={<PageLoadFallback />}>
                 <AdminOrderDetailPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "categories",
+            element: (
+              <Suspense fallback={<PageLoadFallback />}>
+                <AdminCategoriesPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "collections",
+            element: (
+              <Suspense fallback={<PageLoadFallback />}>
+                <AdminCollectionsPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "designs",
+            element: (
+              <Suspense fallback={<PageLoadFallback />}>
+                <AdminDesignsPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "designs/:designId/variants",
+            element: (
+              <Suspense fallback={<PageLoadFallback />}>
+                <AdminDesignVariantsPage />
               </Suspense>
             ),
           },

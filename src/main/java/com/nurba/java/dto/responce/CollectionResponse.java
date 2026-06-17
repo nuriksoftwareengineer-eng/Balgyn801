@@ -9,6 +9,9 @@ public class CollectionResponse {
     private String groupName;
     private String name;
     private String slug;
+    private String description;
+    private String coverImageUrl;
+    private String bannerImageUrl;
     private Integer sortOrder;
     private Boolean active;
 }

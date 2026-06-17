@@ -87,6 +87,9 @@ public class CatalogStorefrontServiceImpl implements CatalogStorefrontService {
         response.setGroupName(collection.getCatalogGroup().getName());
         response.setName(collection.getName());
         response.setSlug(collection.getSlug());
+        response.setDescription(collection.getDescription());
+        response.setCoverImageUrl(collection.getCoverImageUrl());
+        response.setBannerImageUrl(collection.getBannerImageUrl());
         response.setDesigns(designs);
         return response;
     }
@@ -118,6 +121,7 @@ public class CatalogStorefrontServiceImpl implements CatalogStorefrontService {
         response.setSlug(design.getSlug());
         response.setDescription(design.getDescription());
         response.setMainImageUrl(design.getMainImageUrl());
+        response.setGallery(design.getGallery());
         response.setCollectionId(design.getCollection().getId());
         response.setCollectionName(design.getCollection().getName());
         response.setCollectionSlug(design.getCollection().getSlug());

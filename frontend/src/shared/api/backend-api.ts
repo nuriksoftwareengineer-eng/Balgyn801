@@ -58,6 +58,8 @@ export const BACKEND_API = {
     register: "POST /auth/register",
     login: "POST /auth/login",
     refresh: "POST /auth/refresh",
+    refreshCookie: "POST /auth/refresh-cookie (uses HttpOnly cookie)",
+    logout: "POST /auth/logout (clears HttpOnly cookie)",
     me: "GET /auth/me (+ Bearer)",
   },
   product: {
@@ -118,6 +120,7 @@ export async function register(body: RegisterRequest): Promise<AuthResponse> {
   return apiFetch<AuthResponse>("/auth/register", {
     method: "POST",
     body: JSON.stringify(body),
+    credentials: "include",
   });
 }
 
@@ -125,9 +128,27 @@ export async function login(body: LoginRequest): Promise<AuthResponse> {
   return apiFetch<AuthResponse>("/auth/login", {
     method: "POST",
     body: JSON.stringify(body),
+    credentials: "include",
   });
 }
 
+/** Обновить access-токен через HttpOnly refresh-cookie (без тела запроса). */
+export async function refreshCookieAuth(): Promise<AuthResponse> {
+  return apiFetch<AuthResponse>("/auth/refresh-cookie", {
+    method: "POST",
+    credentials: "include",
+  });
+}
+
+/** Выйти: сервер очищает HttpOnly refresh-cookie. */
+export async function logoutAuth(): Promise<void> {
+  return apiFetch<void>("/auth/logout", {
+    method: "POST",
+    credentials: "include",
+  });
+}
+
+/** @deprecated Используйте refreshCookieAuth() — refresh-токен теперь хранится в HttpOnly cookie. */
 export async function refreshAuth(
   body: RefreshTokenRequest,
 ): Promise<AuthResponse> {

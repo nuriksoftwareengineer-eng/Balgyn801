@@ -14,6 +14,9 @@ public interface AuthService {
 
     AuthResponse refresh(RefreshTokenRequest request);
 
+    /** Обновить токены по сырому значению refresh-токена (из HttpOnly cookie). */
+    AuthResponse refreshWithToken(String rawToken);
+
     AuthMeResponse me(String email);
 
     /** Идемпотентно выдаёт роль ADMIN. Возвращает актуальный набор ролей. */

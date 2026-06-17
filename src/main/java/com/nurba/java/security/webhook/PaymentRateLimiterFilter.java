@@ -1,6 +1,7 @@
 package com.nurba.java.security.webhook;
 
 import com.nurba.java.config.PaymentWebhookProperties;
+import com.nurba.java.security.SecurityRateLimitProperties;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -33,6 +34,7 @@ public class PaymentRateLimiterFilter extends OncePerRequestFilter {
     private static final String WEBHOOK_PREFIX = "/api/v1/payments/webhook/";
 
     private final PaymentWebhookProperties properties;
+    private final SecurityRateLimitProperties rateLimitProperties;
 
     // ConcurrentHashMap<ip_bucketKey, timestamp deque>
     private final ConcurrentHashMap<String, Deque<Instant>> buckets = new ConcurrentHashMap<>();
@@ -87,10 +89,13 @@ public class PaymentRateLimiterFilter extends OncePerRequestFilter {
         }
     }
 
-    private static String resolveClientIp(HttpServletRequest request) {
-        String forwarded = request.getHeader("X-Forwarded-For");
-        if (forwarded != null && !forwarded.isBlank()) {
-            return forwarded.split(",")[0].trim();
+    private String resolveClientIp(HttpServletRequest request) {
+        if (rateLimitProperties.isTrustProxy()) {
+            String forwarded = request.getHeader("X-Forwarded-For");
+            if (forwarded != null && !forwarded.isBlank()) {
+                String[] parts = forwarded.split(",");
+                return parts[parts.length - 1].trim();
+            }
         }
         return request.getRemoteAddr();
     }

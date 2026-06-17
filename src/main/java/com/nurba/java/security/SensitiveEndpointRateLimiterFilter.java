@@ -35,6 +35,7 @@ public class SensitiveEndpointRateLimiterFilter extends OncePerRequestFilter {
     private static final String REGISTER_PATH      = "/api/v1/auth/register";
     private static final String CUSTOM_DESIGN_PATH = "/api/v1/custom-design";
     private static final String ORDER_PATH         = "/api/v1/order";
+    private static final String UPLOAD_PATH        = "/api/v1/media/upload";
 
     private final SecurityRateLimitProperties properties;
 
@@ -50,7 +51,8 @@ public class SensitiveEndpointRateLimiterFilter extends OncePerRequestFilter {
         return !LOGIN_PATH.equals(path)
                 && !REGISTER_PATH.equals(path)
                 && !CUSTOM_DESIGN_PATH.equals(path)
-                && !ORDER_PATH.equals(path);
+                && !ORDER_PATH.equals(path)
+                && !UPLOAD_PATH.equals(path);
     }
 
     @Override
@@ -67,6 +69,9 @@ public class SensitiveEndpointRateLimiterFilter extends OncePerRequestFilter {
         } else if (ORDER_PATH.equals(path)) {
             limit = properties.getOrderPerMinute();
             prefix = "order:";
+        } else if (UPLOAD_PATH.equals(path)) {
+            limit = properties.getUploadPerMinute();
+            prefix = "upload:";
         } else {
             limit = properties.getAuthPerMinute();
             prefix = "auth:";
@@ -105,10 +110,13 @@ public class SensitiveEndpointRateLimiterFilter extends OncePerRequestFilter {
         }
     }
 
-    private static String resolveClientIp(HttpServletRequest request) {
-        String forwarded = request.getHeader("X-Forwarded-For");
-        if (forwarded != null && !forwarded.isBlank()) {
-            return forwarded.split(",")[0].trim();
+    private String resolveClientIp(HttpServletRequest request) {
+        if (properties.isTrustProxy()) {
+            String forwarded = request.getHeader("X-Forwarded-For");
+            if (forwarded != null && !forwarded.isBlank()) {
+                String[] parts = forwarded.split(",");
+                return parts[parts.length - 1].trim();
+            }
         }
         return request.getRemoteAddr();
     }

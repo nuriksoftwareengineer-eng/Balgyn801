@@ -23,14 +23,19 @@ services:
       - CDEK_CLIENT_SECRET=${CDEK_CLIENT_SECRET:-}
       - CDEK_SENDER_CITY=${CDEK_SENDER_CITY:-270}
       - CDEK_DEFAULT_TARIFF=${CDEK_DEFAULT_TARIFF:-136}
+      - STORAGE_ENABLED=true
       - MINIO_ENDPOINT=http://minio:9000
-      - MINIO_PUBLIC_URL=http://localhost:9000
+      # MINIO_PUBLIC_URL — URL, под которым браузер обращается к MinIO.
+      # Локально: localhost:9000 (порт проброшен в docker-compose). На проде замените на реальный домен.
+      - MINIO_PUBLIC_URL=${MINIO_PUBLIC_URL:-http://localhost:9000}
       - MINIO_ROOT_USER=minioadmin
       - MINIO_ROOT_PASSWORD=minioadmin
       - MINIO_BUCKET=balgyn-media
     depends_on:
-      - db
-      - minio
+      db:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
 
   minio:
     image: minio/minio:RELEASE.2024-12-18T13-15-44Z
@@ -43,6 +48,12 @@ services:
       MINIO_ROOT_PASSWORD: minioadmin
     volumes:
       - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   frontend:
     image: node:22-alpine
@@ -68,8 +79,15 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - .:/app
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d balgynbol-spring"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
 
 volumes:
   minio_data:
+  postgres_data:
   frontend_node_modules:

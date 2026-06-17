@@ -20,4 +20,15 @@ public class SecurityRateLimitProperties {
 
     /** Лимит для POST /api/v1/order — анти-спам создания заказов. */
     private int orderPerMinute = 15;
+
+    /** Лимит для POST /api/v1/media/upload (ADMIN). */
+    private int uploadPerMinute = 5;
+
+    /**
+     * false (дефолт): X-Forwarded-For игнорируется, используется remoteAddr.
+     *                 Безопасен без обратного прокси — клиент не может подменить IP.
+     * true: берётся самый правый IP из XFF — добавленный доверенным прокси (nginx/Cloudflare).
+     *       Включать только при наличии реального прокси перед приложением.
+     */
+    private boolean trustProxy = false;
 }

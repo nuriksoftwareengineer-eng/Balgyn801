@@ -26,28 +26,35 @@ public class MinioBucketInitializer {
     public void ensureBucketAndPolicy() {
         String bucket = storageProperties.bucket();
         try {
-            s3Client.headBucket(HeadBucketRequest.builder().bucket(bucket).build());
-        } catch (S3Exception e) {
-            if (e.statusCode() == 404) {
-                try {
-                    s3Client.createBucket(CreateBucketRequest.builder().bucket(bucket).build());
-                } catch (BucketAlreadyExistsException | BucketAlreadyOwnedByYouException ignored) {
-                    // ok
+            try {
+                s3Client.headBucket(HeadBucketRequest.builder().bucket(bucket).build());
+            } catch (S3Exception e) {
+                if (e.statusCode() == 404) {
+                    try {
+                        s3Client.createBucket(CreateBucketRequest.builder().bucket(bucket).build());
+                    } catch (BucketAlreadyExistsException | BucketAlreadyOwnedByYouException ignored) {
+                        // ok
+                    }
+                } else {
+                    log.warn("MinIO/S3 headBucket {}: {} — проверьте endpoint и ключи", bucket, e.getMessage());
+                    return;
                 }
-            } else {
-                log.warn("MinIO/S3 headBucket {}: {} — проверьте endpoint и ключи", bucket, e.getMessage());
-                return;
             }
-        }
 
-        String policy = publicReadPolicy(bucket);
-        try {
-            s3Client.putBucketPolicy(PutBucketPolicyRequest.builder()
-                    .bucket(bucket)
-                    .policy(policy)
-                    .build());
-        } catch (S3Exception ex) {
-            log.warn("Не удалось выставить публичное чтение для {}: {}", bucket, ex.getMessage());
+            String policy = publicReadPolicy(bucket);
+            try {
+                s3Client.putBucketPolicy(PutBucketPolicyRequest.builder()
+                        .bucket(bucket)
+                        .policy(policy)
+                        .build());
+            } catch (S3Exception ex) {
+                log.warn("Не удалось выставить публичное чтение для {}: {}", bucket, ex.getMessage());
+            }
+        } catch (Exception e) {
+            // SdkClientException (connection refused, timeout) и любые другие сетевые ошибки —
+            // не убиваем контекст, просто предупреждаем. Загрузка упадёт при первом реальном запросе.
+            log.warn("MinIO недоступен по адресу {} — запустите MinIO локально. " +
+                    "Загрузка изображений не будет работать. Причина: {}", storageProperties.endpoint(), e.getMessage());
         }
     }
 

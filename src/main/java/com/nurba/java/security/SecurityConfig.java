@@ -18,6 +18,7 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
@@ -66,6 +67,15 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(Customizer.withDefaults())
+                .headers(h -> h
+                        .contentTypeOptions(Customizer.withDefaults())
+                        .frameOptions(fo -> fo.deny())
+                        .referrerPolicy(rp -> rp.policy(
+                                ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN))
+                        .httpStrictTransportSecurity(hsts -> hsts
+                                .includeSubDomains(true)
+                                .maxAgeInSeconds(31536000)
+                                .preload(false)))
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .exceptionHandling(ex -> ex
@@ -76,7 +86,9 @@ public class SecurityConfig {
                             .requestMatchers(
                                     "/api/v1/auth/register",
                                     "/api/v1/auth/login",
-                                    "/api/v1/auth/refresh"
+                                    "/api/v1/auth/refresh",
+                                    "/api/v1/auth/refresh-cookie",
+                                    "/api/v1/auth/logout"
                             ).permitAll()
 
                             .requestMatchers("/api/v1/auth/admin/**").hasRole("ADMIN")

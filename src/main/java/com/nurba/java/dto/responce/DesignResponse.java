@@ -2,6 +2,8 @@ package com.nurba.java.dto.responce;
 
 import lombok.Data;
 
+import java.util.List;
+
 @Data
 public class DesignResponse {
     private Long id;
@@ -14,5 +16,6 @@ public class DesignResponse {
     private String slug;
     private String description;
     private String mainImageUrl;
+    private List<String> gallery;
     private Boolean active;
 }

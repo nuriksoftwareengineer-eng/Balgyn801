@@ -49,7 +49,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  */
 @SpringBootTest
 @ActiveProfiles("test")
-@TestPropertySource(properties = "app.security.rate-limit.order-per-minute=3")
+@TestPropertySource(properties = {
+        "app.security.rate-limit.order-per-minute=3",
+        "app.security.rate-limit.trust-proxy=true"
+})
 class OrderRateLimitIntegrationTest {
 
     private static final String ORDER_URL = "/api/v1/order";

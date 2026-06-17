@@ -30,6 +30,17 @@ public class Collection {
     @Column(nullable = false, unique = true)
     private String slug;
 
+    @Column(columnDefinition = "TEXT")
+    private String description;
+
+    /** Обложка коллекции (URL картинки) — для карточки/превью коллекции. */
+    @Column(name = "cover_image_url", length = 512)
+    private String coverImageUrl;
+
+    /** Баннер коллекции (URL картинки) — для шапки страницы коллекции. */
+    @Column(name = "banner_image_url", length = 512)
+    private String bannerImageUrl;
+
     @Column(name = "sort_order")
     private Integer sortOrder;
 
