@@ -1,7 +1,9 @@
 package com.nurba.java.dto.responce;
 
+import com.nurba.java.enums.DesignStatus;
 import lombok.Data;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
@@ -17,5 +19,9 @@ public class DesignResponse {
     private String description;
     private String mainImageUrl;
     private List<String> gallery;
-    private Boolean active;
+    private DesignStatus status;
+    private Integer sortOrder;
+    private LocalDateTime publishedAt;
+    private LocalDateTime archivedAt;
+    private Integer activeGarmentCount;
 }

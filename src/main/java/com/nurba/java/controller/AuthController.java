@@ -9,6 +9,7 @@ import com.nurba.java.dto.responce.AuthMeResponse;
 import com.nurba.java.dto.responce.AuthResponse;
 import com.nurba.java.exception.BusinessRuleException;
 import com.nurba.java.security.JwtProperties;
+import com.nurba.java.security.JwtService;
 import com.nurba.java.service.AuthService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -26,6 +27,7 @@ public class AuthController implements AuthApi {
 
     private final AuthService authService;
     private final JwtProperties jwtProperties;
+    private final JwtService jwtService;
 
     @Value("${app.security.cookie-secure:false}")
     private boolean cookieSecure;
@@ -61,7 +63,16 @@ public class AuthController implements AuthApi {
     }
 
     @Override
-    public void logout(HttpServletResponse response) {
+    public void logout(HttpServletRequest request, HttpServletResponse response) {
+        String rawToken = extractRefreshCookie(request);
+        if (rawToken != null && !rawToken.isBlank()) {
+            try {
+                String email = jwtService.extractEmail(rawToken);
+                authService.revokeRefreshTokens(email);
+            } catch (Exception ignored) {
+                // Best-effort: always clear the cookie even if token is expired/invalid
+            }
+        }
         clearRefreshCookie(response);
     }
 

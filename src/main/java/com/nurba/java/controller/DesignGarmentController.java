@@ -6,12 +6,14 @@ import com.nurba.java.dto.request.UpdateDesignGarmentRequest;
 import com.nurba.java.dto.responce.DesignGarmentResponse;
 import com.nurba.java.service.DesignGarmentService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
+@PreAuthorize("hasRole('ADMIN')")
 public class DesignGarmentController implements DesignGarmentApi {
 
     private final DesignGarmentService service;

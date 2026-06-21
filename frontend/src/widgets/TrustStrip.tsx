@@ -1,14 +1,16 @@
 import { motion, useReducedMotion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import { Container } from "@/shared/ui/container";
-
-const items = [
-  { title: "Доставка", desc: "По Казахстану и за рубеж при необходимости" },
-  { title: "Вышивка", desc: "Плотные стежки, стойкие нити" },
-  { title: "Качество", desc: "Проверка перед отправкой" },
-];
 
 export function TrustStrip() {
   const reduceMotion = useReducedMotion();
+  const { t } = useTranslation();
+
+  const items = [
+    { title: t("home.trust.delivery.title"), desc: t("home.trust.delivery.desc") },
+    { title: t("home.trust.embroidery.title"), desc: t("home.trust.embroidery.desc") },
+    { title: t("home.trust.quality.title"), desc: t("home.trust.quality.desc") },
+  ];
 
   return (
     <Container className="pb-12">

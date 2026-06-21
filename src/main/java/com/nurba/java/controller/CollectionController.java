@@ -5,12 +5,14 @@ import com.nurba.java.dto.request.CreateCollectionRequest;
 import com.nurba.java.dto.responce.CollectionResponse;
 import com.nurba.java.service.CollectionService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
+@PreAuthorize("hasRole('ADMIN')")
 public class CollectionController implements CollectionApi {
 
     private final CollectionService service;

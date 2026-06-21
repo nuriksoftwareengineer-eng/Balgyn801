@@ -5,10 +5,12 @@ import com.nurba.java.dto.request.SetExchangeRateRequest;
 import com.nurba.java.dto.responce.ExchangeRateResponse;
 import com.nurba.java.service.ExchangeRateService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
+@PreAuthorize("hasRole('ADMIN')")
 public class ExchangeRateController implements ExchangeRateApi {
 
     private final ExchangeRateService service;

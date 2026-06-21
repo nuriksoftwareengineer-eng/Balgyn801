@@ -2,6 +2,7 @@ package com.nurba.java.repositories;
 
 import com.nurba.java.domain.Order;
 import com.nurba.java.enums.OrderStatus;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -18,7 +19,10 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     /**
      * Admin order list: excludes the given statuses (PENDING_PAYMENT and EXPIRED),
      * so unpaid/abandoned orders never reach the admin panel. Newest first.
+     * EntityGraph eagerly fetches customer, deliveryAddress and orderItems in a single JOIN
+     * query, eliminating the N+1 selects that occur with LAZY defaults.
      */
+    @EntityGraph(attributePaths = {"customer", "deliveryAddress", "orderItems"})
     List<Order> findByStatusNotInOrderByCreatedAtDesc(Collection<OrderStatus> statuses);
 
     /** Unpaid orders created before the cutoff — candidates for expiry/inventory release. */

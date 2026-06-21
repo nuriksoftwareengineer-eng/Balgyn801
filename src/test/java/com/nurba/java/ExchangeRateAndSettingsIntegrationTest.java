@@ -34,6 +34,8 @@ class ExchangeRateAndSettingsIntegrationTest {
     static class MutableProvider implements ExchangeRateProvider {
         volatile Optional<BigDecimal> value = Optional.of(new BigDecimal("500.0000"));
         @Override public Optional<BigDecimal> fetchKztPerUsd() { return value; }
+        @Override public Optional<BigDecimal> fetchKztPerEur() { return Optional.empty(); }
+        @Override public Optional<BigDecimal> fetchKztPerRub() { return Optional.empty(); }
     }
 
     @TestConfiguration

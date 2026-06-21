@@ -6,6 +6,7 @@ import { RequireAuth } from "@/app/RequireAuth";
 import { AuthShellLayout } from "@/pages/AuthShellLayout";
 import { MainLayout } from "@/pages/MainLayout";
 import { PageLoadFallback } from "@/shared/ui/page-load-fallback";
+import { ErrorBoundary } from "@/shared/ui/error-boundary";
 
 const HomePage = lazy(() =>
   import("@/pages/HomePage").then((m) => ({ default: m.HomePage })),
@@ -66,6 +67,26 @@ const PaymentReturnPage = lazy(() =>
     default: m.PaymentReturnPage,
   })),
 );
+const PaymentSuccessPage = lazy(() =>
+  import("@/pages/PaymentSuccessPage").then((m) => ({
+    default: m.PaymentSuccessPage,
+  })),
+);
+const PaymentFailedPage = lazy(() =>
+  import("@/pages/PaymentFailedPage").then((m) => ({
+    default: m.PaymentFailedPage,
+  })),
+);
+const PaymentCancelledPage = lazy(() =>
+  import("@/pages/PaymentCancelledPage").then((m) => ({
+    default: m.PaymentCancelledPage,
+  })),
+);
+const NotFoundPage = lazy(() =>
+  import("@/pages/NotFoundPage").then((m) => ({
+    default: m.NotFoundPage,
+  })),
+);
 const OrderHistoryPage = lazy(() =>
   import("@/pages/OrderHistoryPage").then((m) => ({
     default: m.OrderHistoryPage,
@@ -122,6 +143,21 @@ const AdminCustomersPage = lazy(() =>
 const AdminSizeChartsPage = lazy(() =>
   import("@/admin/AdminSizeChartsPage").then((m) => ({
     default: m.AdminSizeChartsPage,
+  })),
+);
+const AdminPaymentsPage = lazy(() =>
+  import("@/admin/AdminPaymentsPage").then((m) => ({
+    default: m.AdminPaymentsPage,
+  })),
+);
+const AdminExchangeRatePage = lazy(() =>
+  import("@/admin/AdminExchangeRatePage").then((m) => ({
+    default: m.AdminExchangeRatePage,
+  })),
+);
+const AdminUsersPage = lazy(() =>
+  import("@/admin/AdminUsersPage").then((m) => ({
+    default: m.AdminUsersPage,
   })),
 );
 
@@ -245,8 +281,48 @@ const router = createBrowserRouter([
       {
         path: "payment-return",
         element: (
+          <ErrorBoundary>
+            <Suspense fallback={<PageLoadFallback />}>
+              <PaymentReturnPage />
+            </Suspense>
+          </ErrorBoundary>
+        ),
+      },
+      {
+        path: "payment/success",
+        element: (
+          <ErrorBoundary>
+            <Suspense fallback={<PageLoadFallback />}>
+              <PaymentSuccessPage />
+            </Suspense>
+          </ErrorBoundary>
+        ),
+      },
+      {
+        path: "payment/failed",
+        element: (
+          <ErrorBoundary>
+            <Suspense fallback={<PageLoadFallback />}>
+              <PaymentFailedPage />
+            </Suspense>
+          </ErrorBoundary>
+        ),
+      },
+      {
+        path: "payment/cancelled",
+        element: (
+          <ErrorBoundary>
+            <Suspense fallback={<PageLoadFallback />}>
+              <PaymentCancelledPage />
+            </Suspense>
+          </ErrorBoundary>
+        ),
+      },
+      {
+        path: "*",
+        element: (
           <Suspense fallback={<PageLoadFallback />}>
-            <PaymentReturnPage />
+            <NotFoundPage />
           </Suspense>
         ),
       },
@@ -379,6 +455,30 @@ const router = createBrowserRouter([
             element: (
               <Suspense fallback={<PageLoadFallback />}>
                 <AdminSizeChartsPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "payments",
+            element: (
+              <Suspense fallback={<PageLoadFallback />}>
+                <AdminPaymentsPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "exchange-rate",
+            element: (
+              <Suspense fallback={<PageLoadFallback />}>
+                <AdminExchangeRatePage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "users",
+            element: (
+              <Suspense fallback={<PageLoadFallback />}>
+                <AdminUsersPage />
               </Suspense>
             ),
           },

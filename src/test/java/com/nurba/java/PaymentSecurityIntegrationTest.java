@@ -2,9 +2,6 @@ package com.nurba.java;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nurba.java.config.PaymentWebhookProperties;
-import com.nurba.java.security.webhook.PaymentRateLimiterFilter;
-import com.nurba.java.security.webhook.WebhookSignatureFilter;
 import com.nurba.java.domain.CatalogGroup;
 import com.nurba.java.domain.Collection;
 import com.nurba.java.domain.Color;
@@ -18,7 +15,9 @@ import com.nurba.java.domain.Size;
 import com.nurba.java.enums.Currency;
 import com.nurba.java.enums.GarmentType;
 import com.nurba.java.enums.OrderStatus;
+import com.nurba.java.enums.PaymentProvider;
 import com.nurba.java.enums.PaymentStatus;
+import com.nurba.java.payment.FreedomPaySignature;
 import com.nurba.java.repositories.CatalogGroupRepository;
 import com.nurba.java.repositories.CollectionRepository;
 import com.nurba.java.repositories.ColorRepository;
@@ -33,7 +32,7 @@ import com.nurba.java.repositories.OrderRepository;
 import com.nurba.java.repositories.PaymentRepository;
 import com.nurba.java.repositories.ProcessedWebhookEventRepository;
 import com.nurba.java.repositories.SizeRepository;
-import com.nurba.java.security.webhook.WebhookSignatureService;
+import com.nurba.java.security.webhook.PaymentRateLimiterFilter;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,46 +40,53 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.context.WebApplicationContext;
 
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
 import java.math.BigDecimal;
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
-import java.util.HexFormat;
-import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.xpath;
 
 /**
- * Phase 7 — payment security integration tests.
+ * Freedom Pay payment security integration tests.
  *
- * Covers: webhook signature verification, replay protection, idempotent payment init,
- * payment amount validation, and the happy-path order confirmation.
+ * Covers: MD5 signature verification on callback, replay protection, amount validation,
+ * idempotent payment init, and the happy-path order confirmation.
+ *
+ * merchantId is blank → stub mode (no real Freedom Pay API call).
+ * secretKey is set → signature verification active.
  */
 @SpringBootTest
 @ActiveProfiles("test")
+@TestPropertySource(properties = {
+        "app.payment.freedompay.merchant-id=",
+        "app.payment.freedompay.secret-key=test-fp-secret-32chars-longer!!",
+        "app.payment.freedompay.callback-script-name=freedom-pay",
+        "app.security.rate-limit.trust-proxy=true"
+})
 class PaymentSecurityIntegrationTest {
 
-    private static final String TEST_SECRET      = "test-kaspi-webhook-secret-32chars!!";
-    private static final String PROVIDER         = "KASPI";
-    private static final String WEBHOOK_URL      = "/api/v1/payments/webhook/" + PROVIDER;
-    private static final String INIT_URL         = "/api/v1/payments/init";
+    private static final String TEST_SECRET   = "test-fp-secret-32chars-longer!!";
+    private static final String CALLBACK_URL  = "/api/v1/payments/callback/freedom-pay";
+    private static final String INIT_URL      = "/api/v1/payments/init";
+    private static final String SCRIPT_NAME   = "freedom-pay";
 
     @Autowired private WebApplicationContext context;
     private MockMvc mockMvc;
 
     @Autowired private ObjectMapper objectMapper;
-    @Autowired private PaymentWebhookProperties webhookProperties;
     @Autowired private PaymentRateLimiterFilter rateLimiterFilter;
-    @Autowired private WebhookSignatureFilter signatureFilter;
 
     @Autowired private CatalogGroupRepository catalogGroupRepository;
     @Autowired private CollectionRepository collectionRepository;
@@ -104,17 +110,14 @@ class PaymentSecurityIntegrationTest {
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders.webAppContextSetup(context)
-                .addFilters(rateLimiterFilter, signatureFilter)
+                .addFilters(rateLimiterFilter)
                 .build();
         cleanAll();
         buildFixture();
-        // Enable HMAC check for this test class
-        webhookProperties.getSecrets().put(PROVIDER, TEST_SECRET);
     }
 
     @AfterEach
     void tearDown() {
-        webhookProperties.getSecrets().remove(PROVIDER);
         cleanAll();
     }
 
@@ -123,44 +126,48 @@ class PaymentSecurityIntegrationTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Test
-    void webhook_withValidSignature_returnsOk() throws Exception {
-        long orderId   = createOrder(1);
-        long paymentId = initPayment(orderId);
-        String body    = webhookBody(paymentId, "succeeded");
-        String sig     = sign(body, TEST_SECRET);
+    void callback_withValidSignature_returnsOk() throws Exception {
+        long orderId = createOrder(1);
+        String providerPaymentId = initPaymentAndGetProviderPaymentId(orderId);
 
-        mockMvc.perform(post(WEBHOOK_URL)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .header(WebhookSignatureService.SIGNATURE_HEADER, "hmac_sha256=" + sig)
-                        .content(body))
+        Map<String, String> params = callbackParams(orderId, providerPaymentId, "1", "12000.00");
+        params.put("pg_sig", FreedomPaySignature.sign(SCRIPT_NAME, params, TEST_SECRET));
+
+        mockMvc.perform(post(CALLBACK_URL)
+                        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                        .params(toMultiValue(params)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("SUCCEEDED"));
+                .andExpect(xpath("//pg_status").string("ok"));
     }
 
     @Test
-    void webhook_withMissingSignature_returns401() throws Exception {
-        long orderId   = createOrder(1);
-        long paymentId = initPayment(orderId);
-        String body    = webhookBody(paymentId, "succeeded");
+    void callback_withMissingSignature_returnsRejected() throws Exception {
+        long orderId = createOrder(1);
+        String providerPaymentId = initPaymentAndGetProviderPaymentId(orderId);
 
-        // No signature header → rejected
-        mockMvc.perform(post(WEBHOOK_URL)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(body))
-                .andExpect(status().isUnauthorized());
+        Map<String, String> params = callbackParams(orderId, providerPaymentId, "1", "12000.00");
+        // No pg_sig
+
+        mockMvc.perform(post(CALLBACK_URL)
+                        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                        .params(toMultiValue(params)))
+                .andExpect(status().isOk())
+                .andExpect(xpath("//pg_status").string("rejected"));
     }
 
     @Test
-    void webhook_withWrongSignature_returns401() throws Exception {
-        long orderId   = createOrder(1);
-        long paymentId = initPayment(orderId);
-        String body    = webhookBody(paymentId, "succeeded");
+    void callback_withWrongSignature_returnsRejected() throws Exception {
+        long orderId = createOrder(1);
+        String providerPaymentId = initPaymentAndGetProviderPaymentId(orderId);
 
-        mockMvc.perform(post(WEBHOOK_URL)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .header(WebhookSignatureService.SIGNATURE_HEADER, "hmac_sha256=deadbeef")
-                        .content(body))
-                .andExpect(status().isUnauthorized());
+        Map<String, String> params = callbackParams(orderId, providerPaymentId, "1", "12000.00");
+        params.put("pg_sig", "deadbeefdeadbeefdeadbeefdeadbeef");
+
+        mockMvc.perform(post(CALLBACK_URL)
+                        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                        .params(toMultiValue(params)))
+                .andExpect(status().isOk())
+                .andExpect(xpath("//pg_status").string("rejected"));
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -168,42 +175,39 @@ class PaymentSecurityIntegrationTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Test
-    void webhook_replayedEventId_isIdempotent_orderNotDoubleConfirmed() throws Exception {
-        long orderId   = createOrder(1);
-        long paymentId = initPayment(orderId);
-        String body    = webhookBodyWithEvent(paymentId, "succeeded", "evt-001");
-        String sig     = sign(body, TEST_SECRET);
+    void callback_replayedPaymentId_isIdempotent_orderNotDoubleConfirmed() throws Exception {
+        long orderId = createOrder(1);
+        String providerPaymentId = initPaymentAndGetProviderPaymentId(orderId);
+
+        Map<String, String> params = callbackParams(orderId, providerPaymentId, "1", "12000.00");
+        params.put("pg_sig", FreedomPaySignature.sign(SCRIPT_NAME, params, TEST_SECRET));
 
         // First call: order → CONFIRMED
-        mockMvc.perform(post(WEBHOOK_URL)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .header(WebhookSignatureService.SIGNATURE_HEADER, "hmac_sha256=" + sig)
-                        .content(body))
+        mockMvc.perform(post(CALLBACK_URL)
+                        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                        .params(toMultiValue(params)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("SUCCEEDED"));
+                .andExpect(xpath("//pg_status").string("ok"));
 
-        Order confirmedOrder = orderRepository.findById(orderId).orElseThrow();
-        assertThat(confirmedOrder.getStatus()).isEqualTo(OrderStatus.CONFIRMED);
+        Order confirmed = orderRepository.findById(orderId).orElseThrow();
+        assertThat(confirmed.getStatus()).isEqualTo(OrderStatus.CONFIRMED);
 
-        // Manually try to corrupt: set back to PENDING_PAYMENT to test replay prevention
-        confirmedOrder.setStatus(OrderStatus.PENDING_PAYMENT);
-        confirmedOrder.setUpdatedAt(LocalDateTime.now());
-        orderRepository.save(confirmedOrder);
+        // Manually reset to PENDING_PAYMENT to verify replay protection
+        confirmed.setStatus(OrderStatus.PENDING_PAYMENT);
+        confirmed.setUpdatedAt(LocalDateTime.now());
+        orderRepository.save(confirmed);
 
-        // Second call: same event ID → idempotent, no state change
-        mockMvc.perform(post(WEBHOOK_URL)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .header(WebhookSignatureService.SIGNATURE_HEADER, "hmac_sha256=" + sig)
-                        .content(body))
-                .andExpect(status().isOk());
+        // Second call: same pg_payment_id → idempotent, no state change
+        mockMvc.perform(post(CALLBACK_URL)
+                        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                        .params(toMultiValue(params)))
+                .andExpect(status().isOk())
+                .andExpect(xpath("//pg_status").string("ok"));
 
-        // Order must still be PENDING_PAYMENT (replay was ignored, no re-confirmation)
         Order afterReplay = orderRepository.findById(orderId).orElseThrow();
         assertThat(afterReplay.getStatus()).isEqualTo(OrderStatus.PENDING_PAYMENT);
-
-        // Exactly one processed event record (not two)
         assertThat(processedEventRepository.existsByProviderAndEventId(
-                com.nurba.java.enums.PaymentProvider.KASPI, "evt-001")).isTrue();
+                PaymentProvider.FREEDOM_PAY, providerPaymentId)).isTrue();
         assertThat(processedEventRepository.count()).isEqualTo(1);
     }
 
@@ -212,46 +216,43 @@ class PaymentSecurityIntegrationTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Test
-    void webhook_withWrongAmount_returns400() throws Exception {
-        long orderId   = createOrder(1);
-        long paymentId = initPayment(orderId);
+    void callback_withWrongAmount_returnsRejected() throws Exception {
+        long orderId = createOrder(1);
+        String providerPaymentId = initPaymentAndGetProviderPaymentId(orderId);
 
-        // Order total is 12000 KZT; send 1.00 in webhook
-        String body = """
-                {"paymentId":%d,"status":"succeeded","amount":1.00}
-                """.formatted(paymentId).trim();
-        String sig  = sign(body, TEST_SECRET);
+        // Order total is 12000 KZT; send 1.00 in callback
+        Map<String, String> params = callbackParams(orderId, providerPaymentId, "1", "1.00");
+        params.put("pg_sig", FreedomPaySignature.sign(SCRIPT_NAME, params, TEST_SECRET));
 
-        mockMvc.perform(post(WEBHOOK_URL)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .header(WebhookSignatureService.SIGNATURE_HEADER, "hmac_sha256=" + sig)
-                        .content(body))
-                .andExpect(status().isBadRequest());
+        mockMvc.perform(post(CALLBACK_URL)
+                        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                        .params(toMultiValue(params)))
+                .andExpect(status().isOk())
+                .andExpect(xpath("//pg_status").string("rejected"));
 
-        // Payment must NOT have been marked SUCCEEDED
-        Payment payment = paymentRepository.findById(paymentId).orElseThrow();
+        Payment payment = paymentRepository.findByProviderPaymentId(providerPaymentId).orElseThrow();
         assertThat(payment.getStatus()).isEqualTo(PaymentStatus.PENDING);
     }
 
     @Test
-    void webhook_withCorrectAmount_succeeds() throws Exception {
-        long orderId   = createOrder(1);
-        long paymentId = initPayment(orderId);
+    void callback_withCorrectAmount_succeeds() throws Exception {
+        long orderId = createOrder(1);
+        String providerPaymentId = initPaymentAndGetProviderPaymentId(orderId);
 
-        Payment p = paymentRepository.findById(paymentId).orElseThrow();
+        Payment p = paymentRepository.findByProviderPaymentId(providerPaymentId).orElseThrow();
         String amount = p.getAmount().toPlainString();
 
-        String body = """
-                {"paymentId":%d,"status":"succeeded","amount":%s}
-                """.formatted(paymentId, amount).trim();
-        String sig  = sign(body, TEST_SECRET);
+        Map<String, String> params = callbackParams(orderId, providerPaymentId, "1", amount);
+        params.put("pg_sig", FreedomPaySignature.sign(SCRIPT_NAME, params, TEST_SECRET));
 
-        mockMvc.perform(post(WEBHOOK_URL)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .header(WebhookSignatureService.SIGNATURE_HEADER, "hmac_sha256=" + sig)
-                        .content(body))
+        mockMvc.perform(post(CALLBACK_URL)
+                        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                        .params(toMultiValue(params)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("SUCCEEDED"));
+                .andExpect(xpath("//pg_status").string("ok"));
+
+        Payment updated = paymentRepository.findByProviderPaymentId(providerPaymentId).orElseThrow();
+        assertThat(updated.getStatus()).isEqualTo(PaymentStatus.SUCCEEDED);
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -261,53 +262,150 @@ class PaymentSecurityIntegrationTest {
     @Test
     void initPayment_calledTwice_returnsSamePayment_noDuplicate() throws Exception {
         long orderId = createOrder(1);
-
-        String initBody = """
-                {"orderId":%d,"provider":"KASPI"}
-                """.formatted(orderId).trim();
+        String body = "{\"orderId\":" + orderId + "}";
 
         MvcResult r1 = mockMvc.perform(post(INIT_URL)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(initBody))
+                        .content(body))
                 .andExpect(status().isOk())
                 .andReturn();
 
         MvcResult r2 = mockMvc.perform(post(INIT_URL)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(initBody))
+                        .content(body))
                 .andExpect(status().isOk())
                 .andReturn();
 
         long id1 = objectMapper.readTree(r1.getResponse().getContentAsString()).get("id").asLong();
         long id2 = objectMapper.readTree(r2.getResponse().getContentAsString()).get("id").asLong();
 
-        assertThat(id1).isEqualTo(id2);  // same payment returned
-        assertThat(paymentRepository.findAll()).hasSize(1);  // no duplicate rows
+        assertThat(id1).isEqualTo(id2);
+        assertThat(paymentRepository.findAll()).hasSize(1);
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // 5. Happy path: order confirmed via webhook
+    // 5. Happy path: order confirmed via callback
     // ─────────────────────────────────────────────────────────────────────────
 
     @Test
-    void webhook_succeeded_confirmsOrder() throws Exception {
-        long orderId   = createOrder(1);
-        long paymentId = initPayment(orderId);
-        String body    = webhookBody(paymentId, "succeeded");
-        String sig     = sign(body, TEST_SECRET);
+    void callback_pgResult1_confirmsOrder() throws Exception {
+        long orderId = createOrder(1);
+        String providerPaymentId = initPaymentAndGetProviderPaymentId(orderId);
 
         Order before = orderRepository.findById(orderId).orElseThrow();
         assertThat(before.getStatus()).isEqualTo(OrderStatus.PENDING_PAYMENT);
 
-        mockMvc.perform(post(WEBHOOK_URL)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .header(WebhookSignatureService.SIGNATURE_HEADER, "hmac_sha256=" + sig)
-                        .content(body))
+        Map<String, String> params = callbackParams(orderId, providerPaymentId, "1", "12000.00");
+        params.put("pg_sig", FreedomPaySignature.sign(SCRIPT_NAME, params, TEST_SECRET));
+
+        mockMvc.perform(post(CALLBACK_URL)
+                        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                        .params(toMultiValue(params)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("SUCCEEDED"));
+                .andExpect(xpath("//pg_status").string("ok"));
 
         Order after = orderRepository.findById(orderId).orElseThrow();
         assertThat(after.getStatus()).isEqualTo(OrderStatus.CONFIRMED);
+    }
+
+    @Test
+    void callback_pgResult0_paymentFailed() throws Exception {
+        long orderId = createOrder(1);
+        String providerPaymentId = initPaymentAndGetProviderPaymentId(orderId);
+
+        Map<String, String> params = callbackParams(orderId, providerPaymentId, "0", "12000.00");
+        params.put("pg_sig", FreedomPaySignature.sign(SCRIPT_NAME, params, TEST_SECRET));
+
+        mockMvc.perform(post(CALLBACK_URL)
+                        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                        .params(toMultiValue(params)))
+                .andExpect(status().isOk())
+                .andExpect(xpath("//pg_status").string("ok"));
+
+        Payment payment = paymentRepository.findByProviderPaymentId(providerPaymentId).orElseThrow();
+        assertThat(payment.getStatus()).isEqualTo(PaymentStatus.FAILED);
+    }
+
+    @Test
+    void callback_pgResult0_onAlreadyConfirmedOrder_orderStaysConfirmed() throws Exception {
+        long orderId = createOrder(1);
+        String providerPaymentId = initPaymentAndGetProviderPaymentId(orderId);
+
+        // First callback: success → order CONFIRMED
+        Map<String, String> successParams = callbackParams(orderId, providerPaymentId, "1", "12000.00");
+        successParams.put("pg_sig", FreedomPaySignature.sign(SCRIPT_NAME, successParams, TEST_SECRET));
+        mockMvc.perform(post(CALLBACK_URL)
+                        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                        .params(toMultiValue(successParams)))
+                .andExpect(status().isOk())
+                .andExpect(xpath("//pg_status").string("ok"));
+
+        // Second (late/duplicate) callback: failure with different salt to bypass replay check
+        Map<String, String> failParams = new LinkedHashMap<>(
+                callbackParams(orderId, "fail-" + providerPaymentId, "0", "12000.00"));
+        failParams.put("pg_salt", "different-salt-xyz");
+        failParams.put("pg_sig", FreedomPaySignature.sign(SCRIPT_NAME, failParams, TEST_SECRET));
+        mockMvc.perform(post(CALLBACK_URL)
+                        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                        .params(toMultiValue(failParams)))
+                .andExpect(status().isOk());
+
+        // Order must remain CONFIRMED despite the late failure callback
+        Order order = orderRepository.findById(orderId).orElseThrow();
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.CONFIRMED);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // 6. Cancelled order is not revived by late payment
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @Test
+    void callback_pgResult1_onCancelledOrder_orderStaysCancelled() throws Exception {
+        long orderId = createOrder(1);
+        String providerPaymentId = initPaymentAndGetProviderPaymentId(orderId);
+
+        // Admin cancels the order before payment arrives
+        Order order = orderRepository.findById(orderId).orElseThrow();
+        order.setStatus(OrderStatus.CANCELLED);
+        order.setUpdatedAt(LocalDateTime.now());
+        orderRepository.save(order);
+
+        // Late FP callback: pg_result=1 (success) arrives after cancellation
+        Map<String, String> params = callbackParams(orderId, providerPaymentId, "1", "12000.00");
+        params.put("pg_sig", FreedomPaySignature.sign(SCRIPT_NAME, params, TEST_SECRET));
+
+        mockMvc.perform(post(CALLBACK_URL)
+                        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                        .params(toMultiValue(params)))
+                .andExpect(status().isOk())
+                .andExpect(xpath("//pg_status").string("ok"));
+
+        Order after = orderRepository.findById(orderId).orElseThrow();
+        assertThat(after.getStatus()).isEqualTo(OrderStatus.CANCELLED);
+    }
+
+    @Test
+    void callback_pgResult1_onExpiredOrder_orderStaysExpired() throws Exception {
+        long orderId = createOrder(1);
+        String providerPaymentId = initPaymentAndGetProviderPaymentId(orderId);
+
+        // Order expired (inventory already released)
+        Order order = orderRepository.findById(orderId).orElseThrow();
+        order.setStatus(OrderStatus.EXPIRED);
+        order.setUpdatedAt(LocalDateTime.now());
+        orderRepository.save(order);
+
+        Map<String, String> params = callbackParams(orderId, providerPaymentId, "1", "12000.00");
+        params.put("pg_sig", FreedomPaySignature.sign(SCRIPT_NAME, params, TEST_SECRET));
+
+        mockMvc.perform(post(CALLBACK_URL)
+                        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                        .params(toMultiValue(params)))
+                .andExpect(status().isOk())
+                .andExpect(xpath("//pg_status").string("ok"));
+
+        Order after = orderRepository.findById(orderId).orElseThrow();
+        assertThat(after.getStatus()).isEqualTo(OrderStatus.EXPIRED);
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -338,35 +436,34 @@ class PaymentSecurityIntegrationTest {
         return objectMapper.readTree(result.getResponse().getContentAsString()).get("id").asLong();
     }
 
-    private long initPayment(long orderId) throws Exception {
-        String body = """
-                {"orderId":%d,"provider":"KASPI"}
-                """.formatted(orderId).trim();
-
+    private String initPaymentAndGetProviderPaymentId(long orderId) throws Exception {
+        String body = "{\"orderId\":" + orderId + "}";
         MvcResult result = mockMvc.perform(post(INIT_URL)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isOk())
                 .andReturn();
-        return objectMapper.readTree(result.getResponse().getContentAsString()).get("id").asLong();
+        JsonNode json = objectMapper.readTree(result.getResponse().getContentAsString());
+        return json.get("providerPaymentId").asText();
     }
 
-    private static String webhookBody(long paymentId, String status) {
-        return """
-                {"paymentId":%d,"status":"%s"}
-                """.formatted(paymentId, status).trim();
+    private static Map<String, String> callbackParams(long orderId, String providerPaymentId,
+                                                       String pgResult, String pgAmount) {
+        Map<String, String> params = new LinkedHashMap<>();
+        params.put("pg_order_id", String.valueOf(orderId));
+        params.put("pg_payment_id", providerPaymentId);
+        params.put("pg_amount", pgAmount);
+        params.put("pg_currency", "KZT");
+        params.put("pg_result", pgResult);
+        params.put("pg_description", "Test payment");
+        params.put("pg_salt", "testsalt123");
+        return params;
     }
 
-    private static String webhookBodyWithEvent(long paymentId, String status, String eventId) {
-        return """
-                {"paymentId":%d,"status":"%s","eventId":"%s"}
-                """.formatted(paymentId, status, eventId).trim();
-    }
-
-    private static String sign(String body, String secret) throws Exception {
-        Mac mac = Mac.getInstance("HmacSHA256");
-        mac.init(new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
-        return HexFormat.of().formatHex(mac.doFinal(body.getBytes(StandardCharsets.UTF_8)));
+    private static MultiValueMap<String, String> toMultiValue(Map<String, String> map) {
+        MultiValueMap<String, String> result = new LinkedMultiValueMap<>();
+        map.forEach(result::add);
+        return result;
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -410,7 +507,7 @@ class PaymentSecurityIntegrationTest {
         design.setCollection(coll);
         design.setName("Security Design");
         design.setSlug("sec-design");
-        design.setActive(true);
+        design.setStatus(com.nurba.java.enums.DesignStatus.PUBLISHED);
         design.setCreatedAt(LocalDateTime.now());
         design = designRepository.save(design);
 

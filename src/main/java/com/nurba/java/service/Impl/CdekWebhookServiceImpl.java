@@ -32,9 +32,7 @@ public class CdekWebhookServiceImpl implements CdekWebhookService {
             log.warn("CDEK webhook: пустой uuid, событие проигнорировано");
             return false;
         }
-        CdekShipment shipment = shipmentRepository.findAll().stream()
-                .filter(s -> request.uuid().equals(s.getCdekOrderUuid()))
-                .findFirst()
+        CdekShipment shipment = shipmentRepository.findByCdekOrderUuid(request.uuid())
                 .orElse(null);
         if (shipment == null) {
             log.warn("CDEK webhook: отправление с uuid={} не найдено", request.uuid());

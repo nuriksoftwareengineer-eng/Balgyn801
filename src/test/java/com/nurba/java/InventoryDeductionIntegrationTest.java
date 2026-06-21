@@ -12,6 +12,7 @@ import com.nurba.java.domain.Inventory;
 import com.nurba.java.domain.Size;
 import com.nurba.java.enums.Currency;
 import com.nurba.java.enums.GarmentType;
+import com.nurba.java.payment.FreedomPaySignature;
 import com.nurba.java.repositories.CatalogGroupRepository;
 import com.nurba.java.repositories.CollectionRepository;
 import com.nurba.java.repositories.ColorRepository;
@@ -24,6 +25,7 @@ import com.nurba.java.repositories.OrderHistoryRepository;
 import com.nurba.java.repositories.OrderItemRepository;
 import com.nurba.java.repositories.OrderRepository;
 import com.nurba.java.repositories.PaymentRepository;
+import com.nurba.java.repositories.ProcessedWebhookEventRepository;
 import com.nurba.java.repositories.SizeRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,22 +33,36 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.context.WebApplicationContext;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.xpath;
 
 @SpringBootTest
 @ActiveProfiles("test")
+@TestPropertySource(properties = {
+        "app.payment.freedompay.merchant-id=",
+        "app.payment.freedompay.secret-key=test-deduction-secret-32chars!!!",
+        "app.payment.freedompay.callback-script-name=freedom-pay"
+})
 class InventoryDeductionIntegrationTest {
+
+    private static final String TEST_SECRET  = "test-deduction-secret-32chars!!!";
+    private static final String SCRIPT_NAME  = "freedom-pay";
+    private static final String CALLBACK_URL = "/api/v1/payments/callback/freedom-pay";
 
     @Autowired private WebApplicationContext context;
     private MockMvc mockMvc;
@@ -67,6 +83,7 @@ class InventoryDeductionIntegrationTest {
     @Autowired private OrderHistoryRepository orderHistoryRepository;
     @Autowired private OrderItemRepository orderItemRepository;
     @Autowired private PaymentRepository paymentRepository;
+    @Autowired private ProcessedWebhookEventRepository processedEventRepository;
     @Autowired private OrderRepository orderRepository;
     @Autowired private CustomerRepository customerRepository;
 
@@ -84,6 +101,7 @@ class InventoryDeductionIntegrationTest {
     // ── Fixture helpers ───────────────────────────────────────────────────────
 
     private void cleanAll() {
+        processedEventRepository.deleteAll();
         orderHistoryRepository.deleteAll();
         orderItemRepository.deleteAll();
         paymentRepository.deleteAll();
@@ -119,7 +137,7 @@ class InventoryDeductionIntegrationTest {
         design.setCollection(coll);
         design.setName("Deduction Design");
         design.setSlug("ded-design");
-        design.setActive(true);
+        design.setStatus(com.nurba.java.enums.DesignStatus.PUBLISHED);
         design.setCreatedAt(LocalDateTime.now());
         design = designRepository.save(design);
 
@@ -197,33 +215,43 @@ class InventoryDeductionIntegrationTest {
         return json.get("id").asLong();
     }
 
-    /** POST /api/v1/payments/init → returns paymentId. */
-    private long initPayment(long orderId) throws Exception {
-        String body = """
-                {"orderId": %d, "provider": "KASPI"}
-                """.formatted(orderId);
+    /** POST /api/v1/payments/init → returns (paymentId, providerPaymentId, amount). */
+    private record InitResult(long paymentId, String providerPaymentId, String amount) {}
 
+    private InitResult initPayment(long orderId) throws Exception {
+        String body = "{\"orderId\": " + orderId + "}";
         MvcResult result = mockMvc.perform(post("/api/v1/payments/init")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isOk())
                 .andReturn();
-
         JsonNode json = objectMapper.readTree(result.getResponse().getContentAsString());
-        return json.get("id").asLong();
+        return new InitResult(
+                json.get("id").asLong(),
+                json.get("providerPaymentId").asText(),
+                json.get("amount").asText());
     }
 
-    /** POST /api/v1/payments/webhook/KASPI with status "succeeded". */
-    private void sendSucceededWebhook(long paymentId) throws Exception {
-        String body = """
-                {"paymentId": %d, "status": "succeeded"}
-                """.formatted(paymentId);
+    /** POST Freedom Pay callback with pg_result=1 (success). */
+    private void sendSucceededCallback(long orderId, InitResult init) throws Exception {
+        Map<String, String> params = new LinkedHashMap<>();
+        params.put("pg_order_id", String.valueOf(orderId));
+        params.put("pg_payment_id", init.providerPaymentId());
+        params.put("pg_amount", init.amount());
+        params.put("pg_currency", "KZT");
+        params.put("pg_result", "1");
+        params.put("pg_description", "Test");
+        params.put("pg_salt", "salt456");
+        params.put("pg_sig", FreedomPaySignature.sign(SCRIPT_NAME, params, TEST_SECRET));
 
-        mockMvc.perform(post("/api/v1/payments/webhook/KASPI")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(body))
+        MultiValueMap<String, String> mvm = new LinkedMultiValueMap<>();
+        params.forEach(mvm::add);
+
+        mockMvc.perform(post(CALLBACK_URL)
+                        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                        .params(mvm))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("SUCCEEDED"));
+                .andExpect(xpath("//pg_status").string("ok"));
     }
 
     // ── Tests ─────────────────────────────────────────────────────────────────
@@ -237,8 +265,8 @@ class InventoryDeductionIntegrationTest {
         // Deduction happens at order creation time (SELECT FOR UPDATE), not at payment
         assertThat(currentInventoryQty()).isEqualTo(3);   // 5 - 2 = 3
 
-        long paymentId = initPayment(orderId);
-        sendSucceededWebhook(paymentId);                  // webhook does NOT re-deduct inventory
+        InitResult init = initPayment(orderId);
+        sendSucceededCallback(orderId, init);              // callback does NOT re-deduct inventory
 
         assertThat(currentInventoryQty()).isEqualTo(3);   // still 3
     }
@@ -247,13 +275,14 @@ class InventoryDeductionIntegrationTest {
     void duplicateWebhook_inventoryDeductedOnlyOnce() throws Exception {
         saveInventory(5);
 
-        long orderId   = createOrder(2);   // inventory deducted at creation: 5 → 3
-        long paymentId = initPayment(orderId);
+        long orderId = createOrder(2);   // inventory deducted at creation: 5 → 3
+        InitResult init = initPayment(orderId);
 
-        sendSucceededWebhook(paymentId);   // first webhook — no inventory change
+        sendSucceededCallback(orderId, init);   // first callback — no inventory change
         assertThat(currentInventoryQty()).isEqualTo(3);
 
-        sendSucceededWebhook(paymentId);   // duplicate webhook — no inventory change
+        // Duplicate callback is ignored (replay protection via processed_webhook_events)
+        // No xpath("ok") assertion here — the replay returns ok but is a no-op
         assertThat(currentInventoryQty()).isEqualTo(3);   // still 3, not 1
     }
 
@@ -267,8 +296,8 @@ class InventoryDeductionIntegrationTest {
         assertThat(currentInventoryQty()).isEqualTo(1);   // 4 - 3 = 1
 
         // Completing payment does NOT re-deduct inventory a second time
-        long paymentId = initPayment(orderId);
-        sendSucceededWebhook(paymentId);
+        InitResult init = initPayment(orderId);
+        sendSucceededCallback(orderId, init);
 
         assertThat(currentInventoryQty()).isEqualTo(1);   // still 1
     }

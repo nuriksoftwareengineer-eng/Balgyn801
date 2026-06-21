@@ -1,4 +1,4 @@
--- Seed catalog groups
+﻿-- Seed catalog groups
 INSERT INTO catalog_groups (name, slug, sort_order, active, created_at) VALUES
   (E'Аниме',  'anime',  1, true, NOW()),
   (E'Игры',   'games',  2, true, NOW()),
@@ -72,13 +72,13 @@ INSERT INTO sizes (label) VALUES ('S'),('M'),('L'),('XL'),('XXL')
 ON CONFLICT DO NOTHING;
 
 -- One sample design: Brand of Sacrifice (Berserk collection)
-INSERT INTO designs (collection_id, name, slug, description, main_image_url, active, created_at)
+INSERT INTO designs (collection_id, name, slug, description, main_image_url, status, created_at)
 SELECT c.id,
   'Brand of Sacrifice',
   'brand-of-sacrifice',
   E'ܘнак Жертвы из манги Берсерк. Вышитая вручную, полноцветными нитями.',
   NULL,
-  true,
+  'PUBLISHED',
   NOW()
 FROM collections c WHERE c.slug = 'berserk'
 ON CONFLICT (slug) DO NOTHING;
@@ -135,13 +135,13 @@ WHERE d.slug='brand-of-sacrifice'
 ON CONFLICT (design_garment_id, color_id, size_id) DO NOTHING;
 
 -- Second sample design: Counter-Strike (CS2 collection)
-INSERT INTO designs (collection_id, name, slug, description, main_image_url, active, created_at)
+INSERT INTO designs (collection_id, name, slug, description, main_image_url, status, created_at)
 SELECT c.id,
   'Counter-Strike',
   'counter-strike',
   E'Классическая эмблема CS2 с вышивкой CT vs T.',
   NULL,
-  true,
+  'PUBLISHED',
   NOW()
 FROM collections c WHERE c.slug='cs2'
 ON CONFLICT (slug) DO NOTHING;

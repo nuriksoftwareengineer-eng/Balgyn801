@@ -61,11 +61,14 @@ export interface GarmentDetail {
   prices: GarmentPrice[];
   colors: ColorInfo[];
   sizes: SizeInfo[];
+  /** colorId → sizeId → quantity. Present only on the storefront detail endpoint. */
+  stockMap?: Record<number, Record<number, number>>;
 }
 
 export interface DesignDetail extends DesignSummary {
   collectionSlug: string;
   groupSlug: string;
+  gallery: string[];
   garments: GarmentDetail[];
 }
 

@@ -6,12 +6,14 @@ import com.nurba.java.dto.responce.GarmentWeightResponse;
 import com.nurba.java.enums.GarmentType;
 import com.nurba.java.service.GarmentWeightService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
+@PreAuthorize("hasRole('ADMIN')")
 public class GarmentWeightController implements GarmentWeightApi {
 
     private final GarmentWeightService service;

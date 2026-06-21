@@ -1,5 +1,6 @@
 import { apiFetch, getApiBaseUrl, ApiError } from "@/shared/api/http";
 import type {
+  AdminUserResponse,
   AuthMeResponse,
   AuthResponse,
   CdekCity,
@@ -14,6 +15,7 @@ import type {
   CustomerRequest,
   CustomerResponse,
   DeliveryMethodResponse,
+  ExchangeRateResponse,
   LoginRequest,
   MediaUploadResponse,
   OrderResponse,
@@ -21,9 +23,12 @@ import type {
   PaymentResponse,
   PaymentWebhookRequest,
   PaymentProvider,
+  PaymentStatus,
+  PayPalCreateOrderRequest,
   Product,
   RefreshTokenRequest,
   RegisterRequest,
+  SetExchangeRateRequest,
   UpdateOrderStatusRequest,
 } from "@/shared/api/types";
 import type {
@@ -373,6 +378,22 @@ export async function initPayment(
   });
 }
 
+/** Создаёт PayPal-ордер и возвращает ссылку на одобрение покупателем. */
+export async function createPayPalOrder(body: PayPalCreateOrderRequest): Promise<PaymentResponse> {
+  return apiFetch<PaymentResponse>("/payments/paypal/create-order", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+/** Подтверждает (captures) ранее одобренный PayPal-ордер по его ID (token из URL возврата). */
+export async function capturePayPalOrder(paypalOrderId: string): Promise<PaymentResponse> {
+  return apiFetch<PaymentResponse>(
+    `/payments/paypal/capture/${encodeURIComponent(paypalOrderId)}`,
+    { method: "POST" },
+  );
+}
+
 /** Вебхук-пайплайн (для локального/интеграционного теста без провайдера). */
 export async function submitPaymentWebhook(
   provider: PaymentProvider,
@@ -492,4 +513,48 @@ export async function deleteSizeChart(garmentType: string, token: string): Promi
     method: "DELETE",
     token,
   });
+}
+
+// ── Admin: payments ──────────────────────────────────────────────────────────
+
+export async function getAdminPayments(
+  token: string,
+  filter?: { provider?: PaymentProvider; status?: PaymentStatus },
+): Promise<PaymentResponse[]> {
+  const params = new URLSearchParams();
+  if (filter?.provider) params.set("provider", filter.provider);
+  if (filter?.status) params.set("status", filter.status);
+  const q = params.size > 0 ? `?${params.toString()}` : "";
+  return apiFetch<PaymentResponse[]>(`/admin/payments${q}`, { token });
+}
+
+// ── Admin: exchange rate ─────────────────────────────────────────────────────
+
+export async function getExchangeRate(token: string): Promise<ExchangeRateResponse> {
+  return apiFetch<ExchangeRateResponse>("/admin/exchange-rate", { token });
+}
+
+export async function setExchangeRate(
+  body: SetExchangeRateRequest,
+  token: string,
+): Promise<ExchangeRateResponse> {
+  return apiFetch<ExchangeRateResponse>("/admin/exchange-rate", {
+    method: "PUT",
+    body: JSON.stringify(body),
+    token,
+  });
+}
+
+export async function refreshExchangeRate(token: string): Promise<ExchangeRateResponse> {
+  return apiFetch<ExchangeRateResponse>("/admin/exchange-rate/refresh", {
+    method: "POST",
+    token,
+  });
+}
+
+// ── Admin: users ─────────────────────────────────────────────────────────────
+
+/** Список всех зарегистрированных пользователей (только ADMIN). */
+export async function getAdminUsers(token: string): Promise<AdminUserResponse[]> {
+  return apiFetch<AdminUserResponse[]>("/admin/users", { token });
 }

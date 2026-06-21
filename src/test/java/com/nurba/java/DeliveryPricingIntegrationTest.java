@@ -135,7 +135,7 @@ class DeliveryPricingIntegrationTest {
         design.setCollection(coll);
         design.setName("Pricing Design");
         design.setSlug("price-design");
-        design.setActive(true);
+        design.setStatus(com.nurba.java.enums.DesignStatus.PUBLISHED);
         design.setCreatedAt(LocalDateTime.now());
         design = designRepository.save(design);
 

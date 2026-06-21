@@ -1,6 +1,7 @@
 package com.nurba.java.service;
 
 import com.nurba.java.dto.responce.ExchangeRateResponse;
+import com.nurba.java.dto.responce.PublicExchangeRatesResponse;
 
 import java.math.BigDecimal;
 
@@ -15,6 +16,9 @@ public interface ExchangeRateService {
 
     /** Admin/diagnostic view of the cached rate. */
     ExchangeRateResponse current();
+
+    /** Public snapshot of all KZT rates (USD, EUR, RUB) for frontend currency display. */
+    PublicExchangeRatesResponse publicRates();
 
     /** Admin: set the rate manually and optionally freeze it against scheduled overwrites. */
     ExchangeRateResponse setManualRate(BigDecimal kztPerUsd, boolean frozen);

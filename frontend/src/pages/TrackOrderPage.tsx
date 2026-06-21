@@ -1,5 +1,6 @@
 import { type FormEvent, useState } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/app/auth-context";
 import { STORE_TELEGRAM_URL } from "@/shared/constants/store-content";
 import { InfoPage, InfoSection } from "@/shared/ui/info-page";
@@ -10,12 +11,8 @@ const inputClass =
 const linkClass =
   "font-medium text-black underline underline-offset-2 transition-colors hover:text-zinc-600";
 
-/**
- * Отслеживание заказа. Интерфейс подготовлен под будущую интеграцию трекинга
- * СДЭК: форма уже собирает номер заказа и телефон; когда на бэкенде появится
- * публичный эндпоинт статуса, сюда добавится запрос вместо текущей подсказки.
- */
 export function TrackOrderPage() {
+  const { t } = useTranslation();
   const { token } = useAuth();
   const [orderNumber, setOrderNumber] = useState("");
   const [phone, setPhone] = useState("");
@@ -26,7 +23,7 @@ export function TrackOrderPage() {
     e.preventDefault();
     setError(null);
     if (!orderNumber.trim() || !phone.trim()) {
-      setError("Укажите номер заказа и телефон, на который он оформлен");
+      setError(t("trackOrder.errorRequired"));
       return;
     }
     setSubmitted(true);
@@ -34,8 +31,8 @@ export function TrackOrderPage() {
 
   return (
     <InfoPage
-      title="Отследить заказ"
-      lead="Укажите номер заказа и телефон, на который он был оформлен."
+      title={t("trackOrder.title")}
+      lead={t("trackOrder.lead")}
     >
       <form
         onSubmit={submit}
@@ -43,12 +40,12 @@ export function TrackOrderPage() {
       >
         <label className="flex flex-col gap-1.5">
           <span className="text-[0.6rem] font-medium uppercase tracking-[0.1em] text-[--color-muted]">
-            Номер заказа *
+            {t("trackOrder.orderNumberLabel")}
           </span>
           <input
             required
             inputMode="numeric"
-            placeholder="Например, 24"
+            placeholder={t("trackOrder.orderNumberPlaceholder")}
             value={orderNumber}
             onChange={(e) => setOrderNumber(e.target.value)}
             className={inputClass}
@@ -56,12 +53,12 @@ export function TrackOrderPage() {
         </label>
         <label className="flex flex-col gap-1.5">
           <span className="text-[0.6rem] font-medium uppercase tracking-[0.1em] text-[--color-muted]">
-            Телефон *
+            {t("trackOrder.phoneLabel")}
           </span>
           <input
             required
             type="tel"
-            placeholder="+7 …"
+            placeholder={t("trackOrder.phonePlaceholder")}
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             className={inputClass}
@@ -78,7 +75,7 @@ export function TrackOrderPage() {
           type="submit"
           className="inline-flex h-11 items-center justify-center bg-black px-6 text-sm font-medium tracking-wide text-white transition hover:bg-zinc-800"
         >
-          Проверить статус
+          {t("trackOrder.submitBtn")}
         </button>
       </form>
 
@@ -88,11 +85,10 @@ export function TrackOrderPage() {
           role="status"
         >
           <p className="m-0 text-sm font-semibold text-black">
-            Заказ №{orderNumber.trim()}
+            {t("trackOrder.resultTitle", { number: orderNumber.trim() })}
           </p>
           <p className="m-0 mt-1.5 text-sm leading-relaxed text-[--color-muted]">
-            Онлайн-трекинг СДЭК скоро появится на этой странице. Пока статус
-            этого заказа можно узнать за минуту в{" "}
+            {t("trackOrder.resultDesc")}{" "}
             <a
               href={STORE_TELEGRAM_URL}
               target="_blank"
@@ -100,65 +96,32 @@ export function TrackOrderPage() {
               className={linkClass}
             >
               Telegram
-            </a>{" "}
-            — назовите номер заказа и телефон.
+            </a>
           </p>
         </div>
       ) : null}
 
-      <InfoSection heading="Личный кабинет">
+      <InfoSection heading={t("footer.help.trackOrder")}>
         <p>
           {token ? (
             <>
-              Статусы всех ваших заказов доступны в{" "}
+              {/* Logged-in: link to order history */}
               <Link to="/orders" className={linkClass}>
-                истории заказов
+                {t("profile.myOrders")}
               </Link>
-              .
             </>
           ) : (
             <>
-              Если вы оформляли заказ под аккаунтом —{" "}
               <Link to="/login" className={linkClass}>
-                войдите
-              </Link>
-              , и статусы всех заказов будут в{" "}
+                {t("auth.loginLinkText")}
+              </Link>{" "}
+              →{" "}
               <Link to="/orders" className={linkClass}>
-                истории заказов
+                {t("orders.title")}
               </Link>
-              .
             </>
           )}
         </p>
-      </InfoSection>
-
-      <InfoSection heading="Статусы заказа">
-        <ul className="list-disc space-y-1.5 pl-5">
-          <li>
-            <strong className="font-semibold text-black">Ожидает оплаты</strong>{" "}
-            — заказ создан, ждём подтверждения платежа;
-          </li>
-          <li>
-            <strong className="font-semibold text-black">Подтверждён</strong> —
-            оплата получена, заказ в очереди на производство;
-          </li>
-          <li>
-            <strong className="font-semibold text-black">В производстве</strong>{" "}
-            — изделие вышивается;
-          </li>
-          <li>
-            <strong className="font-semibold text-black">Готов</strong> — ждёт
-            передачи в доставку, присылаем фото;
-          </li>
-          <li>
-            <strong className="font-semibold text-black">Отправлен</strong> —
-            передан в службу доставки;
-          </li>
-          <li>
-            <strong className="font-semibold text-black">Доставлен</strong> —
-            заказ у вас.
-          </li>
-        </ul>
       </InfoSection>
     </InfoPage>
   );

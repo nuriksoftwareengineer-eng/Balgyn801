@@ -1,9 +1,11 @@
 import { Link, useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useCatalogGroup } from "@/shared/api/catalog-api";
 import { useSeoMeta } from "@/shared/hooks/useSeoMeta";
 import { Container } from "@/shared/ui/container";
 
 export function GroupPage() {
+  const { t } = useTranslation();
   // groupSlug is set on deep routes (/catalog/:groupSlug/...); param on /catalog/:param
   const { groupSlug: routeGroupSlug, param } = useParams<{ groupSlug?: string; param?: string }>();
   const groupSlug = routeGroupSlug ?? param;
@@ -45,9 +47,9 @@ export function GroupPage() {
     return (
       <div className="py-14">
         <Container>
-          <p className="text-sm text-[--color-danger]">Группа не найдена.</p>
+          <p className="text-sm text-[--color-danger]">{t("catalog.groupNotFound")}</p>
           <Link to="/catalog" className="mt-4 inline-block text-sm text-[--color-muted] hover:text-black">
-            ← В каталог
+            {t("catalog.backToCatalog")}
           </Link>
         </Container>
       </div>
@@ -60,9 +62,9 @@ export function GroupPage() {
       <div className="border-b border-[--color-border] bg-black">
         <Container className="py-14 md:py-20">
           <nav className="mb-5 flex items-center gap-2 text-[0.55rem] uppercase tracking-[0.16em] text-white/40">
-            <Link to="/" className="transition hover:text-white/70">Главная</Link>
+            <Link to="/" className="transition hover:text-white/70">{t("nav.home")}</Link>
             <span>/</span>
-            <Link to="/catalog" className="transition hover:text-white/70">Каталог</Link>
+            <Link to="/catalog" className="transition hover:text-white/70">{t("nav.catalog")}</Link>
             <span>/</span>
             <span className="text-white/70">{group.name}</span>
           </nav>
@@ -100,7 +102,23 @@ export function GroupPage() {
               ))}
             </div>
           ) : (
-            <p className="text-sm text-[--color-muted]">В этой группе пока нет коллекций.</p>
+            <div className="flex flex-col items-start gap-5 py-10">
+              <div className="flex h-16 w-16 items-center justify-center bg-[--color-surface] text-3xl select-none">
+                🧵
+              </div>
+              <div>
+                <p className="mb-1 text-[15px] font-semibold text-black">{t("catalog.collectionsEmptyTitle")}</p>
+                <p className="text-[13px] text-[--color-muted]">
+                  {t("catalog.collectionsEmptySubtitle")}
+                </p>
+              </div>
+              <Link
+                to="/catalog"
+                className="inline-block border border-black px-5 py-2.5 text-[11px] font-bold uppercase tracking-[0.14em] text-black transition hover:bg-black hover:text-white"
+              >
+                {t("catalog.backToCatalog")}
+              </Link>
+            </div>
           )}
         </Container>
       </div>

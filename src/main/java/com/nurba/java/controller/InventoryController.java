@@ -5,12 +5,14 @@ import com.nurba.java.dto.request.SetInventoryRequest;
 import com.nurba.java.dto.responce.InventoryResponse;
 import com.nurba.java.service.InventoryService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
+@PreAuthorize("hasRole('ADMIN')")
 public class InventoryController implements InventoryApi {
 
     private final InventoryService service;

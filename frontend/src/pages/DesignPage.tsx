@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useCatalogDesign } from "@/shared/api/catalog-api";
 import { getSizeCharts } from "@/shared/api/backend-api";
 import {
@@ -16,6 +17,7 @@ import { cn } from "@/shared/lib/cn";
 import { Container } from "@/shared/ui/container";
 
 export function DesignPage() {
+  const { t } = useTranslation();
   const { groupSlug, collectionSlug, designSlug } = useParams<{
     groupSlug: string;
     collectionSlug: string;
@@ -65,10 +67,18 @@ export function DesignPage() {
     [selectedGarment],
   );
 
-  const availableSizes = useMemo(
-    () => dedupeSizes(selectedGarment?.sizes ?? []),
-    [selectedGarment],
+  // Stock for the currently selected color: sizeId → quantity
+  const stockForColor = useMemo<Record<number, number>>(
+    () => (selectedColorId != null ? (selectedGarment?.stockMap?.[selectedColorId] ?? {}) : {}),
+    [selectedGarment, selectedColorId],
   );
+
+  const availableSizes = useMemo(() => {
+    const all = dedupeSizes(selectedGarment?.sizes ?? []);
+    // If no stockMap provided (API omits it), show all sizes unchanged
+    if (!selectedGarment?.stockMap || selectedColorId == null) return all;
+    return all.filter((s) => (stockForColor[s.id] ?? 0) > 0);
+  }, [selectedGarment, selectedColorId, stockForColor]);
 
   const designGarmentTypes = useMemo(
     () => new Set(activeGarments.map((g) => g.garmentType)),
@@ -105,6 +115,18 @@ export function DesignPage() {
       setSelectedColorId(null);
       setSelectedSizeId(null);
       setAdded(false);
+    }
+  }
+
+  // When color changes, clear size if it has no stock in the new color
+  function handleColorChange(colorId: number) {
+    setSelectedColorId(colorId);
+    setAdded(false);
+    if (selectedSizeId != null && selectedGarment?.stockMap) {
+      const newColorStock = selectedGarment.stockMap[colorId] ?? {};
+      if ((newColorStock[selectedSizeId] ?? 0) === 0) {
+        setSelectedSizeId(null);
+      }
     }
   }
 
@@ -162,7 +184,7 @@ export function DesignPage() {
         <div className="border-b border-[--color-border] bg-black">
           <Container className="py-12 md:py-16">
             <h1 className="text-4xl font-extrabold uppercase tracking-[-0.02em] text-white md:text-5xl">
-              Дизайн не найден
+              {t("design.notFound")}
             </h1>
           </Container>
         </div>
@@ -171,7 +193,7 @@ export function DesignPage() {
             to={collectionSlug ? `/catalog/${groupSlug}/${collectionSlug}` : "/catalog"}
             className="text-[0.65rem] uppercase tracking-[0.12em] text-[--color-muted] transition hover:text-black"
           >
-            ← Назад
+            {t("design.back")}
           </Link>
         </Container>
       </>
@@ -185,9 +207,9 @@ export function DesignPage() {
       <div className="border-b border-[--color-border] bg-black">
         <Container className="py-12 md:py-16">
           <nav className="mb-5 flex flex-wrap items-center gap-2 text-[0.55rem] uppercase tracking-[0.16em] text-white/40">
-            <Link to="/" className="transition hover:text-white/70">Главная</Link>
+            <Link to="/" className="transition hover:text-white/70">{t("nav.home")}</Link>
             <span>/</span>
-            <Link to="/catalog" className="transition hover:text-white/70">Каталог</Link>
+            <Link to="/catalog" className="transition hover:text-white/70">{t("nav.catalog")}</Link>
             <span>/</span>
             <Link to={`/catalog/${groupSlug}`} className="transition hover:text-white/70">
               {design.groupName}
@@ -208,7 +230,7 @@ export function DesignPage() {
       {/* ── Content ──────────────────────────────────────────────────── */}
       <Container className="py-8 md:py-10">
         <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:gap-10">
-          {/* Image */}
+          {/* Image + Gallery */}
           <div className="w-full lg:w-[380px] lg:shrink-0">
             <div className="aspect-square w-full overflow-hidden bg-zinc-900">
               {design.mainImageUrl ? (
@@ -225,6 +247,19 @@ export function DesignPage() {
                 </div>
               )}
             </div>
+            {design.gallery && design.gallery.length > 0 && (
+              <div className="mt-2 grid grid-cols-4 gap-1">
+                {design.gallery.map((url, i) => (
+                  <div key={i} className="aspect-square overflow-hidden bg-zinc-900">
+                    <img
+                      src={url}
+                      alt={`${design.name} ${i + 1}`}
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Selectors */}
@@ -243,7 +278,7 @@ export function DesignPage() {
                   onClick={() => setChartOpen((o) => !o)}
                   className="flex items-center gap-1.5 text-[0.65rem] uppercase tracking-[0.1em] text-[--color-muted] transition hover:text-black"
                 >
-                  📏 Размерная сетка
+                  📏 {t("design.sizeChart")}
                   <svg
                     width="8"
                     height="5"
@@ -297,14 +332,14 @@ export function DesignPage() {
 
             {activeGarments.length === 0 ? (
               <p className="text-sm text-amber-600">
-                Нет доступных вариантов для этого дизайна.
+                {t("design.noVariants")}
               </p>
             ) : (
               <div className="flex flex-col gap-6">
                 {/* Garment selector */}
                 <div>
                   <p className="mb-3 text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-black">
-                    Изделие
+                    {t("design.garment")}
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {activeGarments.map((g) => {
@@ -340,7 +375,7 @@ export function DesignPage() {
                 {selectedGarment && availableColors.length > 0 && (
                   <div>
                     <p className="mb-3 text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-black">
-                      Цвет{selectedColor ? `: ${selectedColor.name}` : ""}
+                      {selectedColor ? t("design.colorSelected", { name: selectedColor.name }) : t("design.color")}
                     </p>
                     <div className="flex flex-wrap gap-2">
                       {availableColors.map((c) => (
@@ -348,12 +383,12 @@ export function DesignPage() {
                           key={`${c.name}::${c.hexCode}`}
                           type="button"
                           title={c.name}
-                          onClick={() => setSelectedColorId(c.id)}
+                          onClick={() => handleColorChange(c.id)}
                           className={cn(
                             "h-9 w-9 rounded-none border-2 transition",
                             selectedColorId === c.id
                               ? "border-black scale-110"
-                              : "border-transparent hover:border-zinc-300",
+                              : "border-zinc-200 hover:border-zinc-500",
                           )}
                           style={{ backgroundColor: c.hexCode }}
                           aria-label={c.name}
@@ -368,7 +403,7 @@ export function DesignPage() {
                 {selectedGarment && availableSizes.length > 0 && (
                   <div>
                     <p className="mb-3 text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-black">
-                      Размер
+                      {t("design.size")}
                     </p>
                     <div className="flex flex-wrap gap-2">
                       {availableSizes.map((s) => (
@@ -403,18 +438,18 @@ export function DesignPage() {
                     onClick={handleAddToCart}
                     className="w-full bg-black py-4 text-[13px] font-bold uppercase tracking-[0.14em] text-white transition hover:bg-zinc-800 disabled:opacity-40 sm:w-auto sm:px-10"
                   >
-                    {added ? "Добавлено ✓" : "В корзину"}
+                    {added ? t("design.added") : t("design.addToCart")}
                   </button>
                   {!selectedGarment && (
                     <p className="mt-3 text-[0.7rem] text-[--color-muted]">
-                      Выберите изделие, цвет и размер
+                      {t("design.selectAll")}
                     </p>
                   )}
                   {selectedGarment && !selectedColor && availableColors.length > 0 && (
-                    <p className="mt-3 text-[0.7rem] text-[--color-muted]">Выберите цвет</p>
+                    <p className="mt-3 text-[0.7rem] text-[--color-muted]">{t("design.selectColor")}</p>
                   )}
                   {selectedGarment && selectedColor && !selectedSize && availableSizes.length > 0 && (
-                    <p className="mt-3 text-[0.7rem] text-[--color-muted]">Выберите размер</p>
+                    <p className="mt-3 text-[0.7rem] text-[--color-muted]">{t("design.selectSize")}</p>
                   )}
                 </div>
               </div>

@@ -1,15 +1,17 @@
 import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import { Truck, ShieldCheck, Sparkles, Paintbrush } from "lucide-react";
 
-const values = [
-  { icon: Truck, title: "Доставка по всему миру", desc: "СДЭК, Казпочта и международные службы доставки" },
-  { icon: ShieldCheck, title: "Гарантия пошива", desc: "Каждый шов под контролем" },
-  { icon: Sparkles, title: "Ремесло и тираж", desc: "Малые партии, ручная вышивка" },
-  { icon: Paintbrush, title: "Кастом вышивка", desc: "Принимаем индивидуальные заказы" },
-];
-
-/** Полоса преимуществ под hero. */
 export function ValueStrip() {
+  const { t } = useTranslation();
+
+  const values = [
+    { icon: Truck, title: t("home.values.embroidery.title"), desc: t("home.values.embroidery.desc") },
+    { icon: ShieldCheck, title: t("home.values.unique.title"), desc: t("home.values.unique.desc") },
+    { icon: Sparkles, title: t("home.values.quality.title"), desc: t("home.values.quality.desc") },
+    { icon: Paintbrush, title: t("home.values.limited.title"), desc: t("home.values.limited.desc") },
+  ];
+
   return (
     <section className="border-y border-black bg-white">
       <div className="container mx-auto px-4 md:px-8">

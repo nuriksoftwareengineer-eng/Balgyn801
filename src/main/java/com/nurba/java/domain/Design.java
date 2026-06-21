@@ -1,5 +1,6 @@
 package com.nurba.java.domain;
 
+import com.nurba.java.enums.DesignStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -38,15 +39,24 @@ public class Design {
     @Column(name = "main_image_url", length = 512)
     private String mainImageUrl;
 
-    /** Галерея дополнительных изображений (список URL). Главное фото — отдельно в mainImageUrl. */
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
     private List<String> gallery = new ArrayList<>();
 
-    @Column(nullable = false)
-    private Boolean active = true;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private DesignStatus status = DesignStatus.DRAFT;
+
+    @Column(name = "sort_order")
+    private Integer sortOrder;
 
     private LocalDateTime createdAt;
+
+    @Column(name = "published_at")
+    private LocalDateTime publishedAt;
+
+    @Column(name = "archived_at")
+    private LocalDateTime archivedAt;
 
     @OneToMany(mappedBy = "design", fetch = FetchType.LAZY)
     private List<DesignGarment> garments = new ArrayList<>();

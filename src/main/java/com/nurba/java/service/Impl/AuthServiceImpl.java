@@ -4,6 +4,7 @@ import com.nurba.java.domain.AppUser;
 import com.nurba.java.dto.request.LoginRequest;
 import com.nurba.java.dto.request.RefreshTokenRequest;
 import com.nurba.java.dto.request.RegisterRequest;
+import com.nurba.java.dto.responce.AdminUserResponse;
 import com.nurba.java.dto.responce.AuthMeResponse;
 import com.nurba.java.dto.responce.AuthResponse;
 import com.nurba.java.enums.Role;
@@ -22,7 +23,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
@@ -73,31 +76,43 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public AuthResponse refresh(RefreshTokenRequest request) {
+        return doRefreshWithToken(request.getRefreshToken().trim());
+    }
+
+    @Override
+    @Transactional
+    public AuthResponse refreshWithToken(String rawToken) {
+        return doRefreshWithToken(rawToken.trim());
+    }
+
+    private AuthResponse doRefreshWithToken(String rawToken) {
         String email;
         try {
-            email = jwtService.validateRefreshToken(request.getRefreshToken().trim());
+            email = jwtService.validateRefreshToken(rawToken);
         } catch (RuntimeException ex) {
             throw new BusinessRuleException("Невалидный или просроченный refresh-токен");
         }
         AppUser user = appUserRepository.findByEmailIgnoreCase(email)
                 .orElseThrow(() -> new NotFoundException("Пользователь не найден"));
+
+        int tokenVer = jwtService.extractRefreshVersion(rawToken);
+        if (tokenVer != -1 && tokenVer != user.getTokenVersion()) {
+            throw new BusinessRuleException("Refresh-токен отозван. Пожалуйста, войдите снова.");
+        }
+
         return buildAuthResponse(user);
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public AuthResponse refreshWithToken(String rawToken) {
-        String email;
-        try {
-            email = jwtService.validateRefreshToken(rawToken.trim());
-        } catch (RuntimeException ex) {
-            throw new BusinessRuleException("Невалидный или просроченный refresh-токен");
-        }
-        AppUser user = appUserRepository.findByEmailIgnoreCase(email)
-                .orElseThrow(() -> new NotFoundException("Пользователь не найден"));
-        return buildAuthResponse(user);
+    @Transactional
+    public void revokeRefreshTokens(String email) {
+        if (email == null || email.isBlank()) return;
+        appUserRepository.findByEmailIgnoreCase(email.trim().toLowerCase()).ifPresent(user -> {
+            user.setTokenVersion(user.getTokenVersion() + 1);
+            appUserRepository.save(user);
+        });
     }
 
     private AuthResponse buildAuthResponse(AppUser user) {
@@ -159,6 +174,20 @@ public class AuthServiceImpl implements AuthService {
         user.getRoles().remove(Role.ADMIN);
         appUserRepository.save(user);
         return toMeResponse(user);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<AdminUserResponse> listUsers() {
+        return appUserRepository.findAll().stream()
+                .sorted(Comparator.comparing(AppUser::getId))
+                .map(u -> AdminUserResponse.builder()
+                        .id(u.getId())
+                        .email(u.getEmail())
+                        .roles(u.getRoles().stream().map(Role::name).collect(Collectors.toList()))
+                        .createdAt(u.getCreatedAt().toString())
+                        .build())
+                .collect(Collectors.toList());
     }
 
     private static String normalize(String email) {

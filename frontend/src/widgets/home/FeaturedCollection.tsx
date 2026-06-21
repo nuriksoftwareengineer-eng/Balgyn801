@@ -2,11 +2,12 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { getProducts } from "@/shared/api/backend-api";
 import { DesignProductCard } from "./DesignProductCard";
 
-/** «Новый дроп» — первые товары каталога (реальные данные бэкенда). */
 export function FeaturedCollection() {
+  const { t } = useTranslation();
   const { data, isPending } = useQuery({
     queryKey: ["products", "all"],
     queryFn: () => getProducts(),
@@ -25,13 +26,13 @@ export function FeaturedCollection() {
           className="mb-12 flex flex-col justify-between gap-6 md:flex-row md:items-end"
         >
           <h2 className="text-[40px] font-extrabold uppercase leading-[1.1] tracking-[-0.04em] sm:text-[48px] md:text-[88px]">
-            Новый дроп
+            {t("home.featured.tag")}
           </h2>
           <Link
             to="/catalog"
             className="group hidden items-center self-end text-[20px] font-semibold uppercase tracking-[0.08em] md:flex"
           >
-            Смотреть все
+            {t("home.featured.viewAll")}
             <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
           </Link>
         </motion.div>
@@ -57,7 +58,7 @@ export function FeaturedCollection() {
             ))}
           </div>
         ) : (
-          <p className="text-[#7A7A7A]">Товары скоро появятся.</p>
+          <p className="text-[#7A7A7A]">{t("home.featured.empty")}</p>
         )}
 
         <div className="mt-8 md:hidden">
@@ -65,7 +66,7 @@ export function FeaturedCollection() {
             to="/catalog"
             className="flex h-[56px] w-full items-center justify-center bg-black text-[14px] font-semibold uppercase tracking-[0.08em] text-white"
           >
-            Смотреть все
+            {t("home.featured.viewAll")}
           </Link>
         </div>
       </div>

@@ -1,4 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useCart } from "@/app/use-cart";
 import type { Product } from "@/shared/api/client";
 import { formatMoney } from "@/shared/lib/format-money";
@@ -7,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { ProductImage } from "@/widgets/ProductImage";
 
 export function ProductCard({ product }: { product: Product }) {
+  const { t } = useTranslation();
   const { addItem } = useCart();
   const navigate = useNavigate();
   const hasVariants =
@@ -40,7 +42,7 @@ export function ProductCard({ product }: { product: Product }) {
               product.inStock ? "text-[--color-muted]" : "text-[--color-danger]",
             )}
           >
-            {product.inStock ? "В наличии" : "Нет в наличии"}
+            {product.inStock ? t("product.inStock") : t("product.outOfStock")}
           </span>
         </div>
 
@@ -60,9 +62,9 @@ export function ProductCard({ product }: { product: Product }) {
         >
           {product.inStock
             ? hasVariants
-              ? "Выбрать размер"
-              : "В корзину"
-            : "Ожидаем поступление"}
+              ? t("product.selectSize")
+              : t("product.addToCart")
+            : t("product.comingSoon")}
         </Button>
       </div>
     </article>

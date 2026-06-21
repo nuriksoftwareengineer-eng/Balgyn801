@@ -5,6 +5,18 @@ import { getOrders } from "@/shared/api/backend-api";
 import { deliveryTypeLabel } from "@/shared/lib/delivery-labels";
 import { formatMoney } from "@/shared/lib/format-money";
 import { orderStatusLabel } from "@/shared/lib/order-status-labels";
+import { cn } from "@/shared/lib/cn";
+
+const ORDER_STATUS_STYLES: Record<string, string> = {
+  PENDING_PAYMENT:  "bg-yellow-900/40 text-yellow-400",
+  PAID:             "bg-blue-900/40 text-blue-400",
+  PROCESSING:       "bg-sky-900/40 text-sky-400",
+  SHIPPED:          "bg-purple-900/40 text-purple-400",
+  DELIVERED:        "bg-emerald-900/40 text-emerald-400",
+  CANCELLED:        "bg-red-900/40 text-red-400",
+  EXPIRED:          "bg-zinc-700/60 text-zinc-400",
+  REFUNDED:         "bg-orange-900/40 text-orange-400",
+};
 
 function formatDate(iso: string | undefined) {
   if (!iso) return "—";
@@ -45,7 +57,7 @@ export function AdminOrdersPage() {
 
   return (
     <div>
-      <h1 className="font-display mb-8 text-4xl tracking-wide text-zinc-100">
+      <h1 className="mb-8 text-2xl font-bold text-zinc-100">
         Заказы
       </h1>
 
@@ -93,8 +105,13 @@ export function AdminOrdersPage() {
                   <td className="px-4 py-3 text-zinc-400">
                     {deliveryTypeLabel(o.deliveryType)}
                   </td>
-                  <td className="px-4 py-3 text-zinc-400">
-                    {orderStatusLabel(o.status)}
+                  <td className="px-4 py-3">
+                    <span className={cn(
+                      "rounded px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-[0.08em]",
+                      ORDER_STATUS_STYLES[o.status ?? ""] ?? "bg-zinc-700/60 text-zinc-400",
+                    )}>
+                      {orderStatusLabel(o.status)}
+                    </span>
                   </td>
                   <td className="px-4 py-3 tabular-nums text-zinc-300">
                     <p className="m-0 text-xs text-zinc-500">

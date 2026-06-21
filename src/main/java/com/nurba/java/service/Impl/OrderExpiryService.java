@@ -70,16 +70,29 @@ public class OrderExpiryService {
 
     /**
      * Expires a single order: releases inventory, marks EXPIRED, records history.
-     * Public + transactional so it can also be invoked directly (e.g. tests, reconciliation).
+     * Public + transactional so it can also be invoked directly (e.g. payment callbacks, tests).
+     *
+     * Re-reads the order inside the transaction before acting. With READ COMMITTED isolation
+     * (Postgres default), this sees any commits from concurrent transactions — specifically,
+     * if a payment callback already expired the order while the scheduler had it in its in-memory
+     * list, the fresh read returns EXPIRED and this method becomes a no-op, preventing the
+     * double inventory release race.
      */
     @Transactional
     public void expire(Order order) {
-        releaseInventory(order);
-        cancelPendingPayments(order);
-        order.setStatus(OrderStatus.EXPIRED);
-        order.setUpdatedAt(LocalDateTime.now());
-        orderRepository.save(order);
-        recordHistory(order);
+        Order fresh = orderRepository.findById(order.getId())
+                .orElseThrow(() -> new RuntimeException("Заказ не найден при истечении: " + order.getId()));
+        if (fresh.getStatus() != OrderStatus.PENDING_PAYMENT) {
+            log.info("[Expiry] expire() skipped: order #{} already in status={}",
+                    fresh.getId(), fresh.getStatus());
+            return;
+        }
+        releaseInventory(fresh);
+        cancelPendingPayments(fresh);
+        fresh.setStatus(OrderStatus.EXPIRED);
+        fresh.setUpdatedAt(LocalDateTime.now());
+        orderRepository.save(fresh);
+        recordHistory(fresh);
     }
 
     /**

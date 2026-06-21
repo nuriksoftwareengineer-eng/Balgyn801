@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useCatalogGroups } from "@/shared/api/catalog-api";
 import img0 from "@/assets/figma/image0.jpeg";
 import img1 from "@/assets/figma/image1.jpeg";
@@ -11,6 +12,7 @@ const COVERS = [img0, img1, img2, img3];
 
 /** «Каталог» — реальные группы каталога с обложками. */
 export function Categories() {
+  const { t } = useTranslation();
   const { data, isPending } = useCatalogGroups();
   const groups = data ?? [];
 
@@ -25,7 +27,7 @@ export function Categories() {
           className="mb-12 max-w-3xl"
         >
           <h2 className="text-[40px] font-extrabold uppercase leading-[1.1] tracking-[-0.04em] sm:text-[48px] md:text-[88px]">
-            Каталог
+            {t("nav.catalog")}
           </h2>
         </motion.div>
 
@@ -62,7 +64,7 @@ export function Categories() {
                       {g.name}
                     </h3>
                     <span className="text-[12px] uppercase tracking-[0.2em] text-[#7A7A7A]">
-                      Смотреть →
+                      {t("home.categories.viewAll")}
                     </span>
                   </div>
                 </Link>

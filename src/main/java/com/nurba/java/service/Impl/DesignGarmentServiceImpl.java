@@ -1,5 +1,6 @@
 package com.nurba.java.service.Impl;
 
+import com.nurba.java.component.DesignReadinessService;
 import com.nurba.java.domain.Color;
 import com.nurba.java.domain.Design;
 import com.nurba.java.domain.DesignGarment;
@@ -16,6 +17,7 @@ import com.nurba.java.repositories.SizeRepository;
 import com.nurba.java.service.DesignGarmentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -30,18 +32,22 @@ public class DesignGarmentServiceImpl implements DesignGarmentService {
     private final ColorRepository colorRepository;
     private final SizeRepository sizeRepository;
     private final DesignGarmentMapper mapper;
+    private final DesignReadinessService readinessService;
 
     @Override
+    @Transactional(readOnly = true)
     public List<DesignGarmentResponse> getByDesign(Long designId) {
         return repository.findByDesign_Id(designId).stream().map(mapper::toResponse).toList();
     }
 
     @Override
+    @Transactional(readOnly = true)
     public DesignGarmentResponse getById(Long id) {
         return mapper.toResponse(findOrThrow(id));
     }
 
     @Override
+    @Transactional
     public DesignGarmentResponse create(CreateDesignGarmentRequest request) {
         Design design = designRepository.findById(request.getDesignId())
                 .orElseThrow(() -> new NotFoundException("Design not found: " + request.getDesignId()));
@@ -54,12 +60,16 @@ public class DesignGarmentServiceImpl implements DesignGarmentService {
         entity.setColors(colors);
         entity.setSizes(sizes);
 
-        return mapper.toResponse(repository.save(entity));
+        DesignGarmentResponse response = mapper.toResponse(repository.save(entity));
+        readinessService.recompute(request.getDesignId());
+        return response;
     }
 
     @Override
+    @Transactional
     public DesignGarmentResponse update(Long id, UpdateDesignGarmentRequest request) {
         DesignGarment entity = findOrThrow(id);
+        Long designId = entity.getDesign().getId();
 
         if (request.getActive() != null) {
             entity.setActive(request.getActive());
@@ -71,13 +81,18 @@ public class DesignGarmentServiceImpl implements DesignGarmentService {
             entity.setSizes(resolveSizes(request.getSizeIds()));
         }
 
-        return mapper.toResponse(repository.save(entity));
+        DesignGarmentResponse response = mapper.toResponse(repository.save(entity));
+        readinessService.recompute(designId);
+        return response;
     }
 
     @Override
+    @Transactional
     public void delete(Long id) {
-        findOrThrow(id);
+        DesignGarment entity = findOrThrow(id);
+        Long designId = entity.getDesign().getId();
         repository.deleteById(id);
+        readinessService.recompute(designId);
     }
 
     private DesignGarment findOrThrow(Long id) {

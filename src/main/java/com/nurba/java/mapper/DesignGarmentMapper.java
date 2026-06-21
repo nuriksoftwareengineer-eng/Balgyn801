@@ -14,6 +14,8 @@ public interface DesignGarmentMapper {
     @Mapping(target = "prices", ignore = true)
     @Mapping(target = "colors", ignore = true)
     @Mapping(target = "sizes", ignore = true)
+    @Mapping(target = "active", ignore = true)
+    @Mapping(target = "sortOrder", ignore = true)
     DesignGarment toEntity(CreateDesignGarmentRequest request);
 
     @Mapping(source = "design.id", target = "designId")

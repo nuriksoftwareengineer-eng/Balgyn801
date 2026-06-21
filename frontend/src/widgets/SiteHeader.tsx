@@ -1,10 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/app/auth-context";
 import { useCartDrawer } from "@/app/cart-drawer-context";
 import { useCart } from "@/app/use-cart";
 import { useCatalogGroups } from "@/shared/api/catalog-api";
+import { useCurrency, type Currency } from "@/app/currency-context";
 import { CartDrawer } from "@/widgets/CartDrawer";
+import { CompactDropdown } from "@/shared/ui/CompactDropdown";
 import { cn } from "@/shared/lib/cn";
 import { Container } from "@/shared/ui/container";
 
@@ -96,7 +99,12 @@ function HeaderIconBtn({
 
 // ─── Main component ───────────────────────────────────────────────────────
 
+const LANGS = ["ru", "kk", "en"] as const;
+const CURRENCIES: Currency[] = ["KZT", "USD", "EUR", "RUB"];
+
 export function SiteHeader() {
+  const { t, i18n } = useTranslation();
+  const { currency, setCurrency } = useCurrency();
   const { user, loading, logout, isAdmin } = useAuth();
   const { totalQty } = useCart();
   const navigate = useNavigate();
@@ -108,7 +116,6 @@ export function SiteHeader() {
 
   const { data: groups } = useCatalogGroups();
 
-  // Hover timers for desktop mega-menu
   const openTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -128,18 +135,14 @@ export function SiteHeader() {
     closeTimerRef.current = setTimeout(() => setMegaOpen(false), 150);
   };
 
-  // Escape key closes mega-menu
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        setMegaOpen(false);
-      }
+      if (e.key === "Escape") setMegaOpen(false);
     };
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
   }, []);
 
-  // Clean up timers on unmount
   useEffect(() => {
     return () => {
       cancelOpen();
@@ -159,6 +162,10 @@ export function SiteHeader() {
     setMegaOpen(false);
   };
 
+  const currentLang = i18n.resolvedLanguage ?? "ru";
+  const langOptions = LANGS.map((lng) => ({ value: lng, label: t(`language.${lng}`) }));
+  const currencyOptions = CURRENCIES.map((c) => ({ value: c, label: t(`currency.${c}`) }));
+
   return (
     <>
       <header className="sticky top-9 z-[100] border-b border-[--color-border] bg-white">
@@ -175,30 +182,47 @@ export function SiteHeader() {
 
           {/* ── Desktop nav ── */}
           <nav className="hidden items-center gap-8 md:flex" aria-label="Основная навигация">
-            {/* Catalog — hover opens mega-menu; click navigates */}
             <div
               onMouseEnter={scheduleMegaOpen}
               onMouseLeave={scheduleMegaClose}
               className="relative"
             >
-              <NavLink
-                to="/catalog"
-                className={navLinkClass}
-                onClick={closeMega}
-              >
-                Каталог
+              <NavLink to="/catalog" className={navLinkClass} onClick={closeMega}>
+                {t("nav.catalog")}
               </NavLink>
             </div>
 
-            <NavLink to="/custom-design" className={navLinkClass}>Свой дизайн</NavLink>
-            <NavLink to="/about" className={navLinkClass}>О нас</NavLink>
+            <NavLink to="/custom-design" className={navLinkClass}>{t("nav.customDesign")}</NavLink>
+            <NavLink to="/about" className={navLinkClass}>{t("nav.about")}</NavLink>
             {isAdmin && (
-              <NavLink to="/admin" className={navLinkClass}>Админ</NavLink>
+              <NavLink to="/admin" className={navLinkClass}>{t("nav.admin")}</NavLink>
             )}
           </nav>
 
           {/* ── Right cluster ── */}
           <div className="flex items-center gap-1">
+
+            {/* Language dropdown (desktop) */}
+            <CompactDropdown
+              trigger={`🌐 ${t(`language.${currentLang}`)}`}
+              options={langOptions}
+              value={currentLang}
+              onChange={(lng) => i18n.changeLanguage(lng)}
+              className="hidden md:block"
+            />
+
+            <span className="mx-0.5 hidden h-3 w-px bg-[--color-border] md:block" />
+
+            {/* Currency dropdown (desktop) */}
+            <CompactDropdown
+              trigger={t(`currency.${currency}`)}
+              options={currencyOptions}
+              value={currency}
+              onChange={(c) => setCurrency(c as Currency)}
+              className="hidden md:block"
+            />
+
+            <span className="mx-0.5 hidden h-3 w-px bg-[--color-border] md:block" />
 
             {/* Desktop: user area */}
             <div className="hidden items-center gap-3 md:flex">
@@ -216,14 +240,14 @@ export function SiteHeader() {
                     to="/orders"
                     className="text-[0.65rem] uppercase tracking-widest text-[--color-muted] transition hover:text-black"
                   >
-                    Заказы
+                    {t("nav.orders")}
                   </Link>
                   <button
                     type="button"
                     onClick={logout}
                     className="text-[0.65rem] uppercase tracking-widest text-[--color-muted] transition hover:text-black"
                   >
-                    Выйти
+                    {t("nav.logout")}
                   </button>
                 </>
               ) : (
@@ -232,21 +256,21 @@ export function SiteHeader() {
                     to="/login"
                     className="text-[0.65rem] uppercase tracking-widest text-[--color-muted] transition hover:text-black"
                   >
-                    Вход
+                    {t("nav.login")}
                   </Link>
                   <Link
                     to="/register"
                     className="text-[0.65rem] uppercase tracking-widest text-[--color-muted] transition hover:text-black"
                   >
-                    Регистрация
+                    {t("nav.register")}
                   </Link>
                 </>
               )}
             </div>
 
-            {/* Mobile: user icon → login or profile */}
+            {/* Mobile: user icon */}
             <HeaderIconBtn
-              label={user ? "Профиль" : "Войти"}
+              label={user ? t("header.profileLabel") : t("header.loginLabel")}
               onClick={() => navigate(user ? "/profile" : "/login")}
               className="md:hidden"
             >
@@ -255,7 +279,7 @@ export function SiteHeader() {
 
             {/* Cart */}
             <HeaderIconBtn
-              label={`Корзина${totalQty > 0 ? `, ${totalQty} поз.` : ""}`}
+              label={t("header.cartLabel")}
               onClick={openDrawer}
               className="relative"
             >
@@ -272,7 +296,7 @@ export function SiteHeader() {
 
             {/* Mobile: hamburger */}
             <HeaderIconBtn
-              label={menuOpen ? "Закрыть меню" : "Меню"}
+              label={menuOpen ? t("header.closeMenu") : t("header.openMenu")}
               onClick={() => setMenuOpen((v) => !v)}
               className="md:hidden"
             >
@@ -296,7 +320,7 @@ export function SiteHeader() {
                     onClick={closeMega}
                     className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-[--color-muted] transition hover:text-black"
                   >
-                    Все коллекции
+                    {t("nav.allCollections")}
                   </Link>
                   {groups.map((g) => (
                     <Link
@@ -310,7 +334,7 @@ export function SiteHeader() {
                   ))}
                 </div>
               ) : (
-                <p className="text-[0.65rem] text-[--color-muted]">Загружаем каталог…</p>
+                <p className="text-[0.65rem] text-[--color-muted]">{t("nav.loadingCatalog")}</p>
               )}
             </Container>
           </div>
@@ -320,23 +344,19 @@ export function SiteHeader() {
         {menuOpen && (
           <div className="border-t border-[--color-border] bg-white md:hidden">
             <Container className="py-6">
-              <nav className="flex flex-col gap-5" aria-label="Мобильное меню">
+              <nav className="flex flex-col gap-5" aria-label={t("header.mobileMenu")}>
 
                 {/* Catalog accordion */}
                 <div className="flex flex-col">
                   <div className="flex items-center justify-between">
-                    <NavLink
-                      to="/catalog"
-                      className={navLinkClass}
-                      onClick={closeMenu}
-                    >
-                      Каталог
+                    <NavLink to="/catalog" className={navLinkClass} onClick={closeMenu}>
+                      {t("nav.catalog")}
                     </NavLink>
                     {groups && groups.length > 0 && (
                       <button
                         type="button"
                         onClick={() => setCatalogAccordionOpen((v) => !v)}
-                        aria-label={catalogAccordionOpen ? "Свернуть" : "Развернуть"}
+                        aria-label={catalogAccordionOpen ? t("header.shrinkCatalog") : t("header.expandCatalog")}
                         className="flex h-7 w-7 items-center justify-center text-[--color-muted] transition hover:text-black"
                       >
                         <ChevronIcon open={catalogAccordionOpen} />
@@ -360,23 +380,15 @@ export function SiteHeader() {
                   )}
                 </div>
 
-                <NavLink
-                  to="/custom-design"
-                  className={navLinkClass}
-                  onClick={closeMenu}
-                >
-                  Свой дизайн
+                <NavLink to="/custom-design" className={navLinkClass} onClick={closeMenu}>
+                  {t("nav.customDesign")}
                 </NavLink>
-                <NavLink
-                  to="/about"
-                  className={navLinkClass}
-                  onClick={closeMenu}
-                >
-                  О нас
+                <NavLink to="/about" className={navLinkClass} onClick={closeMenu}>
+                  {t("nav.about")}
                 </NavLink>
                 {isAdmin && (
                   <NavLink to="/admin" className={navLinkClass} onClick={closeMenu}>
-                    Админ
+                    {t("nav.admin")}
                   </NavLink>
                 )}
 
@@ -388,26 +400,45 @@ export function SiteHeader() {
                       {user.email}
                     </NavLink>
                     <NavLink to="/orders" className={navLinkClass} onClick={closeMenu}>
-                      Мои заказы
+                      {t("nav.myOrders")}
                     </NavLink>
                     <button
                       type="button"
                       onClick={() => { logout(); closeMenu(); }}
                       className="text-left text-[0.7rem] uppercase tracking-widest text-[--color-muted] transition hover:text-black"
                     >
-                      Выйти
+                      {t("nav.logout")}
                     </button>
                   </>
                 ) : (
                   <>
                     <NavLink to="/login" className={navLinkClass} onClick={closeMenu}>
-                      Вход
+                      {t("nav.login")}
                     </NavLink>
                     <NavLink to="/register" className={navLinkClass} onClick={closeMenu}>
-                      Регистрация
+                      {t("nav.register")}
                     </NavLink>
                   </>
                 )}
+
+                {/* Mobile: switchers */}
+                <div className="my-1 border-t border-[--color-border]" />
+                <div className="flex items-center gap-4">
+                  <CompactDropdown
+                    trigger={`🌐 ${t(`language.${currentLang}`)}`}
+                    options={langOptions}
+                    value={currentLang}
+                    onChange={(lng) => { i18n.changeLanguage(lng); closeMenu(); }}
+                    align="left"
+                  />
+                  <CompactDropdown
+                    trigger={t(`currency.${currency}`)}
+                    options={currencyOptions}
+                    value={currency}
+                    onChange={(c) => { setCurrency(c as Currency); closeMenu(); }}
+                    align="left"
+                  />
+                </div>
               </nav>
             </Container>
           </div>

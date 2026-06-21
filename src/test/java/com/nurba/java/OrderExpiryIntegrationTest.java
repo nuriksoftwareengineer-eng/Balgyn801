@@ -127,7 +127,7 @@ class OrderExpiryIntegrationTest {
         design.setCollection(coll);
         design.setName("Expiry Design");
         design.setSlug("exp-design");
-        design.setActive(true);
+        design.setStatus(com.nurba.java.enums.DesignStatus.PUBLISHED);
         design.setCreatedAt(LocalDateTime.now());
         design = designRepository.save(design);
 

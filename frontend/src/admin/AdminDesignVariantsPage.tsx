@@ -70,14 +70,19 @@ export function AdminDesignVariantsPage() {
       </h1>
       {design && (
         <p className="mb-6 text-sm text-zinc-500">
-          {design.groupName} / {design.collectionName} ·{" "}
-          <Link
-            to={`/catalog/${design.groupSlug}/${design.collectionSlug}/${design.slug}`}
-            target="_blank"
-            className="text-sky-400 hover:text-sky-300"
-          >
-            открыть на витрине ↗
-          </Link>
+          {design.groupName} / {design.collectionName}
+          {design.status === "PUBLISHED" && (
+            <>
+              {" "}·{" "}
+              <Link
+                to={`/catalog/${design.groupSlug}/${design.collectionSlug}/${design.slug}`}
+                target="_blank"
+                className="text-sky-400 hover:text-sky-300"
+              >
+                открыть на витрине ↗
+              </Link>
+            </>
+          )}
         </p>
       )}
 

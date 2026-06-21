@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { Plus } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import type { Product } from "@/shared/api/types";
 import { formatMoney } from "@/shared/lib/format-money";
 
@@ -11,6 +12,7 @@ export function DesignProductCard({
   product: Product;
   index?: number;
 }) {
+  const { t } = useTranslation();
   const initial = product.title?.trim().charAt(0).toUpperCase() || "B";
   return (
     <Link to={`/catalog/${product.id}`} className="group relative block">
@@ -36,7 +38,7 @@ export function DesignProductCard({
         <div className="absolute left-4 top-4 flex flex-col gap-2">
           {!product.inStock ? (
             <span className="border border-black bg-white px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-black">
-              Распродано
+              {t("product.soldOut")}
             </span>
           ) : null}
         </div>
@@ -44,7 +46,7 @@ export function DesignProductCard({
         <div className="absolute bottom-0 left-0 hidden w-full translate-y-full p-4 transition-transform duration-500 group-hover:translate-y-0 md:block">
           <span className="flex w-full items-center justify-center gap-2 bg-white/95 px-4 py-3 text-[14px] font-semibold uppercase tracking-[0.08em] text-black backdrop-blur-sm transition-colors group-hover:bg-black group-hover:text-white">
             <Plus className="h-4 w-4" />
-            В корзину
+            {t("product.addToCart")}
           </span>
         </div>
       </div>

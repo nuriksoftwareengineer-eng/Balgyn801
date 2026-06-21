@@ -128,7 +128,7 @@ class MyOrdersIntegrationTest {
         design.setCollection(coll);
         design.setName("My Orders Design");
         design.setSlug("my-orders-design");
-        design.setActive(true);
+        design.setStatus(com.nurba.java.enums.DesignStatus.PUBLISHED);
         design.setCreatedAt(LocalDateTime.now());
         design = designRepository.save(design);
 

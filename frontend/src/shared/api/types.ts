@@ -61,7 +61,13 @@ export type RefreshTokenRequest = {
   refreshToken: string;
 };
 
-export type PaymentProvider = "KASPI" | "YOOKASSA" | "PAYPAL";
+export type PaymentProvider = "FREEDOM_PAY" | "PAYPAL";
+
+export type PayPalCreateOrderRequest = {
+  orderId: number;
+  returnUrl?: string | null;
+  cancelUrl?: string | null;
+};
 export type PaymentStatus =
   | "PENDING"
   | "SUCCEEDED"
@@ -297,6 +303,18 @@ export type PaymentInitRequest = {
   returnUrl?: string | null;
 };
 
+export type ExchangeRateResponse = {
+  kztPerUsd: number;
+  source: string;
+  frozen: boolean;
+  updatedAt: string;
+};
+
+export type SetExchangeRateRequest = {
+  kztPerUsd: number;
+  frozen?: boolean | null;
+};
+
 export type PaymentWebhookRequest = {
   eventId?: string | null;
   paymentId?: number | null;
@@ -306,6 +324,14 @@ export type PaymentWebhookRequest = {
   amount?: number | null;
   currency?: string | null;
   payload?: Record<string, unknown> | null;
+};
+
+/** Ответ `GET /admin/users` — один зарегистрированный пользователь (только ADMIN). */
+export type AdminUserResponse = {
+  id: number;
+  email: string;
+  roles: string[];
+  createdAt: string;
 };
 
 export type PaymentResponse = {
@@ -321,4 +347,6 @@ export type PaymentResponse = {
   errorMessage?: string | null;
   createdAt: string;
   updatedAt: string;
+  // Only present on PayPal create-order; used to authorise /cancel requests.
+  cancelToken?: string | null;
 };

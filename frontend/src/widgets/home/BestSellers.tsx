@@ -1,9 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import { getCatalogDesigns } from "@/shared/api/backend-api";
 
 export function BestSellers() {
+  const { t } = useTranslation();
   const { data, isPending } = useQuery({
     queryKey: ["catalog", "designs", "all"],
     queryFn: () => getCatalogDesigns(),
@@ -23,10 +25,10 @@ export function BestSellers() {
           className="mb-12 flex flex-col justify-between gap-4 md:flex-row md:items-end"
         >
           <h2 className="text-[40px] font-extrabold uppercase leading-[1.1] tracking-[-0.04em] sm:text-[48px] md:text-[88px]">
-            Хиты
+            {t("home.bestSellers.title")}
           </h2>
           <p className="max-w-[300px] text-[16px] text-black">
-            Подобрано редакцией бренда на основе откликов и продаж за последний месяц.
+            {t("home.bestSellers.desc")}
           </p>
         </motion.div>
 
@@ -37,7 +39,7 @@ export function BestSellers() {
             ))}
           </div>
         ) : designs.length === 0 ? (
-          <p className="text-[#7A7A7A]">Скоро здесь появятся хиты продаж.</p>
+          <p className="text-[#7A7A7A]">{t("home.bestSellers.empty")}</p>
         ) : (
           <div className="grid grid-cols-2 gap-4 md:gap-6 lg:grid-cols-4">
             {designs.map((design, i) => (

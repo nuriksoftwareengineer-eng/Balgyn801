@@ -130,7 +130,7 @@ class OrderHistoryIntegrationTest {
         design.setCollection(coll);
         design.setName("History Design");
         design.setSlug("history-design");
-        design.setActive(true);
+        design.setStatus(com.nurba.java.enums.DesignStatus.PUBLISHED);
         design.setCreatedAt(LocalDateTime.now());
         design = designRepository.save(design);
 
@@ -213,23 +213,26 @@ class OrderHistoryIntegrationTest {
     void updateStatus_appendsNewHistoryEntry() throws Exception {
         long orderId = createOrder();
 
-        // Admin updates status to CONFIRMED using a mock admin user (no real JWT needed)
-        String body = """
-                {"status": "CONFIRMED"}
-                """;
+        // Simulate payment confirmation: system sets CONFIRMED, admin cannot do this directly.
+        // (PENDING_PAYMENT → CONFIRMED is a system-only transition via payment callback/capture.)
+        com.nurba.java.domain.Order order = orderRepository.findById(orderId).orElseThrow();
+        order.setStatus(OrderStatus.CONFIRMED);
+        order.setUpdatedAt(LocalDateTime.now());
+        orderRepository.save(order);
 
+        // Admin moves CONFIRMED → IN_PRODUCTION (valid admin transition)
         mockMvc.perform(patch("/api/v1/order/" + orderId + "/status")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(body)
+                        .content("{\"status\": \"IN_PRODUCTION\"}")
                         .with(SecurityMockMvcRequestPostProcessors.user("admin@test.com").roles("ADMIN")))
                 .andExpect(status().isOk());
 
         List<OrderHistory> history =
                 orderHistoryRepository.findByOrder_IdOrderByDateAddedDesc(orderId);
 
-        // Two entries: CONFIRMED (latest) and PENDING_PAYMENT (creation)
+        // Two entries: IN_PRODUCTION (latest) and PENDING_PAYMENT (creation)
         assertThat(history).hasSize(2);
-        assertThat(history.get(0).getStatus()).isEqualTo(OrderStatus.CONFIRMED);
+        assertThat(history.get(0).getStatus()).isEqualTo(OrderStatus.IN_PRODUCTION);
         assertThat(history.get(1).getStatus()).isEqualTo(OrderStatus.PENDING_PAYMENT);
     }
 
@@ -237,7 +240,14 @@ class OrderHistoryIntegrationTest {
     void multipleStatusUpdates_allRecorded() throws Exception {
         long orderId = createOrder();
 
-        for (String status : List.of("CONFIRMED", "IN_PRODUCTION", "READY")) {
+        // Simulate payment: CONFIRMED set directly (system-side, not admin)
+        com.nurba.java.domain.Order order = orderRepository.findById(orderId).orElseThrow();
+        order.setStatus(OrderStatus.CONFIRMED);
+        order.setUpdatedAt(LocalDateTime.now());
+        orderRepository.save(order);
+
+        // Admin moves through production pipeline: CONFIRMED → IN_PRODUCTION → READY → SHIPPED
+        for (String status : List.of("IN_PRODUCTION", "READY", "SHIPPED")) {
             mockMvc.perform(patch("/api/v1/order/" + orderId + "/status")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content("{\"status\": \"" + status + "\"}")
@@ -248,9 +258,9 @@ class OrderHistoryIntegrationTest {
         List<OrderHistory> history =
                 orderHistoryRepository.findByOrder_IdOrderByDateAddedDesc(orderId);
 
-        // 1 creation + 3 updates = 4 entries
+        // 1 creation (PENDING_PAYMENT) + 3 admin transitions = 4 entries
         assertThat(history).hasSize(4);
-        assertThat(history.get(0).getStatus()).isEqualTo(OrderStatus.READY);
+        assertThat(history.get(0).getStatus()).isEqualTo(OrderStatus.SHIPPED);
         assertThat(history.get(3).getStatus()).isEqualTo(OrderStatus.PENDING_PAYMENT);
     }
 }

@@ -1,5 +1,7 @@
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useCart } from "@/app/use-cart";
+import { useCurrency } from "@/app/currency-context";
 import { isDesignLine } from "@/app/cart-context";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -10,14 +12,6 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { formatMoney } from "@/shared/lib/format-money";
-
-// ─── Types ────────────────────────────────────────────────────────────────
-
-interface CartDrawerProps {
-  open: boolean;
-  onClose: () => void;
-}
 
 // ─── Icons ────────────────────────────────────────────────────────────────
 
@@ -40,6 +34,7 @@ function TrashIcon() {
 // ─── Empty state ──────────────────────────────────────────────────────────
 
 function EmptyCart({ onClose }: { onClose: () => void }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   return (
     <div className="flex flex-col items-center justify-center gap-5 py-16 text-center">
@@ -49,14 +44,14 @@ function EmptyCart({ onClose }: { onClose: () => void }) {
         <circle cx="18" cy="20" r="1" />
       </svg>
       <div>
-        <p className="text-sm font-medium text-black">Корзина пуста</p>
-        <p className="mt-1 text-xs text-[--color-muted]">Добавьте что-нибудь из каталога</p>
+        <p className="text-sm font-medium text-black">{t("cart.empty")}</p>
+        <p className="mt-1 text-xs text-[--color-muted]">{t("cart.emptyHint")}</p>
       </div>
       <Button
         size="sm"
         onClick={() => { navigate("/catalog"); onClose(); }}
       >
-        В каталог
+        {t("cart.toCatalog")}
       </Button>
     </div>
   );
@@ -76,6 +71,8 @@ function CartLineRow({ lineKey, title, price, imageUrl, qty, size, color, increm
   decrement: (k: string) => void;
   removeLine: (k: string) => void;
 }) {
+  const { t } = useTranslation();
+  const { format } = useCurrency();
   const meta = [size, color].filter(Boolean).join(" · ");
 
   return (
@@ -97,7 +94,7 @@ function CartLineRow({ lineKey, title, price, imageUrl, qty, size, color, increm
             type="button"
             onClick={() => removeLine(lineKey)}
             className="shrink-0 text-zinc-400 transition hover:text-black"
-            aria-label="Удалить"
+            aria-label={t("cart.remove")}
           >
             <TrashIcon />
           </button>
@@ -114,7 +111,7 @@ function CartLineRow({ lineKey, title, price, imageUrl, qty, size, color, increm
               type="button"
               onClick={() => decrement(lineKey)}
               className="flex h-7 w-7 items-center justify-center text-sm transition hover:bg-[--color-surface]"
-              aria-label="Убрать 1"
+              aria-label={t("cart.decrease")}
             >
               −
             </button>
@@ -125,14 +122,14 @@ function CartLineRow({ lineKey, title, price, imageUrl, qty, size, color, increm
               type="button"
               onClick={() => increment(lineKey)}
               className="flex h-7 w-7 items-center justify-center text-sm transition hover:bg-[--color-surface]"
-              aria-label="Добавить 1"
+              aria-label={t("cart.increase")}
             >
               +
             </button>
           </div>
 
           <p className="text-xs font-semibold text-black">
-            {formatMoney(price * qty)} ₸
+            {format(price * qty)}
           </p>
         </div>
       </div>
@@ -142,7 +139,14 @@ function CartLineRow({ lineKey, title, price, imageUrl, qty, size, color, increm
 
 // ─── Main component ───────────────────────────────────────────────────────
 
+interface CartDrawerProps {
+  open: boolean;
+  onClose: () => void;
+}
+
 export function CartDrawer({ open, onClose }: CartDrawerProps) {
+  const { t } = useTranslation();
+  const { format } = useCurrency();
   const { lines, totalQty, subtotal, increment, decrement, removeLine } = useCart();
   const navigate = useNavigate();
 
@@ -161,13 +165,13 @@ export function CartDrawer({ open, onClose }: CartDrawerProps) {
     >
       <SheetHeader>
         <SheetTitle>
-          Корзина{totalQty > 0 ? ` (${totalQty})` : ""}
+          {t("cart.title")}{totalQty > 0 ? ` (${totalQty})` : ""}
         </SheetTitle>
         <button
           type="button"
           onClick={onClose}
           className="text-zinc-400 transition hover:text-black"
-          aria-label="Закрыть"
+          aria-label={t("cart.close")}
         >
           <CloseIcon />
         </button>
@@ -203,18 +207,18 @@ export function CartDrawer({ open, onClose }: CartDrawerProps) {
           <div className="flex items-end justify-between">
             <div>
               <p className="text-[0.6rem] uppercase tracking-[0.16em] text-[--color-muted]">
-                Итого
+                {t("cart.total")}
               </p>
               <p className="mt-0.5 text-[0.6rem] text-[--color-muted]">
-                {totalQty}&thinsp;{totalQty === 1 ? "позиция" : totalQty < 5 ? "позиции" : "позиций"}
+                {t("cart.items_one", { count: totalQty })}
               </p>
             </div>
             <span className="text-xl font-semibold text-black">
-              {formatMoney(subtotal)} ₸
+              {format(subtotal)}
             </span>
           </div>
           <Button size="lg" className="w-full" onClick={handleCheckout}>
-            Оформить заказ
+            {t("cart.checkout")}
           </Button>
         </SheetFooter>
       )}

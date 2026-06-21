@@ -1,15 +1,18 @@
 import { useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/app/auth-context";
 import {
+  archiveDesign,
   createDesign,
   deleteDesign,
   listCollections,
   listDesigns,
   listGroups,
+  publishDesign,
   updateDesign,
   type AdminDesign,
+  type DesignStatus,
 } from "@/shared/api/admin-catalog";
 import { uploadMedia } from "@/shared/api/backend-api";
 import { ApiError } from "@/shared/api/http";
@@ -19,9 +22,45 @@ import { slugify } from "@/admin/AdminCategoriesPage";
 const inputClass =
   "rounded border border-white/20 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-600 outline-none focus:border-white/40";
 
+// ─── Design status badge ──────────────────────────────────────────────────────
+
+const STATUS_STYLES: Record<DesignStatus, { label: string; cls: string }> = {
+  DRAFT:     { label: "ЧЕРНОВИК",    cls: "bg-zinc-700/60 text-zinc-400" },
+  READY:     { label: "ГОТОВ",       cls: "bg-blue-900/40 text-blue-400" },
+  PUBLISHED: { label: "ОПУБЛИКОВАН", cls: "bg-emerald-900/40 text-emerald-400" },
+  ARCHIVED:  { label: "АРХИВ",       cls: "bg-orange-900/40 text-orange-400" },
+};
+
+function StatusBadge({ d }: { d: AdminDesign }) {
+  const { label, cls } = STATUS_STYLES[d.status] ?? STATUS_STYLES.DRAFT;
+  return (
+    <span className={`inline-flex items-center rounded px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-[0.08em] ${cls}`}>
+      {label}
+    </span>
+  );
+}
+
+// ─── Publish guidance ─────────────────────────────────────────────────────────
+
+function PublishGuidance({ d }: { d: AdminDesign }) {
+  if (d.status === "PUBLISHED" || d.status === "ARCHIVED") return null;
+  const issues: string[] = [];
+  if (!d.mainImageUrl) issues.push("нет главного изображения");
+  if (d.activeGarmentCount === 0) issues.push("нет активных вариантов");
+  if (issues.length === 0) return null;
+  return (
+    <p className="mt-0.5 text-[0.6rem] text-amber-500">
+      Для публикации: {issues.join(", ")}
+    </p>
+  );
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
+
 export function AdminDesignsPage() {
   const { token } = useAuth();
   const qc = useQueryClient();
+  const navigate = useNavigate();
 
   const { data: groups = [] } = useQuery({
     queryKey: ["admin", "groups"],
@@ -54,7 +93,6 @@ export function AdminDesignsPage() {
   const mainRef = useRef<HTMLInputElement>(null);
   const galleryRef = useRef<HTMLInputElement>(null);
 
-  // Collections filtered by the selected category (cascade).
   const collectionsForCategory = useMemo(
     () =>
       categoryId
@@ -88,6 +126,7 @@ export function AdminDesignsPage() {
     setMainImageUrl(d.mainImageUrl ?? "");
     setGallery(d.gallery ?? []);
     setFormError(null);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   async function handleMainUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -141,9 +180,13 @@ export function AdminDesignsPage() {
         ? createDesign(body, token!)
         : updateDesign(editingId, body, token!);
     },
-    onSuccess: () => {
+    onSuccess: (saved) => {
       qc.invalidateQueries({ queryKey: ["admin", "designs"] });
-      resetForm();
+      if (editingId == null) {
+        navigate(`/admin/designs/${saved.id}/variants`);
+      } else {
+        resetForm();
+      }
     },
     onError: (e) => setFormError(e instanceof ApiError ? e.message : (e as Error).message),
   });
@@ -154,12 +197,42 @@ export function AdminDesignsPage() {
     onError: (e) => setFormError(e instanceof ApiError ? e.message : "Не удалось удалить"),
   });
 
+  const publishMut = useMutation({
+    mutationFn: (id: number) => publishDesign(id, token!),
+    onSuccess: () => {
+      setFormError(null);
+      qc.invalidateQueries({ queryKey: ["admin", "designs"] });
+    },
+    onError: (e) => {
+      if (e instanceof ApiError) {
+        try {
+          const body = JSON.parse(e.message);
+          const errs: string[] = body.errors ?? [];
+          setFormError(`Нельзя опубликовать: ${errs.join(", ")}`);
+        } catch {
+          setFormError(e.message);
+        }
+      } else {
+        setFormError("Не удалось опубликовать");
+      }
+    },
+  });
+
+  const archiveMut = useMutation({
+    mutationFn: (id: number) => archiveDesign(id, token!),
+    onSuccess: () => {
+      setFormError(null);
+      qc.invalidateQueries({ queryKey: ["admin", "designs"] });
+    },
+    onError: (e) => setFormError(e instanceof ApiError ? e.message : "Не удалось архивировать"),
+  });
+
   return (
     <div>
       <h1 className="mb-1 text-2xl font-bold text-zinc-100">Дизайны</h1>
       <p className="mb-6 text-sm text-zinc-500">
-        Товар каталога. После сохранения дизайн появляется на{" "}
-        <code>/catalog/{"{"}categorySlug{"}"}/{"{"}collectionSlug{"}"}</code> автоматически.
+        Новый дизайн создаётся как <strong className="text-zinc-300">черновик</strong> и не отображается в каталоге.
+        После создания добавьте варианты, затем опубликуйте.
       </p>
 
       {/* Form */}
@@ -292,7 +365,11 @@ export function AdminDesignsPage() {
 
         <div className="mt-5 flex gap-3">
           <Button type="button" disabled={saveMut.isPending} onClick={() => saveMut.mutate()}>
-            {saveMut.isPending ? "Сохраняем…" : editingId == null ? "Создать" : "Сохранить"}
+            {saveMut.isPending
+              ? "Сохраняем…"
+              : editingId == null
+                ? "Создать и перейти к вариантам →"
+                : "Сохранить"}
           </Button>
           {editingId != null && (
             <button type="button" onClick={resetForm} className="text-sm font-semibold text-zinc-400 hover:text-zinc-200">
@@ -314,60 +391,114 @@ export function AdminDesignsPage() {
             <thead className="bg-zinc-900 text-left text-xs uppercase tracking-wide text-zinc-500">
               <tr>
                 <th className="px-4 py-2.5 font-semibold">Дизайн</th>
-                <th className="px-4 py-2.5 font-semibold">Категория / коллекция</th>
-                <th className="px-4 py-2.5 font-semibold">Страница</th>
+                <th className="px-4 py-2.5 font-semibold">Коллекция</th>
+                <th className="px-4 py-2.5 font-semibold">Статус</th>
+                <th className="px-4 py-2.5 font-semibold text-center">Вар.</th>
                 <th className="px-4 py-2.5" />
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
               {designs.map((d) => (
                 <tr key={d.id} className="bg-zinc-900/40">
-                  <td className="px-4 py-2.5">
+                  <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
                       {d.mainImageUrl ? (
                         <img src={d.mainImageUrl} alt={d.name} className="h-9 w-9 rounded object-cover bg-zinc-800" />
                       ) : (
-                        <div className="h-9 w-9 rounded bg-zinc-800" />
+                        <div className="h-9 w-9 rounded bg-zinc-800 border border-white/10" />
                       )}
-                      <span className="font-medium text-zinc-100">{d.name}</span>
+                      <div>
+                        <span className="font-medium text-zinc-100">{d.name}</span>
+                        <p className="text-[0.65rem] text-zinc-500">{d.groupName} / {d.collectionName}</p>
+                      </div>
                     </div>
                   </td>
-                  <td className="px-4 py-2.5 text-zinc-400">
-                    {d.groupName} / {d.collectionName}
+                  <td className="px-4 py-3 text-xs text-zinc-400">
+                    {d.collectionName}
                   </td>
-                  <td className="px-4 py-2.5">
-                    <Link
-                      to={`/catalog/${d.groupSlug}/${d.collectionSlug}/${d.slug}`}
-                      className="text-xs text-sky-400 hover:text-sky-300"
-                      target="_blank"
-                    >
-                      открыть ↗
-                    </Link>
+                  <td className="px-4 py-3">
+                    <StatusBadge d={d} />
+                    <PublishGuidance d={d} />
                   </td>
-                  <td className="px-4 py-2.5 text-right">
-                    <Link
-                      to={`/admin/designs/${d.id}/variants`}
-                      className="mr-4 text-xs font-semibold text-sky-400 hover:text-sky-300"
-                    >
-                      Варианты
-                    </Link>
-                    <button
-                      type="button"
-                      onClick={() => startEdit(d)}
-                      className="mr-4 text-xs font-semibold text-zinc-300 hover:text-white"
-                    >
-                      Изменить
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (confirm(`Удалить дизайн «${d.name}»?`)) deleteMut.mutate(d.id);
-                      }}
-                      disabled={deleteMut.isPending}
-                      className="text-xs font-semibold text-red-400 hover:text-red-300 disabled:opacity-50"
-                    >
-                      Удалить
-                    </button>
+                  <td className="px-4 py-3 text-center text-xs text-zinc-400">
+                    {d.activeGarmentCount}
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center justify-end gap-3 flex-wrap">
+                      {/* Publish / Restore */}
+                      {(d.status === "DRAFT" || d.status === "READY") && (
+                        <button
+                          type="button"
+                          onClick={() => publishMut.mutate(d.id)}
+                          disabled={publishMut.isPending}
+                          className="text-xs font-semibold text-emerald-400 hover:text-emerald-300 disabled:opacity-50"
+                        >
+                          Опубликовать
+                        </button>
+                      )}
+                      {d.status === "ARCHIVED" && (
+                        <button
+                          type="button"
+                          onClick={() => publishMut.mutate(d.id)}
+                          disabled={publishMut.isPending}
+                          className="text-xs font-semibold text-emerald-400 hover:text-emerald-300 disabled:opacity-50"
+                        >
+                          Восстановить
+                        </button>
+                      )}
+
+                      {/* Archive */}
+                      {d.status === "PUBLISHED" && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (window.confirm(`Архивировать дизайн «${d.name}»? Он будет скрыт из каталога.`)) {
+                              archiveMut.mutate(d.id);
+                            }
+                          }}
+                          disabled={archiveMut.isPending}
+                          className="text-xs font-semibold text-amber-400 hover:text-amber-300 disabled:opacity-50"
+                        >
+                          Архивировать
+                        </button>
+                      )}
+
+                      <Link
+                        to={`/admin/designs/${d.id}/variants`}
+                        className="text-xs font-semibold text-sky-400 hover:text-sky-300"
+                      >
+                        Варианты
+                      </Link>
+
+                      {d.status === "PUBLISHED" && (
+                        <Link
+                          to={`/catalog/${d.groupSlug}/${d.collectionSlug}/${d.slug}`}
+                          className="text-xs text-zinc-500 hover:text-zinc-300"
+                          target="_blank"
+                          title="Открыть в каталоге"
+                        >
+                          ↗
+                        </Link>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={() => startEdit(d)}
+                        className="text-xs font-semibold text-zinc-300 hover:text-white"
+                      >
+                        Изменить
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (confirm(`Удалить дизайн «${d.name}»?`)) deleteMut.mutate(d.id);
+                        }}
+                        disabled={deleteMut.isPending}
+                        className="text-xs font-semibold text-red-400 hover:text-red-300 disabled:opacity-50"
+                      >
+                        Удалить
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

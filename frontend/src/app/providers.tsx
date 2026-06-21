@@ -3,6 +3,7 @@ import { useState, type ReactNode } from "react";
 import { AuthProvider } from "@/app/auth-context";
 import { CartDrawerProvider } from "@/app/cart-drawer-context";
 import { CartProvider } from "@/app/cart-provider";
+import { CurrencyProvider } from "@/app/currency-context";
 
 export function Providers({ children }: { children: ReactNode }) {
   const [queryClient] = useState(
@@ -20,9 +21,11 @@ export function Providers({ children }: { children: ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <CartDrawerProvider>
-          <CartProvider>{children}</CartProvider>
-        </CartDrawerProvider>
+        <CurrencyProvider>
+          <CartDrawerProvider>
+            <CartProvider>{children}</CartProvider>
+          </CartDrawerProvider>
+        </CurrencyProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

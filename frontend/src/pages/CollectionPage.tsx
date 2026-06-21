@@ -1,10 +1,12 @@
 import { Link, useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useCatalogCollection } from "@/shared/api/catalog-api";
 import { useSeoMeta } from "@/shared/hooks/useSeoMeta";
 import { DesignGrid } from "@/widgets/DesignGrid";
 import { Container } from "@/shared/ui/container";
 
 export function CollectionPage() {
+  const { t } = useTranslation();
   const { groupSlug, collectionSlug } = useParams<{
     groupSlug: string;
     collectionSlug: string;
@@ -48,12 +50,12 @@ export function CollectionPage() {
     return (
       <div className="py-14">
         <Container>
-          <p className="text-sm text-[--color-danger]">Коллекция не найдена.</p>
+          <p className="text-sm text-[--color-danger]">{t("catalog.collectionNotFound")}</p>
           <Link
             to={groupSlug ? `/catalog/${groupSlug}` : "/catalog"}
             className="mt-4 inline-block text-sm text-[--color-muted] hover:text-black"
           >
-            ← Назад
+            {t("catalog.back")}
           </Link>
         </Container>
       </div>
@@ -66,9 +68,9 @@ export function CollectionPage() {
       <div className="border-b border-[--color-border] bg-black">
         <Container className="py-14 md:py-20">
           <nav className="mb-5 flex items-center gap-2 text-[0.55rem] uppercase tracking-[0.16em] text-white/40">
-            <Link to="/" className="transition hover:text-white/70">Главная</Link>
+            <Link to="/" className="transition hover:text-white/70">{t("nav.home")}</Link>
             <span>/</span>
-            <Link to="/catalog" className="transition hover:text-white/70">Каталог</Link>
+            <Link to="/catalog" className="transition hover:text-white/70">{t("nav.catalog")}</Link>
             <span>/</span>
             <Link to={`/catalog/${groupSlug}`} className="transition hover:text-white/70">
               {collection.groupName}

@@ -1,11 +1,15 @@
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/app/auth-context";
 import { Container } from "@/shared/ui/container";
 
 export function ProfilePage() {
+  const { t } = useTranslation();
   const { user, logout } = useAuth();
 
   if (!user) return null;
+
+  const isAdmin = user.roles?.includes("ADMIN");
 
   return (
     <>
@@ -13,7 +17,7 @@ export function ProfilePage() {
       <div className="border-b border-[--color-border] bg-black">
         <Container className="py-12 md:py-16">
           <h1 className="text-4xl font-extrabold uppercase tracking-[-0.01em] text-white md:text-5xl">
-            Профиль
+            {t("profile.title")}
           </h1>
         </Container>
       </div>
@@ -29,21 +33,6 @@ export function ProfilePage() {
               </dt>
               <dd className="text-[15px] text-black">{user.email}</dd>
             </div>
-            <div>
-              <dt className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[--color-muted]">
-                Роли
-              </dt>
-              <dd className="flex flex-wrap gap-2">
-                {user.roles.map((role) => (
-                  <span
-                    key={role}
-                    className="border border-black px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-black"
-                  >
-                    {role}
-                  </span>
-                ))}
-              </dd>
-            </div>
           </dl>
 
           {/* Actions */}
@@ -52,14 +41,22 @@ export function ProfilePage() {
               to="/orders"
               className="text-[13px] font-semibold uppercase tracking-[0.1em] text-black underline underline-offset-4 hover:opacity-60 transition-opacity"
             >
-              Мои заказы →
+              {t("profile.myOrders")}
             </Link>
+            {isAdmin && (
+              <Link
+                to="/admin"
+                className="text-[13px] font-semibold uppercase tracking-[0.1em] text-black underline underline-offset-4 hover:opacity-60 transition-opacity"
+              >
+                {t("profile.adminPanel")}
+              </Link>
+            )}
             <button
               type="button"
               onClick={logout}
               className="w-fit text-[13px] font-semibold uppercase tracking-[0.1em] text-[--color-muted] underline underline-offset-4 hover:text-black transition-colors"
             >
-              Выйти из аккаунта
+              {t("profile.logout")}
             </button>
           </div>
         </div>

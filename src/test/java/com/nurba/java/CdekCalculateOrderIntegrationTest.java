@@ -115,7 +115,7 @@ class CdekCalculateOrderIntegrationTest {
         design.setCollection(coll);
         design.setName("Cdek Test Design");
         design.setSlug("cdek-test-design");
-        design.setActive(true);
+        design.setStatus(com.nurba.java.enums.DesignStatus.PUBLISHED);
         design.setCreatedAt(LocalDateTime.now());
         design = designRepository.save(design);
 

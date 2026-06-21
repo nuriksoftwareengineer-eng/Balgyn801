@@ -5,12 +5,14 @@ import com.nurba.java.dto.request.CreateDesignGarmentPriceRequest;
 import com.nurba.java.dto.responce.DesignGarmentPriceResponse;
 import com.nurba.java.service.DesignGarmentPriceService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
+@PreAuthorize("hasRole('ADMIN')")
 public class DesignGarmentPriceController implements DesignGarmentPriceApi {
 
     private final DesignGarmentPriceService service;

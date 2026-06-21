@@ -152,7 +152,7 @@ class InternationalShippingIntegrationTest {
         design.setCollection(coll);
         design.setName("Intl Design");
         design.setSlug("intl-design");
-        design.setActive(true);
+        design.setStatus(com.nurba.java.enums.DesignStatus.PUBLISHED);
         design.setCreatedAt(LocalDateTime.now());
         design = designRepository.save(design);
 

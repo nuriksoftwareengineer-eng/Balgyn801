@@ -62,8 +62,19 @@ public class JwtService {
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(exp))
                 .claim(CLAIM_TYP, TYP_REFRESH)
+                .claim("ver", user.getTokenVersion())
                 .signWith(signingKey)
                 .compact();
+    }
+
+    /** Returns the token_version embedded in the refresh token, or -1 if absent (legacy token). */
+    public int extractRefreshVersion(String token) {
+        try {
+            Claims claims = parseClaims(token);
+            Object ver = claims.get("ver");
+            if (ver instanceof Number n) return n.intValue();
+        } catch (RuntimeException ignored) { }
+        return -1;
     }
 
     public String extractEmail(String token) {

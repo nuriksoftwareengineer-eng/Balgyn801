@@ -59,7 +59,9 @@ import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -341,10 +343,16 @@ public class OrderServiceImpl implements OrderService {
         OrderStatus next = request.getStatus();
         assertAllowedStatusTransition(order.getStatus(), next);
 
-        // When admin cancels any non-already-cancelled order: release reserved inventory and
-        // cancel any PENDING payments so no dangling records remain.
+        // When admin cancels an order: release reserved inventory (only if goods haven't shipped yet)
+        // and cancel any PENDING payments so no dangling records remain.
         if (next == OrderStatus.CANCELLED && order.getStatus() != OrderStatus.CANCELLED) {
-            orderExpiryService.releaseInventory(order);
+            // Goods in transit (SHIPPED) or delivered have already consumed physical stock;
+            // returning them to available inventory would create phantom stock.
+            boolean goodsStillInHouse = order.getStatus() != OrderStatus.SHIPPED
+                    && order.getStatus() != OrderStatus.DELIVERED;
+            if (goodsStillInHouse) {
+                orderExpiryService.releaseInventory(order);
+            }
             orderExpiryService.cancelPendingPayments(order);
         }
 
@@ -384,15 +392,29 @@ public class OrderServiceImpl implements OrderService {
         orderHistoryRepository.save(entry);
     }
 
+    /**
+     * Explicit allowlist of valid admin-driven status transitions.
+     * System transitions (PENDING_PAYMENT → CONFIRMED, → EXPIRED) are handled by payment/expiry
+     * services directly and bypass this guard. Admin can only move orders forward or cancel them.
+     * CANCELLED → CANCELLED is permitted as an idempotent no-op.
+     */
+    private static final Map<OrderStatus, Set<OrderStatus>> ALLOWED_TRANSITIONS = Map.of(
+            OrderStatus.PENDING_PAYMENT, Set.of(OrderStatus.CANCELLED),
+            OrderStatus.NEW,             Set.of(OrderStatus.CONFIRMED, OrderStatus.CANCELLED),
+            OrderStatus.CONFIRMED,       Set.of(OrderStatus.IN_PRODUCTION, OrderStatus.CANCELLED),
+            OrderStatus.IN_PRODUCTION,   Set.of(OrderStatus.READY, OrderStatus.CANCELLED),
+            OrderStatus.READY,           Set.of(OrderStatus.SHIPPED, OrderStatus.CANCELLED),
+            OrderStatus.SHIPPED,         Set.of(OrderStatus.DELIVERED, OrderStatus.CANCELLED),
+            OrderStatus.DELIVERED,       Set.of(),
+            OrderStatus.CANCELLED,       Set.of(OrderStatus.CANCELLED),
+            OrderStatus.EXPIRED,         Set.of()
+    );
+
     private static void assertAllowedStatusTransition(OrderStatus current, OrderStatus next) {
-        if (current == OrderStatus.CANCELLED && next != OrderStatus.CANCELLED) {
-            throw new BusinessRuleException("Отменённый заказ нельзя вернуть в работу");
-        }
-        if (current == OrderStatus.DELIVERED && next != OrderStatus.DELIVERED) {
-            throw new BusinessRuleException("Доставленный заказ нельзя менять");
-        }
-        if (current == OrderStatus.EXPIRED && next != OrderStatus.EXPIRED) {
-            throw new BusinessRuleException("Просроченный (неоплаченный) заказ нельзя вернуть в работу");
+        Set<OrderStatus> allowed = ALLOWED_TRANSITIONS.getOrDefault(current, Set.of());
+        if (!allowed.contains(next)) {
+            throw new BusinessRuleException(
+                    "Переход статуса «" + current + "» → «" + next + "» недопустим");
         }
     }
 

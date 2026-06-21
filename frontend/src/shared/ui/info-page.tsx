@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Container } from "@/shared/ui/container";
 
 /**
@@ -15,12 +16,13 @@ export function InfoPage({
   lead?: string;
   children: ReactNode;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="py-12 md:py-16">
       <Container className="max-w-3xl">
         <nav className="mb-6 flex items-center gap-2 text-[0.6rem] uppercase tracking-[0.14em] text-[--color-muted]">
           <Link to="/" className="transition-colors hover:text-black">
-            Главная
+            {t("nav.home")}
           </Link>
           <span aria-hidden>›</span>
           <span className="text-black">{title}</span>

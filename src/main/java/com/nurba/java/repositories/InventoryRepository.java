@@ -9,11 +9,15 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.jpa.repository.QueryHints;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
 public interface InventoryRepository extends JpaRepository<Inventory, Long> {
     List<Inventory> findByDesignGarment_Id(Long designGarmentId);
+
+    /** Bulk fetch: avoids N+1 when loading stockMaps for all garments of a design. */
+    List<Inventory> findByDesignGarment_IdIn(Collection<Long> designGarmentIds);
     Optional<Inventory> findByDesignGarment_IdAndColor_IdAndSize_Id(Long designGarmentId, Long colorId, Long sizeId);
 
     /**

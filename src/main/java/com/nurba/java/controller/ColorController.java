@@ -5,12 +5,14 @@ import com.nurba.java.dto.request.CreateColorRequest;
 import com.nurba.java.dto.responce.ColorResponse;
 import com.nurba.java.service.ColorService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
+@PreAuthorize("hasRole('ADMIN')")
 public class ColorController implements ColorApi {
 
     private final ColorService service;

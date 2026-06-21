@@ -2,12 +2,14 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/app/auth-context";
 import { useCart } from "@/app/use-cart";
 import { isLegacyLine, isDesignLine } from "@/app/cart-context";
 import {
   calculateCdekTariffByOrder,
   createOrder,
+  createPayPalOrder,
   getDeliveryMethods,
   initPayment,
   listCdekDeliveryPoints,
@@ -28,27 +30,15 @@ import { ApiError } from "@/shared/api/http";
 import { formatMoney } from "@/shared/lib/format-money";
 import { cn } from "@/shared/lib/cn";
 import { Container } from "@/shared/ui/container";
+import {
+  savePendingPayment,
+  loadPendingPayment,
+  clearPendingPayment,
+  saveLastPayment,
+  type PendingPaymentRecord,
+} from "@/shared/lib/pending-payment";
 
-// Static display-only labels — used after order is placed and cart state is cleared.
-const DELIVERY_LABELS: Record<DeliveryType, string> = {
-  PICKUP: "Самовывоз",
-  TAXI: "Такси / курьер",
-  CDEK: "СДЭК",
-  POSTAL: "Казпочта",
-  INTERNATIONAL: "Международная доставка",
-};
-
-// Delivery regions shown at checkout. Customers pick a region, not a country.
-// Each region maps to a representative ISO-2 code; the backend resolves the
-// shipping zone from it and returns the allowed delivery methods — no method
-// availability, pricing or restrictions are decided client-side.
-const DELIVERY_REGIONS: { iso2: string; label: string; hint: string }[] = [
-  { iso2: "KZ", label: "Казахстан", hint: "Доставка по всему Казахстану" },
-  { iso2: "RU", label: "РФ / СНГ", hint: "Россия, Беларусь и другие страны СНГ" },
-  { iso2: "US", label: "Другие страны", hint: "Международная доставка по всему миру" },
-];
-
-const STEP_LABELS = ["Контакты", "Регион", "Доставка", "Детали", "Итог"] as const;
+// DELIVERY_LABELS, DELIVERY_REGIONS, and STEP_LABELS are built inside the component via t()
 
 // Флаг «намерения оформить заказ»: ставится при попытке checkout без авторизации,
 // переживает редирект на /login и читается после возврата на /cart.
@@ -118,9 +108,17 @@ function StepIndicator({
   step: number;
   skipStep4: boolean;
 }) {
+  const { t } = useTranslation();
+  const stepLabels = [
+    t("cart.checkoutFlow.steps.contacts"),
+    t("cart.checkoutFlow.steps.region"),
+    t("cart.checkoutFlow.steps.delivery"),
+    t("cart.checkoutFlow.steps.details"),
+    t("cart.checkoutFlow.steps.summary"),
+  ];
   return (
-    <div className="flex items-start" role="list" aria-label="Шаги оформления">
-      {STEP_LABELS.map((label, i) => {
+    <div className="flex items-start" role="list" aria-label={t("cart.checkoutFlow.title")}>
+      {stepLabels.map((label, i) => {
         const id = i + 1;
         const isSkipped = id === 4 && skipStep4;
         const done = !isSkipped && id < step;
@@ -156,7 +154,7 @@ function StepIndicator({
               >
                 {done ? <CheckIcon /> : id}
               </div>
-              {i < STEP_LABELS.length - 1 && (
+              {i < stepLabels.length - 1 && (
                 <div
                   className={cn(
                     "h-px flex-1 transition-colors duration-300",
@@ -167,7 +165,7 @@ function StepIndicator({
             </div>
             <span
               className={cn(
-                "mt-1.5 text-center text-[0.5rem] uppercase tracking-[0.08em] transition-colors duration-300",
+                "mt-1.5 text-center text-[0.65rem] uppercase tracking-[0.08em] transition-colors duration-300",
                 active
                   ? "font-semibold text-black"
                   : done
@@ -193,11 +191,12 @@ function FieldLabel({
   children: React.ReactNode;
   optional?: boolean;
 }) {
+  const { t } = useTranslation();
   return (
     <span className="text-[0.6rem] font-medium uppercase tracking-[0.1em] text-[--color-muted]">
       {children}
       {optional ? (
-        <span className="ml-1 normal-case font-normal">(необязательно)</span>
+        <span className="ml-1 normal-case font-normal">{t("cart.form.optional")}</span>
       ) : null}
     </span>
   );
@@ -243,18 +242,24 @@ function SummarySidebar({
   deliveryType: DeliveryType | null;
   selectedMethod: DeliveryMethodResponse | null;
 }) {
-  // CDEK: delivery at pickup — show items total only
-  const grandTotal = subtotal;
+  const { t } = useTranslation();
+  // CDEK: delivery paid at pickup point — total is items only.
+  // Other methods: add the estimated delivery fee if known.
+  const deliveryFeeForTotal =
+    deliveryType !== "CDEK" && selectedMethod?.estimatedFeeKzt != null
+      ? selectedMethod.estimatedFeeKzt
+      : 0;
+  const grandTotal = subtotal + deliveryFeeForTotal;
 
   const deliveryLabel =
     selectedMethod?.labelRu ??
-    (deliveryType ? DELIVERY_LABELS[deliveryType] : null);
+    (deliveryType ? t(`orders.delivery_type.${deliveryType}`) : null);
 
   return (
     <aside className="w-72 shrink-0">
       <div className="sticky top-[96px] border border-[--color-border] bg-[--color-surface] p-5">
         <p className="mb-4 text-[0.6rem] font-semibold uppercase tracking-[0.16em] text-black">
-          Ваш заказ
+          {t("cart.summary.yourOrder")}
         </p>
         <ul className="m-0 flex flex-col gap-3 p-0 list-none">
           {lines.map((l) => (
@@ -281,19 +286,19 @@ function SummarySidebar({
 
         <div className="mt-4 flex flex-col gap-2 border-t border-[--color-border] pt-4">
           <div className="flex justify-between text-sm">
-            <span className="text-[--color-muted]">Товары</span>
+            <span className="text-[--color-muted]">{t("cart.summary.items")}</span>
             <span className="font-medium text-black">{formatMoney(subtotal)} ₸</span>
           </div>
 
           {deliveryType === "CDEK" ? (
             <div className="flex justify-between text-sm">
-              <span className="text-[--color-muted]">Доставка СДЭК</span>
-              <span className="text-[--color-muted]">при получении</span>
+              <span className="text-[--color-muted]">{t("cart.summary.cdekDelivery")}</span>
+              <span className="text-[--color-muted]">{t("cart.summary.atReceipt")}</span>
             </div>
           ) : selectedMethod?.estimatedFeeKzt === 0 ? (
             <div className="flex justify-between text-sm">
               <span className="text-[--color-muted]">{deliveryLabel}</span>
-              <span className="font-medium text-emerald-600">Бесплатно</span>
+              <span className="font-medium text-emerald-600">{t("cart.form.free")}</span>
             </div>
           ) : selectedMethod?.estimatedFeeKzt != null ? (
             <div className="flex justify-between text-sm">
@@ -305,12 +310,12 @@ function SummarySidebar({
           ) : deliveryLabel ? (
             <div className="flex justify-between text-sm">
               <span className="text-[--color-muted]">{deliveryLabel}</span>
-              <span className="text-[--color-muted]">по договорённости</span>
+              <span className="text-[--color-muted]">{t("cart.summary.onAgreement")}</span>
             </div>
           ) : null}
 
           <div className="flex justify-between border-t border-[--color-border] pt-2">
-            <span className="text-sm font-semibold text-black">Итого</span>
+            <span className="text-sm font-semibold text-black">{t("cart.total")}</span>
             <span className="text-base font-semibold text-black">
               {formatMoney(grandTotal)} ₸
             </span>
@@ -340,7 +345,8 @@ function OrderSuccess({
   paymentBusy: boolean;
   paymentError: string | null;
 }) {
-  const deliveryLabel = DELIVERY_LABELS[order.deliveryType] ?? order.deliveryType;
+  const { t } = useTranslation();
+  const deliveryLabel = t(`orders.delivery_type.${order.deliveryType}`) || order.deliveryType;
   const fee =
     order.deliveryFee != null && order.deliveryFee > 0 ? order.deliveryFee : null;
   const goodsTotal =
@@ -359,7 +365,7 @@ function OrderSuccess({
     >
       <div className="border border-emerald-200 bg-emerald-50 px-8 py-10 text-center">
         <p className="m-0 text-[0.6rem] font-semibold uppercase tracking-[0.2em] text-emerald-700">
-          Заказ принят
+          {t("cart.order.accepted")}
         </p>
         <p className="mt-3 text-4xl font-semibold text-black">№ {order.id}</p>
 
@@ -367,15 +373,15 @@ function OrderSuccess({
           {fee != null ? (
             <>
               <div className="flex justify-between">
-                <span className="text-[--color-muted]">Товары</span>
+                <span className="text-[--color-muted]">{t("cart.summary.items")}</span>
                 <strong className="text-black">{formatMoney(goodsTotal)} ₸</strong>
               </div>
               <div className="flex justify-between">
-                <span className="text-[--color-muted]">Доставка</span>
+                <span className="text-[--color-muted]">{t("cart.order.delivery")}</span>
                 <strong className="text-black">{formatMoney(fee)} ₸</strong>
               </div>
               <div className="flex justify-between border-t border-emerald-200 pt-2">
-                <span className="font-semibold text-black">Итого</span>
+                <span className="font-semibold text-black">{t("cart.total")}</span>
                 <strong className="text-lg text-black">
                   {formatMoney(order.totalPrice)} ₸
                 </strong>
@@ -384,19 +390,19 @@ function OrderSuccess({
           ) : (
             <>
               <div className="flex justify-between">
-                <span className="text-[--color-muted]">Сумма</span>
+                <span className="text-[--color-muted]">{t("cart.order.amount")}</span>
                 <strong className="text-black">
                   {formatMoney(order.totalPrice)} ₸
                 </strong>
               </div>
               {order.deliveryType === "CDEK" ? (
                 <div className="flex justify-between">
-                  <span className="text-[--color-muted]">Доставка СДЭК</span>
-                  <span className="text-[--color-muted]">оплата при получении</span>
+                  <span className="text-[--color-muted]">{t("cart.order.cdekDelivery")}</span>
+                  <span className="text-[--color-muted]">{t("cart.order.payOnReceipt")}</span>
                 </div>
               ) : deliveryLabel ? (
                 <div className="flex justify-between">
-                  <span className="text-[--color-muted]">Доставка</span>
+                  <span className="text-[--color-muted]">{t("cart.order.delivery")}</span>
                   <span className="text-black">{deliveryLabel}</span>
                 </div>
               ) : null}
@@ -406,49 +412,134 @@ function OrderSuccess({
 
         {order.address ? (
           <p className="mt-4 border border-emerald-200 bg-white px-4 py-3 text-left text-xs text-[--color-muted]">
-            <span className="font-semibold text-black">Адрес: </span>
+            <span className="font-semibold text-black">{t("cart.order.address")}</span>
             {order.address.city}, {order.address.street}
             {order.address.apartment !== "—"
-              ? `, кв./оф. ${order.address.apartment}`
+              ? `, ${t("cart.order.apt")} ${order.address.apartment}`
               : ""}
-            . Получатель: {order.address.recipientName},{" "}
+            . {order.address.recipientName},{" "}
             {order.address.recipientPhone}
           </p>
         ) : null}
 
         <p className="mt-4 text-sm text-[--color-muted]">
-          Мы свяжемся с вами по указанному телефону.
+          {t("cart.order.contactNote")}
         </p>
       </div>
 
       <div className="mt-4 border border-[--color-border] bg-white px-6 py-5">
         <p className="mb-1 text-[0.6rem] font-semibold uppercase tracking-[0.16em] text-black">
-          Оплата
+          {t("cart.order.payment")}
         </p>
         <p className="mb-4 text-sm text-[--color-muted]">
-          Выберите способ оплаты и перейдите к платёжной форме.
+          {t("cart.order.paymentDesc")}
         </p>
-        <div className="flex flex-wrap items-center gap-3">
-          <select
-            value={paymentProvider}
-            onChange={(e) =>
-              onPaymentProviderChange(e.target.value as PaymentProvider)
-            }
-            className="rounded-none border border-[--color-border] bg-white px-3 py-2.5 text-sm text-black outline-none transition focus:border-black"
-          >
-            <option value="KASPI">Kaspi</option>
-            <option value="YOOKASSA">YooKassa</option>
-            <option value="PAYPAL">PayPal</option>
-          </select>
+        <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {/* Bank Card (Freedom Pay) */}
           <button
             type="button"
-            disabled={paymentBusy}
-            onClick={onPay}
-            className="bg-black px-6 py-2.5 text-[13px] font-bold uppercase tracking-[0.14em] text-white transition hover:bg-zinc-800 disabled:opacity-50"
+            onClick={() => onPaymentProviderChange("FREEDOM_PAY")}
+            className={cn(
+              "relative flex flex-col gap-3 border p-4 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black",
+              paymentProvider === "FREEDOM_PAY"
+                ? "border-black bg-black text-white"
+                : "border-[--color-border] bg-white text-black hover:border-black/60",
+            )}
+            aria-pressed={paymentProvider === "FREEDOM_PAY"}
           >
-            {paymentBusy ? "Переходим…" : "Оплатить"}
+            {paymentProvider === "FREEDOM_PAY" && (
+              <span className="absolute right-3 top-3 flex h-4 w-4 items-center justify-center rounded-full bg-white text-black">
+                <svg width="8" height="7" viewBox="0 0 8 7" fill="none" aria-hidden="true">
+                  <path d="M1 3.5l2 2 4-4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </span>
+            )}
+            {/* Card brand logos */}
+            <div className="flex items-center gap-1.5">
+              {/* Visa */}
+              <span className={cn(
+                "flex h-[22px] w-[34px] items-center justify-center rounded border text-[9px] font-black italic",
+                paymentProvider === "FREEDOM_PAY"
+                  ? "border-white/30 bg-white/10 text-white"
+                  : "border-zinc-200 bg-white text-[#1434CB]",
+              )}>VISA</span>
+              {/* Mastercard */}
+              <svg width="34" height="22" viewBox="0 0 34 22" fill="none" className={cn(
+                "rounded border",
+                paymentProvider === "FREEDOM_PAY" ? "border-white/30" : "border-zinc-200",
+              )}>
+                <rect width="34" height="22" fill={paymentProvider === "FREEDOM_PAY" ? "rgba(255,255,255,0.08)" : "white"} rx="2"/>
+                <circle cx="13" cy="11" r="6" fill="#EB001B" fillOpacity="0.9"/>
+                <circle cx="21" cy="11" r="6" fill="#F79E1B" fillOpacity="0.9"/>
+                <path d="M17 6.2a6 6 0 0 1 0 9.6 6 6 0 0 1 0-9.6z" fill="#FF5F00" fillOpacity="0.8"/>
+              </svg>
+            </div>
+            <div>
+              <p className="text-[13px] font-bold leading-tight">{t("payment.bankCard")}</p>
+              <p className={cn(
+                "mt-0.5 text-[11px]",
+                paymentProvider === "FREEDOM_PAY" ? "text-white/70" : "text-[--color-muted]",
+              )}>{t("payment.bankCardDesc")}</p>
+            </div>
+            <p className={cn(
+              "text-[11px]",
+              paymentProvider === "FREEDOM_PAY" ? "text-white/50" : "text-zinc-400",
+            )}>
+              Kaspi · Halyk · Visa · Mastercard
+            </p>
+          </button>
+
+          {/* PayPal card */}
+          <button
+            type="button"
+            onClick={() => onPaymentProviderChange("PAYPAL")}
+            className={cn(
+              "relative flex flex-col gap-3 border p-4 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black",
+              paymentProvider === "PAYPAL"
+                ? "border-black bg-black text-white"
+                : "border-[--color-border] bg-white text-black hover:border-black/60",
+            )}
+            aria-pressed={paymentProvider === "PAYPAL"}
+          >
+            {paymentProvider === "PAYPAL" && (
+              <span className="absolute right-3 top-3 flex h-4 w-4 items-center justify-center rounded-full bg-white text-black">
+                <svg width="8" height="7" viewBox="0 0 8 7" fill="none" aria-hidden="true">
+                  <path d="M1 3.5l2 2 4-4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </span>
+            )}
+            {/* PayPal logo */}
+            <div className={cn(
+              "flex h-[22px] w-[56px] items-center justify-center rounded border text-[11px] font-extrabold tracking-tight",
+              paymentProvider === "PAYPAL"
+                ? "border-white/30 bg-white/10 text-white"
+                : "border-zinc-200 bg-[#003087] text-white",
+            )}>
+              <span className="text-[#009CDE]">Pay</span><span>Pal</span>
+            </div>
+            <div>
+              <p className="text-[13px] font-bold leading-tight">PayPal</p>
+              <p className={cn(
+                "mt-0.5 text-[11px]",
+                paymentProvider === "PAYPAL" ? "text-white/70" : "text-[--color-muted]",
+              )}>{t("payment.paypalDesc")}</p>
+            </div>
+            <p className={cn(
+              "text-[11px]",
+              paymentProvider === "PAYPAL" ? "text-white/50" : "text-zinc-400",
+            )}>
+              Visa · Mastercard · Amex · {t("payment.paypalAccount")}
+            </p>
           </button>
         </div>
+        <button
+          type="button"
+          disabled={paymentBusy}
+          onClick={onPay}
+          className="bg-black px-6 py-2.5 text-[13px] font-bold uppercase tracking-[0.14em] text-white transition hover:bg-zinc-800 disabled:opacity-50"
+        >
+          {paymentBusy ? t("payment.payingBtn") : t("payment.payBtn")}
+        </button>
         {paymentError ? (
           <p className="mt-2 text-sm text-[--color-danger]">{paymentError}</p>
         ) : null}
@@ -460,16 +551,123 @@ function OrderSuccess({
           onClick={onContinue}
           className="inline-flex h-11 items-center justify-center bg-black px-6 text-sm font-medium tracking-wide text-white transition hover:bg-zinc-800"
         >
-          В каталог
+          {t("cart.order.toCatalog")}
         </Link>
         <button
           type="button"
           onClick={onContinue}
           className="border border-[--color-border] px-6 py-2.5 text-[13px] font-bold uppercase tracking-[0.14em] text-black transition hover:border-black"
         >
-          Закрыть
+          {t("cart.order.close")}
         </button>
       </div>
+    </motion.div>
+  );
+}
+
+// ── Recovery banner ────────────────────────────────────────────────────────────
+// Shown when the user returns to /cart after F5, tab close, or cancelled/failed
+// payment. Uses the localStorage pending-payment record to restore context.
+
+function RecoveryBanner({
+  orderId,
+  amount,
+  provider,
+  onProviderChange,
+  onPay,
+  onDismiss,
+  busy,
+  error,
+}: {
+  orderId: number;
+  amount: number;
+  provider: PaymentProvider;
+  onProviderChange: (p: PaymentProvider) => void;
+  onPay: () => void;
+  onDismiss: () => void;
+  busy: boolean;
+  error: string | null;
+}) {
+  const { t } = useTranslation();
+
+  return (
+    <motion.div
+      className="mx-auto max-w-lg"
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+    >
+      {/* Status banner */}
+      <div className="border border-amber-200 bg-amber-50 px-8 py-8">
+        <p className="m-0 text-[0.6rem] font-semibold uppercase tracking-[0.2em] text-amber-700">
+          {t("recovery.title")}
+        </p>
+        <p className="mt-2 text-3xl font-semibold text-black">
+          {t("recovery.order", { id: orderId })}
+        </p>
+        {amount > 0 && (
+          <p className="mt-1 text-sm font-medium text-black">
+            {formatMoney(amount)} ₸
+          </p>
+        )}
+        <p className="mt-3 text-sm text-amber-700">
+          {t("recovery.subtitle")}
+        </p>
+      </div>
+
+      {/* Payment method + button */}
+      <div className="mt-4 border border-[--color-border] bg-white px-6 py-5">
+        <p className="mb-3 text-[0.6rem] font-semibold uppercase tracking-[0.16em] text-black">
+          {t("cart.order.payment")}
+        </p>
+        <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <button
+            type="button"
+            onClick={() => onProviderChange("FREEDOM_PAY")}
+            className={cn(
+              "flex items-center gap-2 border px-4 py-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black",
+              provider === "FREEDOM_PAY"
+                ? "border-black bg-black text-white"
+                : "border-[--color-border] bg-white text-black hover:border-black/60",
+            )}
+            aria-pressed={provider === "FREEDOM_PAY"}
+          >
+            <span className="text-[12px] font-bold">{t("recovery.card")}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => onProviderChange("PAYPAL")}
+            className={cn(
+              "flex items-center gap-2 border px-4 py-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black",
+              provider === "PAYPAL"
+                ? "border-black bg-black text-white"
+                : "border-[--color-border] bg-white text-black hover:border-black/60",
+            )}
+            aria-pressed={provider === "PAYPAL"}
+          >
+            <span className="text-[12px] font-bold">PayPal</span>
+          </button>
+        </div>
+        <button
+          type="button"
+          disabled={busy}
+          onClick={onPay}
+          className="bg-black px-6 py-2.5 text-[13px] font-bold uppercase tracking-[0.14em] text-white transition hover:bg-zinc-800 disabled:opacity-50"
+        >
+          {busy ? t("payment.payingBtn") : t("payment.payBtn")}
+        </button>
+        {error && (
+          <p className="mt-2 text-sm text-[--color-danger]">{error}</p>
+        )}
+      </div>
+
+      <button
+        type="button"
+        onClick={onDismiss}
+        className="mt-4 text-[0.65rem] uppercase tracking-[0.1em] text-[--color-muted] transition hover:text-[--color-danger]"
+      >
+        {t("recovery.dismiss")}
+      </button>
     </motion.div>
   );
 }
@@ -477,6 +675,22 @@ function OrderSuccess({
 // ── CartPage ───────────────────────────────────────────────────────────────────
 
 export function CartPage() {
+  const { t } = useTranslation();
+
+  const STEP_LABELS = [
+    t("cart.checkoutFlow.steps.contacts"),
+    t("cart.checkoutFlow.steps.region"),
+    t("cart.checkoutFlow.steps.delivery"),
+    t("cart.checkoutFlow.steps.details"),
+    t("cart.checkoutFlow.steps.summary"),
+  ];
+
+  const DELIVERY_REGIONS = [
+    { iso2: "KZ", label: t("cart.regions.KZ"), hint: t("cart.regions.KZ_hint") },
+    { iso2: "RU", label: t("cart.regions.RU"), hint: t("cart.regions.RU_hint") },
+    { iso2: "US", label: t("cart.regions.US"), hint: t("cart.regions.US_hint") },
+  ];
+
   const navigate = useNavigate();
   const location = useLocation();
   const { lines, totalQty, subtotal, increment, decrement, removeLine, clear } =
@@ -534,9 +748,13 @@ export function CartPage() {
     null,
   );
   const [paymentProvider, setPaymentProvider] =
-    useState<PaymentProvider>("KASPI");
+    useState<PaymentProvider>("FREEDOM_PAY");
   const [paymentBusy, setPaymentBusy] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
+
+  // ── Recovery: pending payment from localStorage / navigation state ────────────
+  const [pendingRecord, setPendingRecord] = useState<PendingPaymentRecord | null>(null);
+  const [recoveryProvider, setRecoveryProvider] = useState<PaymentProvider>("FREEDOM_PAY");
 
   // ── Delivery methods from backend ────────────────────────────────────────────
   // Prefetch on step 2 so step 3 loads instantly after country selection.
@@ -576,18 +794,58 @@ export function CartPage() {
     ? selectedMethod.requiresAddress
     : deliveryType !== "PICKUP";
 
-  // CDEK: delivery paid at pickup — order total is items only
-  const grandTotal = subtotal;
+  // CDEK: delivery paid at pickup point — order total is items only.
+  // Other methods: add the estimated delivery fee if known.
+  const deliveryFeeForTotal =
+    deliveryType !== "CDEK" && selectedMethod?.estimatedFeeKzt != null
+      ? selectedMethod.estimatedFeeKzt
+      : 0;
+  const grandTotal = subtotal + deliveryFeeForTotal;
 
   // ── Effects ───────────────────────────────────────────────────────────────────
 
   useEffect(() => {
-    const st = location.state as { justAdded?: string } | null;
+    const st = location.state as {
+      justAdded?: string;
+      retryOrderId?: number;
+      retryAmount?: number;
+    } | null;
+
     if (st?.justAdded) {
       setJustAddedTitle(st.justAdded);
+    }
+
+    // Restore pending record from OrderHistory "Pay" button or payment cancelled/failed pages
+    if (st?.retryOrderId && !completedOrder) {
+      const record: PendingPaymentRecord = {
+        orderId: st.retryOrderId,
+        amount: st.retryAmount ?? 0,
+        items: [],
+        provider: "FREEDOM_PAY",
+        expiresAt: Date.now() + 58 * 60 * 1000,
+      };
+      setPendingRecord(record);
+      setRecoveryProvider("FREEDOM_PAY");
+    }
+
+    if (st?.justAdded || st?.retryOrderId) {
       navigate(location.pathname, { replace: true, state: {} });
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname, location.state, navigate]);
+
+  // Check localStorage for a pending payment record on first mount.
+  // Only runs once; location-state-based recovery is handled in the effect above.
+  useEffect(() => {
+    if (completedOrder) return;
+    const record = loadPendingPayment();
+    if (record) {
+      // Don't overwrite if location state already set pendingRecord (handled synchronously above)
+      setPendingRecord((prev) => prev ?? record);
+      setRecoveryProvider(record.provider);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Возврат в checkout после авторизации: гость, нажавший «Оформить заказ»,
   // был отправлен на /login с выставленным флагом. После успешного входа он
@@ -658,7 +916,7 @@ export function CartPage() {
           setCdekCalcError(
             err instanceof ApiError
               ? err.message
-              : "Не удалось рассчитать сроки доставки СДЭК",
+              : t("cart.errors.cdekDeliveryError"),
           );
       })
       .finally(() => {
@@ -733,10 +991,10 @@ export function CartPage() {
     if (!canAdvance()) {
       setFormError(
         step === 4 && selectedMethod?.requiresCitySearch && cdekCalcPending
-          ? "Подождите, рассчитываем сроки доставки…"
+          ? t("cart.errors.calculating")
           : step === 4 && selectedMethod?.requiresCitySearch && !selectedPoint
-            ? "Выберите пункт выдачи СДЭК"
-            : "Заполните все обязательные поля",
+            ? t("cart.errors.selectCdekPoint")
+            : t("cart.errors.fillRequired"),
       );
       return;
     }
@@ -771,6 +1029,18 @@ export function CartPage() {
       setPaymentBusy(false);
       clear();
       setCompletedOrder(order);
+      setPendingRecord(null); // clear any previous recovery banner
+      // Persist to localStorage so F5 / tab-close shows recovery banner
+      savePendingPayment({
+        orderId: order.id,
+        amount: order.totalPrice,
+        provider: paymentProvider,
+        items: (order.items ?? []).map((i) => ({
+          title: i.productTitle ?? "",
+          qty: i.quantity,
+          price: i.unitPrice,
+        })),
+      });
       setPhase("cart");
       setStep(1);
       setCustomerName("");
@@ -782,7 +1052,7 @@ export function CartPage() {
     },
     onError: (err: unknown) => {
       setFormError(
-        err instanceof ApiError ? err.message : "Не удалось оформить заказ",
+        err instanceof ApiError ? err.message : t("cart.errors.orderFailed"),
       );
     },
   });
@@ -795,7 +1065,7 @@ export function CartPage() {
 
     if (selectedMethod?.requiresCitySearch) {
       if (!selectedCity || !selectedPoint) {
-        setFormError("Выберите город и пункт выдачи СДЭК");
+        setFormError(t("cart.errors.cdekAddressRequired"));
         return;
       }
       address = buildCdekAddress(
@@ -849,27 +1119,63 @@ export function CartPage() {
     orderMutation.mutate(payload);
   }
 
-  async function handleInitPayment() {
-    if (!completedOrder) return;
+  async function handleInitPayment(override?: {
+    orderId: number;
+    provider: PaymentProvider;
+    amount: number;
+  }) {
+    const oid = override?.orderId ?? completedOrder?.id;
+    const prov = override?.provider ?? paymentProvider;
+    if (!oid) return;
+
     setPaymentError(null);
     setPaymentBusy(true);
     try {
       const returnUrl = `${window.location.origin}/payment-return`;
-      const payment = await initPayment({
-        orderId: completedOrder.id,
-        provider: paymentProvider,
-        returnUrl,
-      });
-      if (!payment.paymentUrl)
-        throw new Error("Платёжный URL не получен. Попробуйте позже.");
-      window.location.href = payment.paymentUrl;
+      const cancelUrl = `${window.location.origin}/payment/cancelled`;
+
+      let paymentUrl: string;
+
+      if (prov === "PAYPAL") {
+        const payment = await createPayPalOrder({
+          orderId: oid,
+          returnUrl,
+          cancelUrl,
+        });
+        if (!payment.paymentUrl)
+          throw new Error(t("cart.errors.paypalError"));
+        paymentUrl = payment.paymentUrl;
+        // Persist after we have the cancelToken from the server response
+        saveLastPayment({
+          orderId: oid,
+          totalPrice: override?.amount ?? completedOrder?.totalPrice ?? 0,
+          provider: prov,
+          cancelToken: payment.cancelToken ?? undefined,
+        });
+      } else {
+        const payment = await initPayment({
+          orderId: oid,
+          provider: prov,
+          returnUrl,
+        });
+        if (!payment.paymentUrl)
+          throw new Error(t("cart.errors.paymentUrlError"));
+        paymentUrl = payment.paymentUrl;
+        saveLastPayment({
+          orderId: oid,
+          totalPrice: override?.amount ?? completedOrder?.totalPrice ?? 0,
+          provider: prov,
+        });
+      }
+
+      window.location.href = paymentUrl;
     } catch (err: unknown) {
       setPaymentError(
         err instanceof ApiError
           ? err.message
           : err instanceof Error
             ? err.message
-            : "Не удалось инициализировать оплату",
+            : t("cart.errors.paymentFailed"),
       );
     } finally {
       setPaymentBusy(false);
@@ -885,11 +1191,10 @@ export function CartPage() {
         return (
           <div className="flex flex-col gap-4">
             <p className="text-sm text-[--color-muted]">
-              Укажите контактные данные — мы свяжемся с вами после получения
-              заказа.
+              {t("cart.form.contactsDesc")}
             </p>
             <label className="flex flex-col gap-1.5">
-              <FieldLabel>Имя *</FieldLabel>
+              <FieldLabel>{t("cart.form.name")}</FieldLabel>
               <input
                 required
                 autoComplete="name"
@@ -899,7 +1204,7 @@ export function CartPage() {
               />
             </label>
             <label className="flex flex-col gap-1.5">
-              <FieldLabel>Телефон *</FieldLabel>
+              <FieldLabel>{t("cart.form.phone")}</FieldLabel>
               <input
                 required
                 type="tel"
@@ -928,7 +1233,7 @@ export function CartPage() {
         return (
           <div className="flex flex-col gap-3">
             <p className="text-sm text-[--color-muted]">
-              Выберите регион доставки.
+              {t("cart.form.regionDesc")}
             </p>
             {DELIVERY_REGIONS.map((r) => (
               <button
@@ -974,15 +1279,15 @@ export function CartPage() {
         return (
           <div className="flex flex-col gap-3">
             <p className="text-sm text-[--color-muted]">
-              Выберите способ получения заказа.
+              {t("cart.form.methodDesc")}
             </p>
             {loading ? (
               <p className="text-sm text-[--color-muted]">
-                Загружаем методы доставки…
+                {t("cart.form.loadingMethods")}
               </p>
             ) : fetchError ? (
               <p className="text-sm text-[--color-danger]">
-                Не удалось загрузить методы доставки. Попробуйте ещё раз.
+                {t("cart.form.loadMethodsError")}
               </p>
             ) : methods && methods.length > 0 ? (
               methods.map((method) => (
@@ -1008,7 +1313,7 @@ export function CartPage() {
                             : "text-[--color-muted]",
                         )}
                       >
-                        Доступно только в: {method.cityRestriction}
+                        {t("cart.form.availableIn")} {method.cityRestriction}
                       </p>
                     ) : method.estimatedFeeKzt === 0 ? (
                       <p
@@ -1019,7 +1324,7 @@ export function CartPage() {
                             : "text-emerald-600",
                         )}
                       >
-                        Бесплатно
+                        {t("cart.form.free")}
                       </p>
                     ) : method.estimatedFeeKzt != null ? (
                       <p
@@ -1030,7 +1335,7 @@ export function CartPage() {
                             : "text-[--color-muted]",
                         )}
                       >
-                        от {formatMoney(method.estimatedFeeKzt)} ₸
+                        {t("cart.form.fromPrice", { price: formatMoney(method.estimatedFeeKzt) })}
                       </p>
                     ) : (
                       <p
@@ -1041,7 +1346,7 @@ export function CartPage() {
                             : "text-[--color-muted]",
                         )}
                       >
-                        по договорённости
+                        {t("cart.form.onAgreement")}
                       </p>
                     )}
                   </div>
@@ -1054,7 +1359,7 @@ export function CartPage() {
               ))
             ) : (
               <p className="text-sm text-amber-600">
-                Для выбранной страны доступные методы доставки не найдены.
+                {t("cart.form.noMethods")}
               </p>
             )}
           </div>
@@ -1067,11 +1372,10 @@ export function CartPage() {
           return (
             <div className="border border-[--color-border] bg-[--color-surface] px-5 py-5">
               <p className="text-sm font-semibold text-black">
-                {selectedMethod?.labelRu ?? "Самовывоз"}
+                {selectedMethod?.labelRu ?? t("orders.delivery_type.PICKUP")}
               </p>
               <p className="mt-1 text-sm text-[--color-muted]">
-                После оформления заказа мы свяжемся с вами для уточнения
-                времени и места получения. Доставка бесплатная.
+                {t("cart.form.pickupDesc")}
               </p>
             </div>
           );
@@ -1081,27 +1385,26 @@ export function CartPage() {
           return (
             <div className="flex flex-col gap-5">
               <p className="text-sm text-[--color-muted]">
-                Введите название города и выберите пункт выдачи СДЭК.
-                Сроки доставки рассчитываются автоматически.
+                {t("cart.form.cdekDesc")}
               </p>
 
               <div className="flex flex-col gap-2">
                 <label className="flex flex-col gap-1.5">
-                  <FieldLabel>Поиск города *</FieldLabel>
+                  <FieldLabel>{t("cart.form.citySearch")}</FieldLabel>
                   <input
                     value={cdekCitySearch}
                     onChange={(e) => {
                       setCdekCitySearch(e.target.value);
                       if (selectedCity) setSelectedCity(null);
                     }}
-                    placeholder="Например, Алматы"
+                    placeholder={t("cart.form.cityPlaceholder")}
                     autoComplete="off"
                     className={inputClass}
                   />
                 </label>
                 {citiesQuery.isFetching ? (
                   <p className="text-xs text-[--color-muted]">
-                    Поиск городов…
+                    {t("cart.form.searchingCities")}
                   </p>
                 ) : null}
                 {citiesQuery.data &&
@@ -1137,7 +1440,7 @@ export function CartPage() {
                 <div className="flex flex-col gap-3">
                   {pointsQuery.isFetching ? (
                     <p className="text-xs text-[--color-muted]">
-                      Загружаем пункты выдачи…
+                      {t("cart.form.loadingPvz")}
                     </p>
                   ) : null}
                   {pointsQuery.data && pointsQuery.data.length > 0 ? (
@@ -1157,7 +1460,7 @@ export function CartPage() {
                       return (
                         <div className="flex flex-col gap-2">
                           <FieldLabel>
-                            Пункт выдачи СДЭК * ({filtered.length} из {all.length})
+                            {t("cart.form.pvzCount", { count: filtered.length, total: all.length })}
                           </FieldLabel>
                           {/* Custom click-to-open PVZ dropdown */}
                           <div className="relative">
@@ -1172,7 +1475,7 @@ export function CartPage() {
                               <span className={selectedPoint ? "text-black" : "text-[--color-muted]"}>
                                 {selectedPoint
                                   ? `${selectedPoint.code} — ${selectedPoint.address || selectedPoint.name}`
-                                  : "Выберите пункт выдачи…"}
+                                  : t("cart.form.pvzPlaceholder")}
                               </span>
                               <svg width="8" height="5" viewBox="0 0 8 5" fill="none" aria-hidden="true"
                                 className={cn("shrink-0 ml-2 transition-transform duration-150", pvzOpen && "rotate-180")}>
@@ -1186,7 +1489,7 @@ export function CartPage() {
                                     type="text"
                                     value={pvzFilter}
                                     onChange={(e) => setPvzFilter(e.target.value)}
-                                    placeholder="Код, улица или адрес"
+                                    placeholder={t("cart.form.pvzFilter")}
                                     autoComplete="off"
                                     autoFocus
                                     className="w-full border border-[--color-border] px-3 py-2 text-sm outline-none focus:border-black focus:ring-1 focus:ring-black"
@@ -1194,7 +1497,7 @@ export function CartPage() {
                                 </div>
                                 <ul className="m-0 max-h-52 overflow-y-auto list-none p-0">
                                   {filtered.length === 0 ? (
-                                    <li className="px-3 py-2.5 text-xs text-amber-600">Ничего не найдено</li>
+                                    <li className="px-3 py-2.5 text-xs text-amber-600">{t("cart.form.pvzNotFound")}</li>
                                   ) : filtered.map((p) => (
                                     <li key={p.code}>
                                       <button
@@ -1224,8 +1527,7 @@ export function CartPage() {
                     })()
                   ) : pointsQuery.isSuccess ? (
                     <p className="text-sm text-amber-600">
-                      Для этого города список ПВЗ пуст. Попробуйте другой
-                      город.
+                      {t("cart.form.pvzEmpty")}
                     </p>
                   ) : null}
 
@@ -1233,7 +1535,7 @@ export function CartPage() {
                     <div className="flex flex-col gap-2">
                       {cdekCalcPending ? (
                         <p className="text-xs text-[--color-muted]">
-                          Рассчитываем сроки доставки…
+                          {t("cart.errors.calculating")}
                         </p>
                       ) : cdekCalcError ? (
                         <p className="text-xs text-amber-600">{cdekCalcError}</p>
@@ -1241,18 +1543,18 @@ export function CartPage() {
                         <div className="border border-[--color-border] bg-[--color-surface] px-4 py-3">
                           <div className="flex items-center justify-between">
                             <span className="text-sm text-black">
-                              Стоимость доставки:{" "}
+                              {t("cart.form.cdekCost")}{" "}
                               <span className="font-semibold">
                                 {formatMoney(cdekTariff.deliveryPrice)} ₸
                               </span>
                             </span>
                             <span className="text-[0.65rem] uppercase tracking-[0.08em] text-[--color-muted]">
-                              оплата при получении
+                              {t("cart.form.cdekAtReceipt")}
                             </span>
                           </div>
                           {cdekTariff.minDays && cdekTariff.maxDays ? (
                             <p className="mt-1 text-[0.65rem] text-[--color-muted]">
-                              Срок: {cdekTariff.minDays}–{cdekTariff.maxDays} дн.
+                              {t("cart.form.deliveryDays", { min: cdekTariff.minDays, max: cdekTariff.maxDays })}
                             </p>
                           ) : null}
                         </div>
@@ -1264,11 +1566,11 @@ export function CartPage() {
 
               <div className="flex flex-col gap-3 border-t border-[--color-border] pt-4">
                 <p className="text-[0.6rem] font-medium uppercase tracking-[0.1em] text-[--color-muted]">
-                  Данные получателя
+                  {t("cart.form.recipientSection")}
                 </p>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <label className="flex flex-col gap-1.5">
-                    <FieldLabel>Имя получателя *</FieldLabel>
+                    <FieldLabel>{t("cart.form.recipientName")}</FieldLabel>
                     <input
                       required
                       autoComplete="name"
@@ -1278,7 +1580,7 @@ export function CartPage() {
                     />
                   </label>
                   <label className="flex flex-col gap-1.5">
-                    <FieldLabel>Телефон получателя *</FieldLabel>
+                    <FieldLabel>{t("cart.form.recipientPhone")}</FieldLabel>
                     <input
                       required
                       type="tel"
@@ -1298,18 +1600,18 @@ export function CartPage() {
         return (
           <div className="flex flex-col gap-4">
             <p className="text-sm text-[--color-muted]">
-              Укажите адрес доставки.
+              {t("cart.form.addressDesc")}
               {selectedMethod?.cityRestriction ? (
                 <>
                   {" "}
-                  Доступно только в:{" "}
+                  {t("cart.form.availableIn")}{" "}
                   <strong>{selectedMethod.cityRestriction}</strong>.
                 </>
               ) : null}{" "}
-              Стоимость согласовывается с оператором после оформления заказа.
+              {t("cart.form.onAgreement")}
             </p>
             <label className="flex flex-col gap-1.5">
-              <FieldLabel>Город *</FieldLabel>
+              <FieldLabel>{t("cart.form.cityLabel")}</FieldLabel>
               <input
                 required
                 value={addrCity}
@@ -1318,7 +1620,7 @@ export function CartPage() {
               />
             </label>
             <label className="flex flex-col gap-1.5">
-              <FieldLabel>Улица, дом *</FieldLabel>
+              <FieldLabel>{t("cart.form.street")}</FieldLabel>
               <input
                 required
                 value={addrStreet}
@@ -1328,17 +1630,17 @@ export function CartPage() {
             </label>
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="flex flex-col gap-1.5">
-                <FieldLabel>Квартира / офис *</FieldLabel>
+                <FieldLabel>{t("cart.form.apt")}</FieldLabel>
                 <input
                   required
-                  placeholder="Нет — «—»"
+                  placeholder={t("cart.form.aptPlaceholder")}
                   value={addrApartment}
                   onChange={(e) => setAddrApartment(e.target.value)}
                   className={inputClass}
                 />
               </label>
               <label className="flex flex-col gap-1.5">
-                <FieldLabel optional>Индекс</FieldLabel>
+                <FieldLabel optional>{t("cart.form.postal")}</FieldLabel>
                 <input
                   inputMode="numeric"
                   value={addrPostal}
@@ -1350,7 +1652,7 @@ export function CartPage() {
             <div className="h-px bg-[--color-border]" />
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="flex flex-col gap-1.5">
-                <FieldLabel>Получатель *</FieldLabel>
+                <FieldLabel>{t("cart.form.recipient")}</FieldLabel>
                 <input
                   required
                   autoComplete="name"
@@ -1360,7 +1662,7 @@ export function CartPage() {
                 />
               </label>
               <label className="flex flex-col gap-1.5">
-                <FieldLabel>Телефон получателя *</FieldLabel>
+                <FieldLabel>{t("cart.form.recipientPhone")}</FieldLabel>
                 <input
                   required
                   type="tel"
@@ -1379,19 +1681,18 @@ export function CartPage() {
         const regionObj = DELIVERY_REGIONS.find((r) => r.iso2 === countryIso2);
         const deliveryMethodLabel =
           selectedMethod?.labelRu ??
-          DELIVERY_LABELS[deliveryType] ??
-          deliveryType;
+          (deliveryType ? t(`orders.delivery_type.${deliveryType}`) : deliveryType);
 
         return (
           <div className="flex flex-col gap-5">
             <p className="text-sm text-[--color-muted]">
-              Проверьте данные перед оформлением заказа.
+              {t("cart.form.summaryDesc")}
             </p>
 
             <section className="border border-[--color-border] bg-white">
               <div className="flex items-center justify-between border-b border-[--color-border] px-5 py-3">
                 <p className="text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-black">
-                  Контакты
+                  {t("cart.form.contactsSection")}
                 </p>
                 <button
                   type="button"
@@ -1401,16 +1702,16 @@ export function CartPage() {
                   }}
                   className="text-[0.55rem] uppercase tracking-[0.1em] text-[--color-muted] hover:text-black transition"
                 >
-                  Изменить
+                  {t("cart.form.edit")}
                 </button>
               </div>
               <dl className="flex flex-col gap-2 px-5 py-4 text-sm">
                 <div className="flex justify-between gap-4">
-                  <dt className="text-[--color-muted]">Имя</dt>
+                  <dt className="text-[--color-muted]">{t("cart.form.nameLabel")}</dt>
                   <dd className="m-0 font-medium text-black">{customerName}</dd>
                 </div>
                 <div className="flex justify-between gap-4">
-                  <dt className="text-[--color-muted]">Телефон</dt>
+                  <dt className="text-[--color-muted]">{t("cart.form.phoneLabel")}</dt>
                   <dd className="m-0 font-medium text-black">{customerPhone}</dd>
                 </div>
                 {telegramUsername ? (
@@ -1427,7 +1728,7 @@ export function CartPage() {
             <section className="border border-[--color-border] bg-white">
               <div className="flex items-center justify-between border-b border-[--color-border] px-5 py-3">
                 <p className="text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-black">
-                  Доставка
+                  {t("cart.form.deliverySection")}
                 </p>
                 <button
                   type="button"
@@ -1437,18 +1738,18 @@ export function CartPage() {
                   }}
                   className="text-[0.55rem] uppercase tracking-[0.1em] text-[--color-muted] hover:text-black transition"
                 >
-                  Изменить
+                  {t("cart.form.edit")}
                 </button>
               </div>
               <dl className="flex flex-col gap-2 px-5 py-4 text-sm">
                 <div className="flex justify-between gap-4">
-                  <dt className="text-[--color-muted]">Регион</dt>
+                  <dt className="text-[--color-muted]">{t("cart.form.regionLabel")}</dt>
                   <dd className="m-0 font-medium text-black">
                     {regionObj?.label ?? countryIso2}
                   </dd>
                 </div>
                 <div className="flex justify-between gap-4">
-                  <dt className="text-[--color-muted]">Способ</dt>
+                  <dt className="text-[--color-muted]">{t("cart.form.methodLabel")}</dt>
                   <dd className="m-0 font-medium text-black">
                     {deliveryMethodLabel}
                   </dd>
@@ -1457,7 +1758,7 @@ export function CartPage() {
                 !selectedMethod?.requiresCitySearch &&
                 addrCity ? (
                   <div className="flex justify-between gap-4">
-                    <dt className="text-[--color-muted]">Адрес</dt>
+                    <dt className="text-[--color-muted]">{t("cart.form.addressLabel")}</dt>
                     <dd className="m-0 text-right font-medium text-black">
                       {addrCity}, {addrStreet}, {addrApartment}
                     </dd>
@@ -1468,7 +1769,7 @@ export function CartPage() {
                 selectedPoint ? (
                   <>
                     <div className="flex justify-between gap-4">
-                      <dt className="text-[--color-muted]">Город СДЭК</dt>
+                      <dt className="text-[--color-muted]">{t("cart.form.cdekCity")}</dt>
                       <dd className="m-0 font-medium text-black">
                         {selectedCity.region?.trim()
                           ? `${selectedCity.city}, ${selectedCity.region}`
@@ -1476,13 +1777,13 @@ export function CartPage() {
                       </dd>
                     </div>
                     <div className="flex justify-between gap-4">
-                      <dt className="text-[--color-muted]">Пункт выдачи</dt>
+                      <dt className="text-[--color-muted]">{t("cart.form.pvzLabel")}</dt>
                       <dd className="m-0 text-right font-medium text-black">
                         {selectedPoint.name}
                       </dd>
                     </div>
                     <div className="flex justify-between gap-4">
-                      <dt className="text-[--color-muted]">Получатель</dt>
+                      <dt className="text-[--color-muted]">{t("cart.form.recipientLabel")}</dt>
                       <dd className="m-0 font-medium text-black">
                         {cdekRecipientName}, {cdekRecipientPhone}
                       </dd>
@@ -1491,32 +1792,32 @@ export function CartPage() {
                 ) : null}
                 {selectedMethod?.requiresCitySearch ? (
                   <div className="flex justify-between gap-4 border-t border-[--color-border] pt-2">
-                    <dt className="text-[--color-muted]">Доставка СДЭК</dt>
+                    <dt className="text-[--color-muted]">{t("cart.form.cdekDeliveryLabel")}</dt>
                     <dd className="m-0 text-right text-[--color-muted]">
                       {cdekTariff
-                        ? `${formatMoney(cdekTariff.deliveryPrice)} ₸ · оплата при получении`
-                        : "оплата при получении"}
+                        ? `${formatMoney(cdekTariff.deliveryPrice)} ₸ · ${t("cart.form.cdekAtReceipt")}`
+                        : t("cart.form.cdekAtReceipt")}
                     </dd>
                   </div>
                 ) : selectedMethod?.estimatedFeeKzt === 0 ? (
                   <div className="flex justify-between gap-4">
-                    <dt className="text-[--color-muted]">Стоимость</dt>
+                    <dt className="text-[--color-muted]">{t("cart.form.costLabel")}</dt>
                     <dd className="m-0 font-medium text-emerald-600">
-                      Бесплатно
+                      {t("cart.form.free")}
                     </dd>
                   </div>
                 ) : selectedMethod?.estimatedFeeKzt != null ? (
                   <div className="flex justify-between gap-4">
-                    <dt className="text-[--color-muted]">Стоимость</dt>
+                    <dt className="text-[--color-muted]">{t("cart.form.costLabel")}</dt>
                     <dd className="m-0 font-medium text-black">
                       {formatMoney(selectedMethod.estimatedFeeKzt)} ₸
                     </dd>
                   </div>
                 ) : (
                   <div className="flex justify-between gap-4">
-                    <dt className="text-[--color-muted]">Стоимость</dt>
+                    <dt className="text-[--color-muted]">{t("cart.form.costLabel")}</dt>
                     <dd className="m-0 text-[--color-muted]">
-                      по договорённости
+                      {t("cart.form.onAgreement")}
                     </dd>
                   </div>
                 )}
@@ -1526,7 +1827,7 @@ export function CartPage() {
             <section className="border border-[--color-border] bg-white">
               <div className="border-b border-[--color-border] px-5 py-3">
                 <p className="text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-black">
-                  Товары
+                  {t("cart.form.goodsSection")}
                 </p>
               </div>
               <ul className="m-0 flex flex-col gap-0 p-0 list-none divide-y divide-[--color-border]">
@@ -1561,19 +1862,19 @@ export function CartPage() {
               </ul>
               <div className="flex flex-col gap-2 border-t border-[--color-border] px-5 py-4 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-[--color-muted]">Товары</span>
+                  <span className="text-[--color-muted]">{t("cart.summary.items")}</span>
                   <span className="font-medium text-black">
                     {formatMoney(subtotal)} ₸
                   </span>
                 </div>
                 {deliveryType === "CDEK" ? (
                   <div className="flex justify-between">
-                    <span className="text-[--color-muted]">Доставка СДЭК</span>
-                    <span className="text-[--color-muted]">при получении</span>
+                    <span className="text-[--color-muted]">{t("cart.summary.cdekDelivery")}</span>
+                    <span className="text-[--color-muted]">{t("cart.summary.atReceipt")}</span>
                   </div>
                 ) : null}
                 <div className="flex justify-between border-t border-[--color-border] pt-2">
-                  <span className="font-semibold text-black">Итого</span>
+                  <span className="font-semibold text-black">{t("cart.total")}</span>
                   <span className="text-base font-semibold text-black">
                     {formatMoney(grandTotal)} ₸
                   </span>
@@ -1582,12 +1883,12 @@ export function CartPage() {
             </section>
 
             <label className="flex flex-col gap-1.5">
-              <FieldLabel optional>Комментарий к заказу</FieldLabel>
+              <FieldLabel optional>{t("cart.checkoutFlow.comment")}</FieldLabel>
               <textarea
                 rows={3}
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
-                placeholder="Размер, цвет, пожелания по доставке…"
+                placeholder={t("cart.checkoutFlow.commentPlaceholder")}
                 className={cn(inputClass, "resize-y")}
               />
             </label>
@@ -1608,7 +1909,10 @@ export function CartPage() {
         <Container>
           <OrderSuccess
             order={completedOrder}
-            onContinue={() => setCompletedOrder(null)}
+            onContinue={() => {
+              setCompletedOrder(null);
+              clearPendingPayment();
+            }}
             onPay={() => void handleInitPayment()}
             paymentProvider={paymentProvider}
             onPaymentProviderChange={(p) => {
@@ -1617,6 +1921,40 @@ export function CartPage() {
             }}
             paymentBusy={paymentBusy}
             paymentError={paymentError}
+          />
+        </Container>
+      </div>
+    );
+  }
+
+  // ── Render: Recovery banner (pending payment, F5 / tab-close / cancelled) ──────
+
+  if (pendingRecord && !completedOrder) {
+    return (
+      <div className="py-14">
+        <Container>
+          <RecoveryBanner
+            orderId={pendingRecord.orderId}
+            amount={pendingRecord.amount}
+            provider={recoveryProvider}
+            onProviderChange={(p) => {
+              setRecoveryProvider(p);
+              setPaymentError(null);
+            }}
+            onPay={() =>
+              void handleInitPayment({
+                orderId: pendingRecord.orderId,
+                provider: recoveryProvider,
+                amount: pendingRecord.amount,
+              })
+            }
+            onDismiss={() => {
+              // Clear locally; the backend expiry job will mark the order EXPIRED in ~58 min.
+              clearPendingPayment();
+              setPendingRecord(null);
+            }}
+            busy={paymentBusy}
+            error={paymentError}
           />
         </Container>
       </div>
@@ -1635,20 +1973,20 @@ export function CartPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: reduceMotion ? 0 : 0.3 }}
           >
-            Корзина
+            {t("cart.title")}
           </motion.h1>
 
           {justAddedTitle && lines.length > 0 ? (
             <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border border-[--color-border] bg-[--color-surface] px-4 py-3 text-sm">
               <span className="text-black">
-                «{justAddedTitle}» добавлен в корзину.
+                {t("cart.addedToCart", { title: justAddedTitle })}
               </span>
               <button
                 type="button"
                 onClick={() => setJustAddedTitle(null)}
                 className="text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-[--color-muted] hover:text-black"
               >
-                Скрыть
+                {t("cart.hide")}
               </button>
             </div>
           ) : null}
@@ -1656,14 +1994,14 @@ export function CartPage() {
           {lines.length === 0 ? (
             <div className="max-w-sm border border-[--color-border] bg-white px-6 py-10 text-center">
               <p className="m-0 text-sm text-[--color-muted]">
-                Пока пусто — загляните в каталог.
+                {t("cart.emptyAction")}
               </p>
               <button
                 type="button"
                 onClick={() => navigate("/catalog")}
                 className="mt-6 bg-black px-6 py-3 text-[12px] font-bold uppercase tracking-[0.14em] text-white transition hover:bg-zinc-800"
               >
-                В каталог
+                {t("cart.toCatalog")}
               </button>
             </div>
           ) : (
@@ -1710,7 +2048,7 @@ export function CartPage() {
                       <button
                         type="button"
                         onClick={() => decrement(line.lineKey)}
-                        aria-label="Уменьшить"
+                        aria-label={t("cart.decreaseQty")}
                         className="flex h-8 w-8 items-center justify-center text-sm transition hover:bg-[--color-surface]"
                       >
                         −
@@ -1721,7 +2059,7 @@ export function CartPage() {
                       <button
                         type="button"
                         onClick={() => increment(line.lineKey)}
-                        aria-label="Увеличить"
+                        aria-label={t("cart.increaseQty")}
                         className="flex h-8 w-8 items-center justify-center text-sm transition hover:bg-[--color-surface]"
                       >
                         +
@@ -1732,7 +2070,7 @@ export function CartPage() {
                       onClick={() => removeLine(line.lineKey)}
                       className="text-[0.65rem] uppercase tracking-[0.1em] text-[--color-muted] transition hover:text-[--color-danger]"
                     >
-                      Удалить
+                      {t("cart.remove")}
                     </button>
                   </motion.li>
                 ))}
@@ -1741,12 +2079,7 @@ export function CartPage() {
               <div className="mt-4 flex flex-wrap items-center justify-between gap-4 border border-[--color-border] bg-[--color-surface] px-5 py-5">
                 <div>
                   <p className="m-0 text-[0.6rem] uppercase tracking-[0.16em] text-[--color-muted]">
-                    {totalQty}&thinsp;
-                    {totalQty === 1
-                      ? "позиция"
-                      : totalQty < 5
-                        ? "позиции"
-                        : "позиций"}
+                    {t("cart.items", { count: totalQty })}
                   </p>
                   <p className="mt-1 text-2xl font-semibold text-black">
                     {formatMoney(subtotal)} ₸
@@ -1758,7 +2091,7 @@ export function CartPage() {
                     onClick={clear}
                     className="text-[0.65rem] uppercase tracking-[0.1em] text-[--color-muted] transition hover:text-[--color-danger]"
                   >
-                    Очистить
+                    {t("cart.clearCart")}
                   </button>
                   <button
                     type="button"
@@ -1775,7 +2108,7 @@ export function CartPage() {
                     }}
                     className="bg-black px-8 py-4 text-[13px] font-bold uppercase tracking-[0.14em] text-white transition hover:bg-zinc-800"
                   >
-                    Оформить заказ
+                    {t("cart.checkout")}
                   </button>
                 </div>
               </div>
@@ -1784,7 +2117,7 @@ export function CartPage() {
                 to="/catalog"
                 className="mt-8 inline-block text-[0.65rem] uppercase tracking-[0.12em] text-[--color-muted] transition hover:text-black"
               >
-                ← В каталог
+                {t("cart.backToCatalog")}
               </Link>
             </div>
           )}
@@ -1800,12 +2133,11 @@ export function CartPage() {
       <Container>
         <div className="mb-2">
           <h1 className="text-3xl font-extrabold uppercase tracking-[-0.02em] text-black md:text-4xl">
-            Оформление заказа
+            {t("cart.checkoutFlow.title")}
           </h1>
           <p className="mt-1 text-sm text-[--color-muted]">
-            {totalQty}&thinsp;
-            {totalQty === 1 ? "товар" : totalQty < 5 ? "товара" : "товаров"}{" "}
-            · {formatMoney(subtotal)} ₸
+            {t("cart.goods", { count: totalQty })}
+            {" "}· {formatMoney(subtotal)} ₸
           </p>
         </div>
 
@@ -1825,7 +2157,7 @@ export function CartPage() {
               >
                 <div className="mb-5">
                   <p className="text-[0.55rem] font-semibold uppercase tracking-[0.18em] text-[--color-muted]">
-                    Шаг {step} из 5
+                    {t("cart.checkoutFlow.stepOf", { step })}
                   </p>
                   <h2 className="mt-0.5 text-xl font-semibold text-black">
                     {STEP_LABELS[step - 1]}
@@ -1849,7 +2181,7 @@ export function CartPage() {
                     onClick={handleBack}
                     className="text-[0.65rem] font-medium uppercase tracking-[0.12em] text-[--color-muted] transition hover:text-black"
                   >
-                    ← {step === 1 ? "Корзина" : "Назад"}
+                    {step === 1 ? t("cart.checkoutFlow.backToCart") : t("cart.checkoutFlow.back")}
                   </button>
 
                   {step < 5 ? (
@@ -1858,7 +2190,7 @@ export function CartPage() {
                       onClick={handleNext}
                       className="bg-black px-8 py-4 text-[13px] font-bold uppercase tracking-[0.14em] text-white transition hover:bg-zinc-800"
                     >
-                      Продолжить
+                      {t("cart.checkoutFlow.continue")}
                     </button>
                   ) : (
                     <button
@@ -1868,8 +2200,8 @@ export function CartPage() {
                       className="bg-black px-8 py-4 text-[13px] font-bold uppercase tracking-[0.14em] text-white transition hover:bg-zinc-800 disabled:opacity-50"
                     >
                       {orderMutation.isPending
-                        ? "Отправляем…"
-                        : "Подтвердить заказ"}
+                        ? t("cart.checkoutFlow.submitting")
+                        : t("cart.checkoutFlow.submit")}
                     </button>
                   )}
                 </div>

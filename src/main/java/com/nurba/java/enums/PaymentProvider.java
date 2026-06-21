@@ -1,7 +1,6 @@
 package com.nurba.java.enums;
 
 public enum PaymentProvider {
-    KASPI,
-    YOOKASSA,
+    FREEDOM_PAY,
     PAYPAL
 }

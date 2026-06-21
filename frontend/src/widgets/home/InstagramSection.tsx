@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import p1 from "@/assets/figma/photo_5289740941222682480_y.jpg";
 import p2 from "@/assets/figma/photo_5289740941222682481_y.jpg";
 import p3 from "@/assets/figma/photo_5289740941222682482_y.jpg";
@@ -19,8 +20,9 @@ function IgIcon({ className }: { className?: string }) {
   );
 }
 
-/** Лента Instagram. */
 export function InstagramSection() {
+  const { t } = useTranslation();
+
   return (
     <section className="py-24 md:py-32">
       <div className="container mx-auto px-4 md:px-8">
@@ -41,7 +43,7 @@ export function InstagramSection() {
             className="group inline-flex items-center gap-2 text-[14px] font-semibold uppercase tracking-[0.08em] hover:text-[#7A7A7A]"
           >
             <IgIcon className="h-5 w-5" />
-            Подписаться
+            {t("home.instagram.follow")}
           </a>
         </motion.div>
 
@@ -56,7 +58,7 @@ export function InstagramSection() {
             >
               <img
                 src={src}
-                alt="BALGYN в Instagram"
+                alt={t("home.instagram.imageAlt")}
                 className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
               />
               <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-colors duration-300 group-hover:bg-black/30">

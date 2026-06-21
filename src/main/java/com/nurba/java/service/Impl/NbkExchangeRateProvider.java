@@ -28,9 +28,14 @@ public class NbkExchangeRateProvider implements ExchangeRateProvider {
 
     private static final Logger log = LoggerFactory.getLogger(NbkExchangeRateProvider.class);
 
-    // Matches the <item> whose <title>USD</title>, capturing the numeric <description>.
     private static final Pattern USD_RATE = Pattern.compile(
             "<title>USD</title>.*?<description>\\s*([0-9]+(?:[.,][0-9]+)?)\\s*</description>",
+            Pattern.DOTALL);
+    private static final Pattern EUR_RATE = Pattern.compile(
+            "<title>EUR</title>.*?<description>\\s*([0-9]+(?:[.,][0-9]+)?)\\s*</description>",
+            Pattern.DOTALL);
+    private static final Pattern RUB_RATE = Pattern.compile(
+            "<title>RUB</title>.*?<description>\\s*([0-9]+(?:[.,][0-9]+)?)\\s*</description>",
             Pattern.DOTALL);
 
     @Value("${app.exchange-rate.nbk-rss-url:https://nationalbank.kz/rss/rates_all.xml}")
@@ -41,6 +46,20 @@ public class NbkExchangeRateProvider implements ExchangeRateProvider {
 
     @Override
     public Optional<BigDecimal> fetchKztPerUsd() {
+        return fetchFromFeed(USD_RATE, "USD");
+    }
+
+    @Override
+    public Optional<BigDecimal> fetchKztPerEur() {
+        return fetchFromFeed(EUR_RATE, "EUR");
+    }
+
+    @Override
+    public Optional<BigDecimal> fetchKztPerRub() {
+        return fetchFromFeed(RUB_RATE, "RUB");
+    }
+
+    private Optional<BigDecimal> fetchFromFeed(Pattern pattern, String currency) {
         try {
             HttpClient client = HttpClient.newBuilder()
                     .connectTimeout(Duration.ofMillis(timeoutMs))
@@ -51,12 +70,12 @@ public class NbkExchangeRateProvider implements ExchangeRateProvider {
                     .build();
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() != 200 || response.body() == null) {
-                log.warn("NBK rate fetch returned status {}", response.statusCode());
+                log.warn("NBK rate fetch returned status {} for {}", response.statusCode(), currency);
                 return Optional.empty();
             }
-            Matcher m = USD_RATE.matcher(response.body());
+            Matcher m = pattern.matcher(response.body());
             if (!m.find()) {
-                log.warn("NBK rate fetch: USD entry not found in feed");
+                log.warn("NBK rate fetch: {} entry not found in feed", currency);
                 return Optional.empty();
             }
             BigDecimal rate = new BigDecimal(m.group(1).replace(',', '.'));
@@ -65,8 +84,7 @@ public class NbkExchangeRateProvider implements ExchangeRateProvider {
             }
             return Optional.of(rate);
         } catch (Exception e) {
-            // Network down, timeout, parse error — degrade gracefully to last known-good.
-            log.warn("NBK rate fetch failed ({}); keeping last known-good rate", e.toString());
+            log.warn("NBK rate fetch failed for {} ({}); keeping last known-good rate", currency, e.toString());
             return Optional.empty();
         }
     }

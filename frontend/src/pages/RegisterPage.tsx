@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/app/auth-context";
 import { ApiError } from "@/shared/api/http";
 
@@ -7,6 +8,7 @@ const inputClass =
   "w-full border-b border-[--color-border] bg-transparent py-3 text-[15px] text-black outline-none transition placeholder:text-[--color-muted] focus:border-black";
 
 export function RegisterPage() {
+  const { t } = useTranslation();
   const { register } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -23,13 +25,10 @@ export function RegisterPage() {
     setSubmitting(true);
     try {
       await register(email.trim(), password);
-      // Успешная регистрация НЕ авторизует пользователя автоматически.
-      // Перенаправляем на страницу входа; `from` сохраняем, чтобы после входа
-      // вернуть пользователя в исходное место (например, в корзину/checkout).
       navigate("/login", { replace: true, state: { from, registered: true } });
     } catch (err) {
       setError(
-        err instanceof ApiError ? err.message : "Не удалось зарегистрироваться",
+        err instanceof ApiError ? err.message : t("auth.registerError"),
       );
     } finally {
       setSubmitting(false);
@@ -39,16 +38,16 @@ export function RegisterPage() {
   return (
     <>
       <h1 className="mb-2 text-[32px] font-extrabold uppercase tracking-[-0.02em] text-black">
-        Создать аккаунт
+        {t("auth.registerHeading")}
       </h1>
       <p className="mb-8 text-[13px] text-[--color-muted]">
-        Уже есть аккаунт?{" "}
+        {t("auth.haveAccount")}{" "}
         <Link
           to="/login"
           state={from ? { from } : undefined}
           className="font-semibold text-black underline underline-offset-2 hover:opacity-70"
         >
-          Войти
+          {t("auth.loginLinkText")}
         </Link>
       </p>
 
@@ -70,9 +69,9 @@ export function RegisterPage() {
 
         <label className="flex flex-col gap-1">
           <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[--color-muted]">
-            Пароль{" "}
+            {t("auth.password")}{" "}
             <span className="normal-case font-normal tracking-normal">
-              (от 8 символов)
+              {t("auth.passwordHint")}
             </span>
           </span>
           <input
@@ -98,7 +97,7 @@ export function RegisterPage() {
           disabled={submitting}
           className="mt-2 w-full bg-black py-4 text-[13px] font-bold uppercase tracking-[0.14em] text-white transition hover:bg-zinc-800 disabled:opacity-50"
         >
-          {submitting ? "Создаём…" : "Создать аккаунт"}
+          {submitting ? t("auth.creatingAccount") : t("auth.createAccount")}
         </button>
       </form>
     </>

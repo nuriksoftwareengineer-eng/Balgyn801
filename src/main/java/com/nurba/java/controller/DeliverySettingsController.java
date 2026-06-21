@@ -5,10 +5,12 @@ import com.nurba.java.dto.request.SetKzDeliveryFlatRequest;
 import com.nurba.java.dto.responce.DeliverySettingsResponse;
 import com.nurba.java.service.DeliverySettingService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
+@PreAuthorize("hasRole('ADMIN')")
 public class DeliverySettingsController implements DeliverySettingsApi {
 
     private final DeliverySettingService service;

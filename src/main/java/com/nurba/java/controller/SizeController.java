@@ -5,12 +5,14 @@ import com.nurba.java.dto.request.CreateSizeRequest;
 import com.nurba.java.dto.responce.SizeResponse;
 import com.nurba.java.service.SizeService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
+@PreAuthorize("hasRole('ADMIN')")
 public class SizeController implements SizeApi {
 
     private final SizeService service;

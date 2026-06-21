@@ -35,14 +35,20 @@ export function AdminLayout() {
           <NavLink to="/admin/designs" className={navClass}>
             Дизайны
           </NavLink>
-          <NavLink to="/admin/products" className={navClass}>
-            Товары (legacy)
-          </NavLink>
           <NavLink to="/admin/customers" className={navClass}>
             Клиенты
           </NavLink>
           <NavLink to="/admin/size-charts" className={navClass}>
             Размерные сетки
+          </NavLink>
+          <NavLink to="/admin/payments" className={navClass}>
+            Платежи
+          </NavLink>
+          <NavLink to="/admin/exchange-rate" className={navClass}>
+            Курс валют
+          </NavLink>
+          <NavLink to="/admin/users" className={navClass}>
+            Пользователи
           </NavLink>
         </nav>
         <div className="mt-auto border-t border-white/10 pt-4">

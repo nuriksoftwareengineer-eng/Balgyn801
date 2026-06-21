@@ -5,12 +5,14 @@ import com.nurba.java.dto.request.CreateCatalogGroupRequest;
 import com.nurba.java.dto.responce.CatalogGroupResponse;
 import com.nurba.java.service.CatalogGroupService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
+@PreAuthorize("hasRole('ADMIN')")
 public class CatalogGroupController implements CatalogGroupApi {
 
     private final CatalogGroupService service;

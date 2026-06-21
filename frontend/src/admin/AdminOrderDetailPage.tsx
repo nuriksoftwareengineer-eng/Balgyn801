@@ -363,7 +363,10 @@ export function AdminOrderDetailPage() {
               variant="primary"
               className="rounded-[10px]"
               disabled={shipmentMut.isPending}
-              onClick={() => shipmentMut.mutate("create")}
+              onClick={() => {
+                const label = shipment ? "Повторить создание отправления CDEK?" : "Создать отправление CDEK? Это выставит счёт через CDEK API.";
+                if (window.confirm(label)) shipmentMut.mutate("create");
+              }}
             >
               {shipmentMut.isPending
                 ? "Выполняется…"

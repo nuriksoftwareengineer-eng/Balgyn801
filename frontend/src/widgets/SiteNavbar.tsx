@@ -1,19 +1,20 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Search, ShoppingBag, Menu, X, User } from "lucide-react";
+import { ShoppingBag, Menu, X, User, Globe } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useCart } from "@/app/use-cart";
 import { useCartDrawer } from "@/app/cart-drawer-context";
 import { useAuth } from "@/app/auth-context";
+import { useCurrency, type Currency } from "@/app/currency-context";
+import { CompactDropdown } from "@/shared/ui/CompactDropdown";
 
-const NAV_LINKS = [
-  { label: "Каталог", to: "/catalog" },
-  { label: "Свой дизайн", to: "/custom-design" },
-  { label: "О нас", to: "/about" },
-  { label: "Контакты", to: "/contacts" },
-];
+const LANGS = ["ru", "kk", "en"] as const;
+const CURRENCIES: Currency[] = ["KZT", "USD", "EUR", "RUB"];
 
-/** Шапка витрины в стиле дизайна: прозрачная над hero на главной, белая при скролле / на др. страницах. */
+/** Шапка витрины: прозрачная над hero на главной, белая при скролле / на др. страницах. */
 export function SiteNavbar() {
+  const { t, i18n } = useTranslation();
+  const { currency, setCurrency } = useCurrency();
   const location = useLocation();
   const { totalQty } = useCart();
   const { openDrawer } = useCartDrawer();
@@ -31,8 +32,17 @@ export function SiteNavbar() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Закрыть мобильное меню при смене маршрута.
   useEffect(() => setMobileOpen(false), [location.pathname]);
+
+  const navLinks = [
+    { labelKey: "nav.catalog", to: "/catalog" },
+    { labelKey: "nav.customDesign", to: "/custom-design" },
+    { labelKey: "nav.about", to: "/about" },
+    { labelKey: "nav.contacts", to: "/contacts" },
+  ];
+
+  const mutedCls = transparent ? "text-white/60 hover:text-white" : "text-[--color-muted] hover:text-black";
+  const dividerCls = transparent ? "bg-white/20" : "bg-[#E6E6E6]";
 
   return (
     <>
@@ -51,38 +61,70 @@ export function SiteNavbar() {
             BALGYN
           </Link>
 
+          {/* Desktop nav */}
           <nav className="hidden items-center gap-[40px] text-[15px] font-semibold uppercase tracking-[0.1em] xl:flex">
-            {NAV_LINKS.map((l) => (
-              <Link key={l.to} to={l.to} className="transition-colors hover:text-[#7A7A7A]">
-                {l.label}
+            {navLinks.map((l) => (
+              <Link key={l.to} to={l.to} className={`transition-colors ${mutedCls}`}>
+                {t(l.labelKey)}
               </Link>
             ))}
           </nav>
 
-          <div className="flex items-center gap-[20px] md:gap-[28px]">
+          {/* Right cluster */}
+          <div className="flex items-center gap-[16px] md:gap-[20px]">
+
+            {/* Language dropdown — desktop */}
+            <CompactDropdown
+              className="hidden xl:block"
+              trigger={<span className="flex items-center gap-1.5"><Globe className="h-3.5 w-3.5" />{t(`language.${i18n.resolvedLanguage ?? "ru"}`)}</span>}
+              options={LANGS.map((lng) => ({ value: lng, label: t(`language.${lng}`) }))}
+              value={i18n.resolvedLanguage ?? "ru"}
+              onChange={(lng) => i18n.changeLanguage(lng)}
+              triggerClassName={transparent ? "text-white/70 hover:text-white" : undefined}
+            />
+
+            <span className={`hidden h-4 w-px xl:block ${dividerCls}`} />
+
+            {/* Currency dropdown — desktop */}
+            <CompactDropdown
+              className="hidden xl:block"
+              trigger={t(`currency.${currency}`)}
+              options={CURRENCIES.map((c) => ({ value: c, label: t(`currency.${c}`) }))}
+              value={currency}
+              onChange={(c) => setCurrency(c as Currency)}
+              triggerClassName={transparent ? "text-white/70 hover:text-white" : undefined}
+            />
+
+            <span className={`hidden h-4 w-px xl:block ${dividerCls}`} />
+
+            {/* User icon */}
             <Link
               to={user ? "/profile" : "/login"}
-              aria-label={user ? "Профиль" : "Войти"}
-              className="hidden transition-colors hover:text-[#7A7A7A] md:flex"
+              aria-label={user ? t("nav.profile") : t("nav.login")}
+              className={`hidden transition-colors md:flex ${mutedCls}`}
             >
               <User className="h-[26px] w-[26px]" />
             </Link>
+
+            {/* Cart */}
             <button
               type="button"
               onClick={openDrawer}
-              aria-label={`Корзина, ${totalQty} поз.`}
-              className="flex items-center gap-2 transition-colors hover:text-[#7A7A7A]"
+              aria-label={t("header.cartItems", { count: totalQty })}
+              className={`flex items-center gap-2 transition-colors ${mutedCls}`}
             >
               <ShoppingBag className="h-[26px] w-[26px]" />
               <span className="text-[16px] font-semibold leading-none tracking-[0.08em] md:text-[18px]">
                 ({totalQty})
               </span>
             </button>
+
+            {/* Hamburger */}
             <button
               type="button"
               onClick={() => setMobileOpen(true)}
-              className="-mr-2 p-2 xl:hidden"
-              aria-label="Открыть меню"
+              className={`-mr-2 p-2 xl:hidden transition-colors ${mutedCls}`}
+              aria-label={t("header.openMenu")}
             >
               <Menu className="h-7 w-7" />
             </button>
@@ -90,6 +132,7 @@ export function SiteNavbar() {
         </div>
       </header>
 
+      {/* Mobile full-screen menu */}
       {mobileOpen ? (
         <div className="fixed inset-0 z-[60] flex flex-col bg-black text-white">
           <div className="mx-auto grid h-[72px] w-full max-w-[1440px] grid-cols-3 items-center px-4">
@@ -104,43 +147,72 @@ export function SiteNavbar() {
               type="button"
               onClick={() => setMobileOpen(false)}
               className="-mr-2 justify-self-end p-2"
-              aria-label="Закрыть меню"
+              aria-label={t("header.closeMenu")}
             >
               <X className="h-6 w-6" />
             </button>
           </div>
+
           <div className="flex flex-1 flex-col justify-center gap-6 px-8">
-            {NAV_LINKS.map((l) => (
+            {navLinks.map((l) => (
               <Link
                 key={l.to}
                 to={l.to}
                 className="text-[28px] font-bold uppercase tracking-[-0.02em]"
               >
-                {l.label}
+                {t(l.labelKey)}
               </Link>
             ))}
             <Link
               to={user ? "/profile" : "/login"}
               className="text-[28px] font-bold uppercase tracking-[-0.02em]"
             >
-              {user ? "Профиль" : "Войти"}
+              {user ? t("nav.profile") : t("nav.login")}
             </Link>
           </div>
-          <div className="flex items-center justify-between gap-6 border-t border-white/20 p-6">
-            <button type="button" className="inline-flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.16em]">
-              <Search className="h-4 w-4" />
-              Поиск
-            </button>
+
+          <div className="flex flex-col gap-4 border-t border-white/20 px-8 pb-8 pt-6">
+            {/* Language */}
+            <div className="flex items-center gap-4">
+              {LANGS.map((lng) => (
+                <button
+                  key={lng}
+                  type="button"
+                  onClick={() => i18n.changeLanguage(lng)}
+                  className={`text-[13px] font-semibold uppercase tracking-[0.12em] transition-colors ${
+                    i18n.resolvedLanguage === lng ? "text-white" : "text-white/60"
+                  }`}
+                >
+                  {t(`language.${lng}`)}
+                </button>
+              ))}
+            </div>
+            {/* Currency */}
+            <div className="flex items-center gap-4">
+              {CURRENCIES.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => setCurrency(c)}
+                  className={`text-[13px] font-semibold uppercase tracking-[0.08em] transition-colors ${
+                    currency === c ? "text-white" : "text-white/60"
+                  }`}
+                >
+                  {c}
+                </button>
+              ))}
+            </div>
+            {/* Cart shortcut */}
             <button
               type="button"
               onClick={() => {
                 setMobileOpen(false);
                 openDrawer();
               }}
-              className="inline-flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.16em]"
+              className="inline-flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.16em] text-white/60"
             >
               <ShoppingBag className="h-4 w-4" />
-              Корзина ({totalQty})
+              {t("nav.cart")} ({totalQty})
             </button>
           </div>
         </div>

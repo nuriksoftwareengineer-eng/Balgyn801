@@ -14,6 +14,8 @@ services:
       # Локальный stub оплаты: разрешить неподписанные webhooks (в проде false + реальные секреты).
       - PAYMENT_WEBHOOK_ALLOW_UNSIGNED=${PAYMENT_WEBHOOK_ALLOW_UNSIGNED:-false}
       - SWAGGER_ENABLED=${SWAGGER_ENABLED:-true}
+      # Профиль Spring. Выставь prod чтобы выключить Swagger и включить COOKIE_SECURE/TRUST_PROXY.
+      # - SPRING_PROFILES_ACTIVE=prod
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/balgynbol-spring
       - SPRING_DATASOURCE_USERNAME=postgres
       - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD:-postgres}
@@ -23,19 +25,40 @@ services:
       - CDEK_CLIENT_SECRET=${CDEK_CLIENT_SECRET:-}
       - CDEK_SENDER_CITY=${CDEK_SENDER_CITY:-270}
       - CDEK_DEFAULT_TARIFF=${CDEK_DEFAULT_TARIFF:-136}
+      # Set APP_SEED_CATALOG=true in .env to seed catalog groups, collections, sample designs, colors, sizes.
+      - APP_SEED_CATALOG=${APP_SEED_CATALOG:-false}
+      # Frontend base URL — used to build Freedom Pay success/failure redirect URLs.
+      # Change to https://yourdomain.com in production.
+      - FRONTEND_BASE_URL=${FRONTEND_BASE_URL:-http://localhost:5174}
+      # Freedom Pay credentials (leave blank for stub/test mode).
+      - FREEDOMPAY_MERCHANT_ID=${FREEDOMPAY_MERCHANT_ID:-}
+      - FREEDOMPAY_SECRET_KEY=${FREEDOMPAY_SECRET_KEY:-}
+      - FREEDOMPAY_RESULT_URL=${FREEDOMPAY_RESULT_URL:-}
+      - FREEDOMPAY_TESTING_MODE=${FREEDOMPAY_TESTING_MODE:-false}
+      # PayPal credentials (leave blank for stub/test mode).
+      - PAYPAL_MODE=${PAYPAL_MODE:-sandbox}
+      - PAYPAL_CLIENT_ID=${PAYPAL_CLIENT_ID:-}
+      - PAYPAL_CLIENT_SECRET=${PAYPAL_CLIENT_SECRET:-}
+      - PAYPAL_WEBHOOK_ID=${PAYPAL_WEBHOOK_ID:-}
       - STORAGE_ENABLED=true
       - MINIO_ENDPOINT=http://minio:9000
       # MINIO_PUBLIC_URL — URL, под которым браузер обращается к MinIO.
       # Локально: localhost:9000 (порт проброшен в docker-compose). На проде замените на реальный домен.
       - MINIO_PUBLIC_URL=${MINIO_PUBLIC_URL:-http://localhost:9000}
-      - MINIO_ROOT_USER=minioadmin
-      - MINIO_ROOT_PASSWORD=minioadmin
-      - MINIO_BUCKET=balgyn-media
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER:-minioadmin}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD:-minioadmin}
+      - MINIO_BUCKET=${MINIO_BUCKET:-balgyn-media}
     depends_on:
       db:
         condition: service_healthy
       minio:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/api/v1/exchange-rates > /dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
 
   minio:
     image: minio/minio:RELEASE.2024-12-18T13-15-44Z
@@ -44,8 +67,8 @@ services:
       - "9000:9000"
       - "9001:9001"
     environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
     volumes:
       - minio_data:/data
     healthcheck:
@@ -56,19 +79,18 @@ services:
       start_period: 10s
 
   frontend:
-    image: node:22-alpine
-    working_dir: /app/frontend
-    # npm ci matches package-lock; anonymous node_modules volumes could miss new deps (e.g. framer-motion).
-    command: sh -c "npm ci && npm run dev -- --host 0.0.0.0 --port 5173"
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        # Relative path: nginx proxy (or browser) will route /api/v1 → backend.
+        # Override with the full URL (https://api.yourdomain.com/api/v1) if not using nginx proxy.
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-/api/v1}
     ports:
-      - "5174:5173"
-    environment:
-      - VITE_API_BASE_URL=http://localhost:8080/api/v1
-    volumes:
-      - .:/app
-      - frontend_node_modules:/app/frontend/node_modules
+      - "5174:80"
     depends_on:
-      - app
+      app:
+        condition: service_healthy
 
   db:
     image: postgres:16
@@ -90,4 +112,3 @@ services:
 volumes:
   minio_data:
   postgres_data:
-  frontend_node_modules:

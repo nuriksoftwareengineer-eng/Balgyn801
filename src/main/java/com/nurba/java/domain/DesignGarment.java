@@ -12,7 +12,13 @@ import java.util.List;
 import java.util.Set;
 
 @Entity
-@Table(name = "design_garments")
+@Table(
+    name = "design_garments",
+    uniqueConstraints = @UniqueConstraint(
+        name = "uq_design_garment_type",
+        columnNames = {"design_id", "garment_type"}
+    )
+)
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -32,6 +38,9 @@ public class DesignGarment {
 
     @Column(nullable = false)
     private Boolean active = true;
+
+    @Column(name = "sort_order")
+    private Integer sortOrder;
 
     @OneToMany(mappedBy = "designGarment", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<DesignGarmentPrice> prices = new ArrayList<>();

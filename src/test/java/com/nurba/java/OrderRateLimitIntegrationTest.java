@@ -176,7 +176,7 @@ class OrderRateLimitIntegrationTest {
         design.setCollection(coll);
         design.setName("RateLimit Design");
         design.setSlug("ratelimit-design");
-        design.setActive(true);
+        design.setStatus(com.nurba.java.enums.DesignStatus.PUBLISHED);
         design.setCreatedAt(LocalDateTime.now());
         design = designRepository.save(design);
 

@@ -13,6 +13,11 @@ import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import java.util.Arrays;
+import java.util.List;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -35,6 +40,26 @@ public class SecurityConfig {
 
     @Value("${app.swagger.enabled:true}")
     private boolean swaggerEnabled;
+
+    @Value("${app.cors.allowed-origins}")
+    private String allowedOriginsCsv;
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration config = new CorsConfiguration();
+        List<String> origins = Arrays.stream(allowedOriginsCsv.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .toList();
+        config.setAllowedOrigins(origins);
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        config.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept"));
+        config.setAllowCredentials(true);
+        config.setMaxAge(1800L);
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/api/**", config);
+        return source;
+    }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -83,6 +108,9 @@ public class SecurityConfig {
                         .accessDeniedHandler(accessDeniedHandler))
                 .authorizeHttpRequests(auth -> {
                     auth
+                            // Actuator health — Docker healthcheck uses this
+                            .requestMatchers(HttpMethod.GET, "/actuator/health").permitAll()
+
                             .requestMatchers(
                                     "/api/v1/auth/register",
                                     "/api/v1/auth/login",
@@ -98,6 +126,8 @@ public class SecurityConfig {
                             // Public storefront catalog — read-only, no auth required
                             .requestMatchers(HttpMethod.GET, "/api/v1/catalog/**").permitAll()
 
+                            .requestMatchers(HttpMethod.GET, "/api/v1/exchange-rates").permitAll()
+
                             .requestMatchers(HttpMethod.GET, "/api/v1/product/**").permitAll()
 
                             .requestMatchers(HttpMethod.POST, "/api/v1/order").permitAll()
@@ -110,7 +140,11 @@ public class SecurityConfig {
                             .requestMatchers(HttpMethod.POST, "/api/v1/delivery/cdek/calculate-order").permitAll()
                             .requestMatchers(HttpMethod.POST, "/api/v1/delivery/cdek/webhook").permitAll()
                             .requestMatchers(HttpMethod.POST, "/api/v1/payments/init").permitAll()
-                            .requestMatchers(HttpMethod.POST, "/api/v1/payments/webhook/**").permitAll()
+                            .requestMatchers(HttpMethod.POST, "/api/v1/payments/callback/**").permitAll()
+                            .requestMatchers(HttpMethod.POST, "/api/v1/payments/paypal/create-order").permitAll()
+                            .requestMatchers(HttpMethod.POST, "/api/v1/payments/paypal/capture/**").permitAll()
+                            .requestMatchers(HttpMethod.POST, "/api/v1/payments/paypal/cancel/**").permitAll()
+                            .requestMatchers(HttpMethod.POST, "/api/v1/payments/paypal/webhook").permitAll()
 
                             .requestMatchers(HttpMethod.GET, "/api/v1/order", "/api/v1/order/**")
                             .hasRole("ADMIN")

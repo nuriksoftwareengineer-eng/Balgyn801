@@ -11,4 +11,7 @@ public interface CdekShipmentRepository extends JpaRepository<CdekShipment, Long
 
     /** Отправление, привязанное к заказу (OneToOne). */
     Optional<CdekShipment> findByOrder_Id(Long orderId);
+
+    /** Поиск отправления по UUID от CDEK для обработки вебхуков (точечный запрос, не findAll). */
+    Optional<CdekShipment> findByCdekOrderUuid(String cdekOrderUuid);
 }

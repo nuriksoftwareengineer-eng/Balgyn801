@@ -1,0 +1,16 @@
+User-agent: *
+Allow: /
+Allow: /catalog/
+Allow: /about
+Allow: /contacts
+Allow: /delivery
+Allow: /privacy
+Allow: /terms
+
+Disallow: /admin/
+Disallow: /profile
+Disallow: /cart
+Disallow: /payment/
+Disallow: /order/
+
+Sitemap: https://balgyn.kz/sitemap.xml

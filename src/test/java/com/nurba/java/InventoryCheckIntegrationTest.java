@@ -112,7 +112,7 @@ class InventoryCheckIntegrationTest {
         design.setCollection(coll);
         design.setName("Test Design");
         design.setSlug("inv-test-design");
-        design.setActive(true);
+        design.setStatus(com.nurba.java.enums.DesignStatus.PUBLISHED);
         design.setCreatedAt(LocalDateTime.now());
         design = designRepository.save(design);
 

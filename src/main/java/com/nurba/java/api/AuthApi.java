@@ -38,9 +38,9 @@ public interface AuthApi {
     @PostMapping("/refresh-cookie")
     AuthResponse refreshCookie(HttpServletRequest request, HttpServletResponse response);
 
-    @Operation(summary = "Выход — очистить HttpOnly refresh-cookie")
+    @Operation(summary = "Выход — очистить HttpOnly refresh-cookie и отозвать refresh-токен")
     @PostMapping("/logout")
-    void logout(HttpServletResponse response);
+    void logout(HttpServletRequest request, HttpServletResponse response);
 
     @Operation(summary = "Текущий пользователь по JWT")
     @GetMapping("/me")

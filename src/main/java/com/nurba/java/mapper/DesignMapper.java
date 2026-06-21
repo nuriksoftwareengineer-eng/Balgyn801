@@ -11,8 +11,12 @@ public interface DesignMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "publishedAt", ignore = true)
+    @Mapping(target = "archivedAt", ignore = true)
+    @Mapping(target = "sortOrder", ignore = true)
     @Mapping(target = "collection", ignore = true)
     @Mapping(target = "garments", ignore = true)
+    @Mapping(target = "status", ignore = true)
     Design toEntity(CreateDesignRequest request);
 
     @Mapping(source = "collection.id", target = "collectionId")
@@ -20,5 +24,6 @@ public interface DesignMapper {
     @Mapping(source = "collection.slug", target = "collectionSlug")
     @Mapping(source = "collection.catalogGroup.name", target = "groupName")
     @Mapping(source = "collection.catalogGroup.slug", target = "groupSlug")
+    @Mapping(target = "activeGarmentCount", ignore = true)
     DesignResponse toResponse(Design entity);
 }

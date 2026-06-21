@@ -4,6 +4,7 @@ import com.nurba.java.enums.GarmentType;
 import lombok.Data;
 
 import java.util.List;
+import java.util.Map;
 
 @Data
 public class DesignGarmentResponse {
@@ -15,4 +16,6 @@ public class DesignGarmentResponse {
     private List<DesignGarmentPriceResponse> prices;
     private List<ColorResponse> colors;
     private List<SizeResponse> sizes;
+    /** colorId → sizeId → quantity. Only populated on the storefront detail endpoint. */
+    private Map<Long, Map<Long, Integer>> stockMap;
 }

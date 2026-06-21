@@ -45,6 +45,8 @@ export interface AdminCollectionRequest {
   sortOrder?: number;
 }
 
+export type DesignStatus = "DRAFT" | "READY" | "PUBLISHED" | "ARCHIVED";
+
 export interface AdminDesign {
   id: number;
   collectionId: number;
@@ -57,7 +59,8 @@ export interface AdminDesign {
   description: string | null;
   mainImageUrl: string | null;
   gallery: string[];
-  active: boolean;
+  status: DesignStatus;
+  activeGarmentCount: number;
 }
 
 export interface AdminDesignRequest {
@@ -147,6 +150,20 @@ export function updateDesign(id: number, body: AdminDesignRequest, token: string
 
 export function deleteDesign(id: number, token: string): Promise<void> {
   return apiFetch<void>(`/admin/catalog/designs/${id}`, { method: "DELETE", token });
+}
+
+export function publishDesign(id: number, token: string): Promise<AdminDesign> {
+  return apiFetch<AdminDesign>(`/admin/catalog/designs/${id}/publish`, {
+    method: "PATCH",
+    token,
+  });
+}
+
+export function archiveDesign(id: number, token: string): Promise<AdminDesign> {
+  return apiFetch<AdminDesign>(`/admin/catalog/designs/${id}/archive`, {
+    method: "PATCH",
+    token,
+  });
 }
 
 // ─── Variants (DesignGarment) ─────────────────────────────────────────────────

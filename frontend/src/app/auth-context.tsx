@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -40,7 +41,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const [token, setToken] = useState<string | null>(() => readStoredToken());
   const [user, setUser] = useState<AuthMeResponse | null>(null);
-  const [loading, setLoading] = useState(() => !!readStoredToken());
+  // Always start loading — resolved only after we know the auth state (prevents flash of logout).
+  const [loading, setLoading] = useState(true);
+  // True once the startup session check is complete; prevents the token effect from
+  // resolving loading prematurely while the refresh-cookie probe is still in-flight.
+  const startupDone = useRef(!!readStoredToken());
 
   /** Вход/выход в другой вкладке — подтягиваем тот же JWT без перезагрузки. */
   useEffect(() => {
@@ -51,6 +56,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
+  }, []);
+
+  /**
+   * Probe for an active session via HttpOnly cookie on cold start (e.g. F5 with expired
+   * access token in storage). This blocks the UI in a loading state until we know whether
+   * the user is authenticated — preventing the "brief logout flash" on protected routes.
+   */
+  useEffect(() => {
+    if (readStoredToken()) return; // Stored token exists; the token effect handles it.
+    refreshCookieAuth()
+      .then((res) => {
+        writeStoredToken(res.accessToken);
+        startupDone.current = true;
+        setToken(res.accessToken); // triggers token effect → /me → loading=false
+      })
+      .catch(() => {
+        startupDone.current = true;
+        setLoading(false); // No session at all — render logged-out state
+      });
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally run once on mount
   }, []);
 
   useEffect(() => {
@@ -72,33 +97,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!token) {
-      queueMicrotask(() => {
-        setUser(null);
-        setLoading(false);
-      });
+      // Only resolve loading once the startup session check is done.
+      // If startupDone is still false, the refresh-cookie probe is in-flight.
+      if (startupDone.current) {
+        queueMicrotask(() => {
+          setUser(null);
+          setLoading(false);
+        });
+      }
       return;
     }
 
     let cancelled = false;
-    queueMicrotask(() => setLoading(true));
     (async () => {
       try {
         const me = await getMe(token);
-        if (!cancelled) setUser(me);
+        if (!cancelled) {
+          setUser(me);
+          setLoading(false);
+        }
       } catch (e) {
         if (!cancelled && e instanceof ApiError && e.status === 401) {
           clearStoredToken();
           setToken(null);
           setUser(null);
+          // loading resolved on next token-effect run (token=null, startupDone=true)
+        } else if (!cancelled) {
+          setLoading(false);
         }
-      } finally {
-        if (!cancelled) setLoading(false);
       }
     })();
 
     return () => {
       cancelled = true;
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- startupDone is a ref, not state
   }, [token]);
 
   const login = useCallback(async (email: string, password: string) => {
