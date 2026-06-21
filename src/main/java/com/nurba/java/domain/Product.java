@@ -38,5 +38,21 @@ public class Product {
     @Column(columnDefinition = "jsonb")
     private List<ProductColorOption> colors = new ArrayList<>();
 
+    // ── Габариты для упаковки CDEK (опциональны, V18) ────────────────────────────
+    // Только для legacy-товаров. Вес design-вариантов считает GarmentWeightService —
+    // здесь логику веса не дублируем. NULL = брать значения по умолчанию из конфигурации.
+
+    @Column(name = "weight_grams")
+    private Integer weightGrams;
+
+    @Column(name = "length_cm")
+    private Integer lengthCm;
+
+    @Column(name = "width_cm")
+    private Integer widthCm;
+
+    @Column(name = "height_cm")
+    private Integer heightCm;
+
     private LocalDateTime createdAt;
 }

@@ -1,45 +1,15 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
-import { Container } from "@/shared/ui/container";
-import { SectionHead } from "@/shared/ui/section-head";
-import { CategoryChips } from "@/widgets/CategoryChips";
-import { CustomDesignCTASection } from "@/widgets/CustomDesignCTASection";
-import { HeroSection } from "@/widgets/HeroSection";
-import { ProductCatalogGrid } from "@/widgets/ProductCatalogGrid";
+import { Hero } from "@/widgets/home/Hero";
+import { BestSellers } from "@/widgets/home/BestSellers";
+import { ValueStrip } from "@/widgets/home/ValueStrip";
+import { InstagramSection } from "@/widgets/home/InstagramSection";
 
 export function HomePage() {
-  const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
-
   return (
     <>
-      <HeroSection />
-      <section className="py-8 md:pb-16" id="shop">
-        <Container>
-          <SectionHead
-            title="Подборка категорий"
-            action={
-              <Link to="/catalog" className="text-violet-400 hover:underline">
-                Смотреть всё
-              </Link>
-            }
-          />
-          <CategoryChips
-            selectedCategory={categoryFilter}
-            onSelect={setCategoryFilter}
-          />
-          <SectionHead
-            title="Хиты каталога"
-            className="mt-12"
-            action={
-              <span className="text-sm font-semibold text-violet-400/85">
-                Из вашего API
-              </span>
-            }
-          />
-          <ProductCatalogGrid categoryFilter={categoryFilter} />
-        </Container>
-      </section>
-      <CustomDesignCTASection />
+      <Hero />
+      <BestSellers />
+      <ValueStrip />
+      <InstagramSection />
     </>
   );
 }

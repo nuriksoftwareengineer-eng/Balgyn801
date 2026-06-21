@@ -1,7 +1,13 @@
+import { useTranslation } from "react-i18next";
+
 export function AnnouncementBar() {
+  const { t } = useTranslation();
+
   return (
-    <div className="announcement-shimmer sticky top-0 z-[120] flex h-10 items-center justify-center gap-2 bg-gradient-to-r from-violet-700 via-violet-500 to-purple-600 px-4 text-center text-xs font-medium tracking-wide text-white sm:text-sm">
-      Бесплатная доставка от суммы заказа • Новые дропы каждую неделю
+    <div className="sticky top-0 z-[120] flex h-9 items-center justify-center bg-black px-4">
+      <p className="text-center text-[0.65rem] font-medium uppercase tracking-[0.18em] text-white">
+        {t("home.announcement")}
+      </p>
     </div>
   );
 }

@@ -1,73 +1,77 @@
 import { Link } from "react-router-dom";
-import { Container } from "@/shared/ui/container";
+import { useTranslation } from "react-i18next";
+import { Marquee } from "@/widgets/home/Marquee";
+
+const linkClass =
+  "text-[14px] text-[#D9D9D9] transition-colors hover:text-white";
 
 export function SiteFooter() {
+  const { t } = useTranslation();
   const year = new Date().getFullYear();
 
   return (
-    <footer className="border-t border-white/10 bg-[#080809] py-12 pb-8 pt-12">
-      <Container>
-        <div className="grid gap-8 md:grid-cols-[1.2fr_1fr_1fr]">
-          <div>
-            <div className="font-display mb-2.5 text-2xl tracking-[0.06em] text-zinc-100">
-              BALG<span className="text-violet-400">YN</span>
-            </div>
-            <p className="m-0 max-w-sm text-sm leading-relaxed text-zinc-400">
-              Стритвир с вышивкой по мотивам игр, аниме и уличной культуры. Дизайн ваш — качество наше.
-            </p>
+    <footer className="bg-black text-white">
+      <div className="border-y border-white/20 py-4 md:py-6">
+        <Marquee
+          items={["balgyn", "✸", t("footer.marquee.fresh"), "✸", t("footer.marquee.embroidery"), "✸"]}
+          speed={70}
+        />
+      </div>
+
+      <div className="container mx-auto px-4 pb-12 pt-20 md:px-8 md:pt-24">
+        <div className="mb-20 grid grid-cols-2 gap-12 md:grid-cols-4 md:mb-24">
+          <div className="flex flex-col gap-4">
+            <h4 className="mb-2 text-[12px] font-semibold uppercase tracking-wider">{t("footer.shop.title")}</h4>
+            <Link to="/catalog" className={linkClass}>{t("footer.shop.catalog")}</Link>
+            <Link to="/custom-design" className={linkClass}>{t("footer.shop.customDesign")}</Link>
+            <Link to="/about" className={linkClass}>{t("footer.shop.about")}</Link>
           </div>
-          <div>
-            <h3 className="mb-3.5 text-[0.6875rem] font-bold uppercase tracking-[0.14em] text-zinc-400">
-              Покупателям
-            </h3>
-            <ul className="m-0 list-none space-y-2.5 p-0">
-              <li>
-                <Link to="/catalog" className="text-sm text-zinc-400 hover:text-zinc-100">
-                  Каталог
-                </Link>
-              </li>
-              <li>
-                <a href="#" className="text-sm text-zinc-400 hover:text-zinc-100">
-                  Доставка
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-sm text-zinc-400 hover:text-zinc-100">
-                  Возврат
-                </a>
-              </li>
-            </ul>
+
+          <div className="flex flex-col gap-4">
+            <h4 className="mb-2 text-[12px] font-semibold uppercase tracking-wider">{t("footer.help.title")}</h4>
+            <Link to="/delivery" className={linkClass}>{t("footer.help.delivery")}</Link>
+            <Link to="/returns" className={linkClass}>{t("footer.help.returns")}</Link>
+            <Link to="/track-order" className={linkClass}>{t("footer.help.trackOrder")}</Link>
+            <Link to="/contacts" className={linkClass}>{t("footer.help.contacts")}</Link>
           </div>
-          <div>
-            <h3 className="mb-3.5 text-[0.6875rem] font-bold uppercase tracking-[0.14em] text-zinc-400">
-              Компания
-            </h3>
-            <ul className="m-0 list-none space-y-2.5 p-0">
-              <li>
-                <Link to="/about" className="text-sm text-zinc-400 hover:text-zinc-100">
-                  О нас
-                </Link>
-              </li>
-              <li>
-                <a href="#" className="text-sm text-zinc-400 hover:text-zinc-100">
-                  Контакты
-                </a>
-              </li>
-              <li>
-                <Link
-                  to="/custom-design"
-                  className="text-sm text-zinc-400 hover:text-zinc-100"
-                >
-                  Свой дизайн
-                </Link>
-              </li>
-            </ul>
+
+          <div className="flex flex-col gap-4">
+            <h4 className="mb-2 text-[12px] font-semibold uppercase tracking-wider">{t("footer.social.title")}</h4>
+            <a href="https://instagram.com/balgyn_shop" target="_blank" rel="noopener noreferrer" className={linkClass}>Instagram</a>
+            <a href="https://tiktok.com/@balgyn_shop" target="_blank" rel="noopener noreferrer" className={linkClass}>TikTok</a>
+            <a href="https://instagram.com/balgyn_shop/reels/" target="_blank" rel="noopener noreferrer" className={linkClass}>Reels</a>
+          </div>
+
+          <div className="col-span-2 flex flex-col gap-4 md:col-span-1">
+            <h4 className="mb-2 text-[12px] font-semibold uppercase tracking-wider">{t("footer.newsletter.title")}</h4>
+            <p className="mb-2 text-[14px] text-[#D9D9D9]">{t("footer.newsletter.desc")}</p>
+            <a
+              href="https://instagram.com/balgyn_shop"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex w-fit items-center gap-2 border-b border-[#7A7A7A] pb-2 text-[14px] text-[#D9D9D9] transition-colors hover:border-white hover:text-white"
+            >
+              {t("footer.newsletter.follow")}
+            </a>
           </div>
         </div>
-        <p className="mt-10 border-t border-white/10 pt-6 text-center text-xs text-zinc-400">
-          © {year} Balgyn. Каркас витрины на React Router и Tailwind.
-        </p>
-      </Container>
+
+        <div className="flex flex-col gap-8 border-t border-[#2A2A2A] pt-8">
+          <p className="text-[44px] font-extrabold uppercase leading-none tracking-[-0.04em] md:text-[72px]">
+            BALGYN
+          </p>
+          <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
+            <p className="text-center text-[12px] uppercase tracking-wider text-[#7A7A7A] md:text-left">
+              {t("footer.rights", { year })}
+            </p>
+            <div className="flex flex-wrap justify-center gap-6 text-[10px] uppercase tracking-[0.2em] text-[#7A7A7A]">
+              <Link to="/privacy" className="transition-colors hover:text-white">{t("footer.legal.privacy")}</Link>
+              <Link to="/terms" className="transition-colors hover:text-white">{t("footer.legal.terms")}</Link>
+              <Link to="/returns" className="transition-colors hover:text-white">{t("footer.legal.returns")}</Link>
+            </div>
+          </div>
+        </div>
+      </div>
     </footer>
   );
 }

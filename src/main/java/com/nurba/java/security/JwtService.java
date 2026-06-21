@@ -29,8 +29,9 @@ public class JwtService {
         byte[] keyBytes = secret.getBytes(StandardCharsets.UTF_8);
         if (keyBytes.length < 32) {
             throw new IllegalStateException(
-                    "JWT секрет слишком короткий (" + keyBytes.length + " байт). "
-                            + "HS256 требует минимум 32 байта. Задайте JWT_SECRET через env.");
+                    "JWT_SECRET не задан или слишком короткий (" + keyBytes.length + " байт). "
+                            + "HS256 требует минимум 32 байта. Скопируйте .env.example в .env "
+                            + "(cp .env.example .env) или задайте переменную окружения JWT_SECRET.");
         }
         this.signingKey = Keys.hmacShaKeyFor(keyBytes);
         this.accessExpirationMs = props.expirationMs();
@@ -61,8 +62,19 @@ public class JwtService {
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(exp))
                 .claim(CLAIM_TYP, TYP_REFRESH)
+                .claim("ver", user.getTokenVersion())
                 .signWith(signingKey)
                 .compact();
+    }
+
+    /** Returns the token_version embedded in the refresh token, or -1 if absent (legacy token). */
+    public int extractRefreshVersion(String token) {
+        try {
+            Claims claims = parseClaims(token);
+            Object ver = claims.get("ver");
+            if (ver instanceof Number n) return n.intValue();
+        } catch (RuntimeException ignored) { }
+        return -1;
     }
 
     public String extractEmail(String token) {

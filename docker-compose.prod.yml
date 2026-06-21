@@ -1,0 +1,198 @@
+# Production Docker Compose
+# Usage:
+#   cp .env.example .env.prod   # fill in all secrets
+#   docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+#
+# Key differences from docker-compose.yml (dev):
+#   - Spring prod profile: COOKIE_SECURE=true, TRUST_PROXY=true, Swagger off
+#   - nginx reverse proxy on :80 (single public port)
+#   - MinIO console NOT exposed publicly
+#   - SWAGGER_ENABLED=false by default
+
+services:
+  app:
+    image: dev-balgynbol-spring
+    build: .
+    restart: unless-stopped
+    environment:
+      - JWT_SECRET=${JWT_SECRET:?Set JWT_SECRET in .env.prod}
+      - BOOTSTRAP_ADMIN_EMAIL=${BOOTSTRAP_ADMIN_EMAIL:-}
+      - BOOTSTRAP_ADMIN_PASSWORD=${BOOTSTRAP_ADMIN_PASSWORD:-}
+      - SPRING_PROFILES_ACTIVE=prod
+      - SWAGGER_ENABLED=false
+      - PAYMENT_WEBHOOK_ALLOW_UNSIGNED=false
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/balgynbol-spring
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env.prod}
+      - CDEK_BASE_URL=${CDEK_BASE_URL:-https://api.cdek.ru/v2}
+      - CDEK_CLIENT_ID=${CDEK_CLIENT_ID:?Set CDEK_CLIENT_ID in .env.prod}
+      - CDEK_CLIENT_SECRET=${CDEK_CLIENT_SECRET:?Set CDEK_CLIENT_SECRET in .env.prod}
+      - CDEK_WEBHOOK_TOKEN=${CDEK_WEBHOOK_TOKEN:?Set CDEK_WEBHOOK_TOKEN in .env.prod}
+      - CDEK_SENDER_CITY=${CDEK_SENDER_CITY:-270}
+      - CDEK_DEFAULT_TARIFF=${CDEK_DEFAULT_TARIFF:-136}
+      - APP_SEED_CATALOG=false
+      - FRONTEND_BASE_URL=${FRONTEND_BASE_URL:?Set FRONTEND_BASE_URL (e.g. https://balgyn.kz)}
+      - FREEDOMPAY_MERCHANT_ID=${FREEDOMPAY_MERCHANT_ID:?Set FREEDOMPAY_MERCHANT_ID}
+      - FREEDOMPAY_SECRET_KEY=${FREEDOMPAY_SECRET_KEY:?Set FREEDOMPAY_SECRET_KEY}
+      - FREEDOMPAY_RESULT_URL=${FREEDOMPAY_RESULT_URL:?Set FREEDOMPAY_RESULT_URL}
+      - FREEDOMPAY_TESTING_MODE=${FREEDOMPAY_TESTING_MODE:-false}
+      - PAYPAL_MODE=${PAYPAL_MODE:-live}
+      - PAYPAL_CLIENT_ID=${PAYPAL_CLIENT_ID:?Set PAYPAL_CLIENT_ID}
+      - PAYPAL_CLIENT_SECRET=${PAYPAL_CLIENT_SECRET:?Set PAYPAL_CLIENT_SECRET}
+      - PAYPAL_WEBHOOK_ID=${PAYPAL_WEBHOOK_ID:?Set PAYPAL_WEBHOOK_ID}
+      - STORAGE_ENABLED=true
+      - MINIO_ENDPOINT=http://minio:9000
+      - MINIO_PUBLIC_URL=${MINIO_PUBLIC_URL:?Set MINIO_PUBLIC_URL (e.g. https://media.balgyn.kz)}
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER:?Set MINIO_ROOT_USER}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD}
+      - MINIO_BUCKET=${MINIO_BUCKET:-balgyn-media}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:?Set ALLOWED_ORIGINS (e.g. https://balgyn.kz)}
+    depends_on:
+      db:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/actuator/health | grep -q '\"status\":\"UP\"' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+  minio:
+    image: minio/minio:RELEASE.2024-12-18T13-15-44Z
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    # Console NOT exposed on public port — access via VPN/SSH tunnel only
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?Set MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD}
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: /api/v1
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_healthy
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  certbot:
+    image: certbot/certbot:v3.3.0
+    restart: no
+    volumes:
+      - letsencrypt:/etc/letsencrypt
+      - certbot_webroot:/var/www/certbot
+    # Run once to obtain or renew certificate:
+    #   docker compose -f docker-compose.prod.yml run --rm certbot certonly \
+    #     --webroot -w /var/www/certbot -d ${DOMAIN} --email ${CERTBOT_EMAIL} --agree-tos --no-eff-email
+    # Then reload nginx:
+    #   docker compose -f docker-compose.prod.yml exec nginx nginx -s reload
+    entrypoint: /bin/sh -c "trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+  nginx:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - DOMAIN=${DOMAIN:?Set DOMAIN (e.g. balgyn.kz)}
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/templates/default.conf.template:ro
+      - letsencrypt:/etc/letsencrypt:ro
+      - certbot_webroot:/var/www/certbot
+    depends_on:
+      - frontend
+      - app
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"
+
+  db:
+    image: postgres:16.6
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: balgynbol-spring
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env.prod}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - db_backups:/backups
+      - ./scripts/backup-postgres.sh:/usr/local/bin/backup-postgres.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d balgynbol-spring"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Daily backup sidecar: runs pg_dump at 03:00 UTC, retains 30 days.
+  # Backups land in the db_backups volume at /backups/daily-YYYY-MM-DD.sql.gz.
+  # To offload to S3/remote: mount an rclone config and add rclone copy after pg_dump.
+  db-backup:
+    image: postgres:16.6
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env.prod}
+      POSTGRES_DB: balgynbol-spring
+      BACKUP_KEEP_DAYS: ${BACKUP_KEEP_DAYS:-30}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env.prod}
+    volumes:
+      - db_backups:/backups
+      - ./scripts/backup-postgres.sh:/usr/local/bin/backup-postgres.sh:ro
+    # Run once per day at 03:00 (sleep loop; container stays up).
+    entrypoint: /bin/sh -c "chmod +x /usr/local/bin/backup-postgres.sh && trap exit TERM; while :; do PGHOST=db /usr/local/bin/backup-postgres.sh; sleep 86400 & wait $${!}; done"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+volumes:
+  minio_data:
+  postgres_data:
+  letsencrypt:
+  certbot_webroot:
+  db_backups:

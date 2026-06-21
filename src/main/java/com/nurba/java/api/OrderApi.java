@@ -20,7 +20,7 @@ public interface OrderApi {
 
     @Operation(summary = "Оформить заказ")
     @PostMapping
-    OrderResponse createOrder(@RequestBody CreateOrderRequest request);
+    OrderResponse createOrder(@Valid @RequestBody CreateOrderRequest request);
 
     @Operation(summary = "Заказ по ID")
     @GetMapping("/{id}")

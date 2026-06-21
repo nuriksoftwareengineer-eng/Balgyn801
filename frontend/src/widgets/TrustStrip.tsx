@@ -1,14 +1,16 @@
 import { motion, useReducedMotion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import { Container } from "@/shared/ui/container";
-
-const items = [
-  { title: "Доставка", desc: "По Казахстану и за рубеж при необходимости" },
-  { title: "Вышивка", desc: "Плотные стежки, стойкие нити" },
-  { title: "Качество", desc: "Проверка перед отправкой" },
-];
 
 export function TrustStrip() {
   const reduceMotion = useReducedMotion();
+  const { t } = useTranslation();
+
+  const items = [
+    { title: t("home.trust.delivery.title"), desc: t("home.trust.delivery.desc") },
+    { title: t("home.trust.embroidery.title"), desc: t("home.trust.embroidery.desc") },
+    { title: t("home.trust.quality.title"), desc: t("home.trust.quality.desc") },
+  ];
 
   return (
     <Container className="pb-12">
@@ -24,7 +26,7 @@ export function TrustStrip() {
               delay: reduceMotion ? 0 : i * 0.08,
               ease: [0.22, 1, 0.36, 1],
             }}
-            className="rounded-[14px] border border-white/10 bg-zinc-900 px-5 py-5 text-center transition-colors hover:border-violet-500/25 hover:bg-zinc-900/95"
+            className="rounded-[14px] border border-white/10 bg-zinc-900 px-5 py-5 text-center transition-colors hover:border-white/25 hover:bg-zinc-900/95"
           >
             <strong className="mb-1.5 block text-xs font-bold uppercase tracking-[0.06em] text-zinc-100">
               {item.title}

@@ -1,0 +1,444 @@
+{
+  "nav": {
+    "home": "Home",
+    "catalog": "Catalog",
+    "customDesign": "Custom Design",
+    "about": "About",
+    "admin": "Admin",
+    "login": "Login",
+    "register": "Register",
+    "logout": "Logout",
+    "orders": "Orders",
+    "myOrders": "My Orders",
+    "profile": "Profile",
+    "cart": "Cart",
+    "contacts": "Contacts",
+    "allCollections": "All Collections",
+    "loadingCatalog": "Loading catalog…"
+  },
+  "header": {
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "shrinkCatalog": "Collapse",
+    "expandCatalog": "Expand",
+    "profileLabel": "Profile",
+    "loginLabel": "Sign In",
+    "cartLabel": "Cart",
+    "cartItems": "Cart, {{count}} items",
+    "mobileMenu": "Mobile menu"
+  },
+  "auth": {
+    "loginHeading": "Sign In",
+    "registerHeading": "Create Account",
+    "loginLinkText": "Sign In",
+    "registerLinkText": "Register",
+    "loginError": "Login failed",
+    "noAccount": "Don't have an account?",
+    "registerError": "Registration failed",
+    "haveAccount": "Already have an account?",
+    "password": "Password",
+    "passwordHint": "(min 8 characters)",
+    "accountCreated": "Account created. Please log in.",
+    "creatingAccount": "Creating…",
+    "loggingIn": "Logging in…",
+    "createAccount": "Create account"
+  },
+  "profile": {
+    "title": "Profile",
+    "myOrders": "My orders →",
+    "adminPanel": "Admin Panel →",
+    "logout": "Sign out"
+  },
+  "payment": {
+    "selectMethod": "Payment",
+    "methodDescription": "Choose a payment method and proceed to the payment form.",
+    "payBtn": "Pay now",
+    "payingBtn": "Redirecting…",
+    "freedomPayLabel": "Freedom Pay",
+    "freedomPayDesc": "Card payment in Kazakhstan",
+    "paypalLabel": "PayPal",
+    "paypalDesc": "International payments",
+    "bankCard": "Bank Card",
+    "confirming": "Confirming payment…",
+    "bankCardDesc": "Secure online payment",
+    "kaspi": "Kaspi Bank",
+    "halyk": "Halyk Bank",
+    "kazakhCards": "Kazakh bank cards",
+    "intlCards": "International cards",
+    "paypalAccount": "PayPal account",
+    "success": {
+      "title": "Payment successful",
+      "subtitle": "Your payment has been confirmed. Thank you for your purchase!",
+      "orderNumber": "Order number",
+      "amount": "Amount",
+      "method": "Payment method",
+      "toOrders": "My orders",
+      "toCatalog": "To catalog"
+    },
+    "failed": {
+      "title": "Payment failed",
+      "subtitle": "An error occurred while processing your payment. Please try again or choose a different payment method.",
+      "orderNumber": "Order number",
+      "retry": "Try again",
+      "toCart": "Back to cart",
+      "toCatalog": "To catalog"
+    },
+    "cancelled": {
+      "title": "Payment cancelled",
+      "subtitle": "You cancelled the payment. Your order is saved and awaiting payment.",
+      "orderNumber": "Order number",
+      "retry": "Pay for order",
+      "toCart": "Back to cart",
+      "toCatalog": "To catalog"
+    }
+  },
+  "orders": {
+    "title": "My Orders",
+    "empty": "No orders yet.",
+    "emptySubtitle": "Place your first order in our embroidery catalog.",
+    "toCatalog": "Go to catalog",
+    "order": "Order",
+    "delivery": "Delivery",
+    "comment": "Comment",
+    "status": {
+      "NEW": "New",
+      "CONFIRMED": "Confirmed",
+      "IN_PRODUCTION": "In production",
+      "READY": "Ready",
+      "SHIPPED": "Shipped",
+      "DELIVERED": "Delivered",
+      "CANCELLED": "Cancelled",
+      "PENDING_PAYMENT": "Awaiting payment",
+      "EXPIRED": "Expired"
+    },
+    "delivery_type": {
+      "PICKUP": "Pickup",
+      "TAXI": "Taxi / courier",
+      "CDEK": "CDEK",
+      "POSTAL": "Kazpost",
+      "INTERNATIONAL": "International delivery"
+    },
+    "payment_provider": {
+      "FREEDOM_PAY": "Freedom Pay",
+      "PAYPAL": "PayPal"
+    },
+    "payNow": "Pay now"
+  },
+  "recovery": {
+    "title": "Pending order",
+    "order": "Order #{{id}}",
+    "subtitle": "Your order is awaiting payment. Pay now or it will be automatically cancelled in one hour.",
+    "card": "Bank Card",
+    "dismiss": "Cancel order"
+  },
+  "notFound": {
+    "code": "404",
+    "title": "Page not found",
+    "description": "The link may be outdated or the page may have been deleted.",
+    "toHome": "Home",
+    "toCatalog": "To catalog"
+  },
+  "currency": {
+    "label": "Currency",
+    "KZT": "₸ KZT",
+    "USD": "$ USD",
+    "EUR": "€ EUR",
+    "RUB": "₽ RUB"
+  },
+  "language": {
+    "ru": "RU",
+    "kk": "KZ",
+    "en": "EN"
+  },
+  "cart": {
+    "empty": "Your cart is empty",
+    "emptyHint": "Add something from the catalog",
+    "emptyAction": "Empty for now — browse the catalog.",
+    "toCatalog": "To catalog",
+    "title": "Cart",
+    "close": "Close",
+    "remove": "Remove",
+    "decrease": "Remove 1",
+    "increase": "Add 1",
+    "decreaseQty": "Decrease",
+    "increaseQty": "Increase",
+    "total": "Total",
+    "checkout": "Checkout",
+    "clearCart": "Clear",
+    "hide": "Hide",
+    "backToCatalog": "← To catalog",
+    "addedToCart": "«{{title}}» added to cart.",
+    "items_one": "{{count}} item",
+    "items_few": "{{count}} items",
+    "items_many": "{{count}} items",
+    "goods_one": "{{count}} item",
+    "goods_few": "{{count}} items",
+    "goods_many": "{{count}} items",
+    "checkoutFlow": {
+      "title": "Checkout",
+      "stepOf": "Step {{step}} of 5",
+      "back": "← Back",
+      "backToCart": "← Cart",
+      "continue": "Continue",
+      "submit": "Confirm order",
+      "submitting": "Placing…",
+      "comment": "Order comment",
+      "commentPlaceholder": "Size, colour, delivery preferences…",
+      "freeDelivery": "Free delivery",
+      "paidOnReceipt": "pay on receipt",
+      "steps": {
+        "contacts": "Contacts",
+        "region": "Region",
+        "delivery": "Delivery",
+        "details": "Details",
+        "summary": "Summary"
+      }
+    },
+    "summary": {
+      "yourOrder": "Your order",
+      "items": "Items",
+      "cdekDelivery": "CDEK Delivery",
+      "atReceipt": "on receipt",
+      "onAgreement": "on agreement"
+    },
+    "order": {
+      "accepted": "Order placed",
+      "amount": "Amount",
+      "delivery": "Delivery",
+      "cdekDelivery": "CDEK Delivery",
+      "payOnReceipt": "pay on receipt",
+      "contactNote": "We will contact you at the phone number you provided.",
+      "payment": "Payment",
+      "paymentDesc": "Choose a payment method and proceed to the payment form.",
+      "address": "Address: ",
+      "apt": "apt.",
+      "close": "Close",
+      "toCatalog": "To catalog"
+    },
+    "form": {
+      "optional": "(optional)",
+      "contactsDesc": "Enter your contact details — we'll get in touch after receiving your order.",
+      "name": "Name *",
+      "phone": "Phone *",
+      "regionDesc": "Select your delivery region.",
+      "methodDesc": "Select a delivery method.",
+      "loadingMethods": "Loading delivery methods…",
+      "loadMethodsError": "Failed to load delivery methods. Please try again.",
+      "noMethods": "No delivery methods available for the selected country.",
+      "availableIn": "Available only in:",
+      "free": "Free",
+      "fromPrice": "from {{price}} ₸",
+      "onAgreement": "on agreement",
+      "pickupDesc": "After placing your order, we will contact you to arrange pickup time and location. Delivery is free.",
+      "cdekDesc": "Enter your city and select a CDEK pickup point. Delivery time is calculated automatically.",
+      "citySearch": "City search *",
+      "cityPlaceholder": "e.g. Almaty",
+      "searchingCities": "Searching cities…",
+      "pvzCount": "CDEK pickup point * ({{count}} of {{total}})",
+      "pvzPlaceholder": "Select a pickup point…",
+      "pvzFilter": "Code, street or address",
+      "pvzNotFound": "Not found",
+      "pvzEmpty": "No CDEK points for this city. Try another city.",
+      "loadingPvz": "Loading pickup points…",
+      "cdekCost": "Delivery cost:",
+      "cdekAtReceipt": "pay on receipt",
+      "deliveryDays": "Est. {{min}}–{{max}} days",
+      "recipientSection": "Recipient details",
+      "recipientName": "Recipient name *",
+      "recipientPhone": "Recipient phone *",
+      "addressDesc": "Enter delivery address.",
+      "cityLabel": "City *",
+      "street": "Street, building *",
+      "apt": "Apartment / office *",
+      "aptPlaceholder": "None — «—»",
+      "postal": "Postal code",
+      "recipient": "Recipient *",
+      "summaryDesc": "Review your order before placing it.",
+      "contactsSection": "Contacts",
+      "edit": "Edit",
+      "nameLabel": "Name",
+      "phoneLabel": "Phone",
+      "deliverySection": "Delivery",
+      "regionLabel": "Region",
+      "methodLabel": "Method",
+      "addressLabel": "Address",
+      "cdekCity": "CDEK city",
+      "pvzLabel": "Pickup point",
+      "recipientLabel": "Recipient",
+      "cdekDeliveryLabel": "CDEK Delivery",
+      "costLabel": "Cost",
+      "goodsSection": "Items"
+    },
+    "regions": {
+      "KZ": "Kazakhstan",
+      "KZ_hint": "Delivery across Kazakhstan",
+      "RU": "Russia / CIS",
+      "RU_hint": "Russia, Belarus and other CIS countries",
+      "US": "Other countries",
+      "US_hint": "International delivery worldwide"
+    },
+    "errors": {
+      "fillRequired": "Please fill in all required fields",
+      "calculating": "Please wait, calculating delivery time…",
+      "selectCdekPoint": "Select a CDEK pickup point",
+      "cdekAddressRequired": "Select a city and CDEK pickup point",
+      "orderFailed": "Failed to place order",
+      "cdekDeliveryError": "Failed to calculate CDEK delivery time",
+      "paymentFailed": "Failed to initiate payment",
+      "paypalError": "PayPal did not return a confirmation link. Please try again later.",
+      "paymentUrlError": "Payment URL not received. Please try again later."
+    }
+  },
+  "design": {
+    "notFound": "Design not found",
+    "back": "← Back",
+    "noVariants": "No available variants for this design.",
+    "garment": "Garment",
+    "color": "Colour",
+    "colorSelected": "Colour: {{name}}",
+    "size": "Size",
+    "sizeChart": "Size guide",
+    "addToCart": "Add to cart",
+    "added": "Added ✓",
+    "selectGarment": "Select garment",
+    "selectColor": "Select colour",
+    "selectSize": "Select size",
+    "selectAll": "Select garment, colour and size"
+  },
+  "errors": {
+    "loadFailed": "Load failed",
+    "noProducts": "No products in this category yet.",
+    "loadCatalog": "Failed to load catalog.",
+    "collectionNotFound": "Collection not found.",
+    "groupNotFound": "Group not found."
+  },
+  "home": {
+    "announcement": "Free shipping from a minimum order amount · New drops every week",
+    "trust": {
+      "delivery": { "title": "Delivery", "desc": "Worldwide" },
+      "embroidery": { "title": "Embroidery", "desc": "Almaty, KZ" },
+      "quality": { "title": "Quality", "desc": "100% Cotton" }
+    },
+    "hero": {
+      "badge": "Shipping worldwide!",
+      "tagline": "Bringing freshness to your style.",
+      "cta": "View collection"
+    },
+    "values": {
+      "embroidery": { "title": "Hand embroidery", "desc": "Each piece is crafted by hand using our signature technique." },
+      "unique": { "title": "Unique designs", "desc": "Original graphic imagery unlike anything else." },
+      "quality": { "title": "Material quality", "desc": "We select only the finest fabrics: dense cotton, Premium fleece." },
+      "limited": { "title": "Limited edition", "desc": "Small batches guarantee the exclusivity of every piece." }
+    },
+    "bestSellers": {
+      "title": "Best Sellers",
+      "desc": "Curated by our brand editorial based on reviews and sales over the past month.",
+      "empty": "Best sellers coming soon."
+    },
+    "instagram": {
+      "follow": "Follow",
+      "imageAlt": "BALGYN on Instagram"
+    },
+    "featured": {
+      "tag": "New drop",
+      "viewAll": "View all",
+      "empty": "Products coming soon."
+    },
+    "about": {
+      "title": "About the brand",
+      "desc": "Balgyn is an embroidery brand from Almaty, created for those who value individuality and the quality of hand embroidery.",
+      "stat1": { "value": "Edition", "label": "Small batches" },
+      "stat2": { "value": "Material", "label": "100% cotton" },
+      "stat3": { "value": "Production", "label": "Almaty" }
+    },
+    "categories": {
+      "viewAll": "View →"
+    }
+  },
+  "footer": {
+    "marquee": {
+      "fresh": "stay fresh",
+      "embroidery": "embroidery · almaty"
+    },
+    "shop": {
+      "title": "Shop",
+      "catalog": "Catalog",
+      "customDesign": "Custom Design",
+      "about": "About"
+    },
+    "help": {
+      "title": "Help",
+      "delivery": "Shipping & Payment",
+      "returns": "Returns & Exchanges",
+      "trackOrder": "Track Order",
+      "contacts": "Contacts"
+    },
+    "social": {
+      "title": "Social"
+    },
+    "newsletter": {
+      "title": "Newsletter",
+      "desc": "Updates and drop releases only.",
+      "follow": "Follow on Instagram →"
+    },
+    "rights": "© {{year}} BALGYN · All rights reserved · Almaty, KZ",
+    "legal": {
+      "privacy": "Privacy",
+      "terms": "Terms",
+      "returns": "Returns"
+    }
+  },
+  "product": {
+    "soldOut": "Sold out",
+    "inStock": "In stock",
+    "outOfStock": "Out of stock",
+    "selectSize": "Select size",
+    "addToCart": "Add to cart",
+    "comingSoon": "Coming soon"
+  },
+  "customDesign": {
+    "title": "Custom Design",
+    "lead": "Fill in the form — click the button and Telegram will open with a ready message. All you need to do is send it.",
+    "nameLabel": "Name *",
+    "namePlaceholder": "Your name",
+    "phoneLabel": "Phone or Telegram *",
+    "phonePlaceholder": "+7 … or @username",
+    "descLabel": "Description *",
+    "descPlaceholder": "What to embroider, on what, references…",
+    "wishesLabel": "Wishes",
+    "wishesPlaceholder": "Colour, size, deadline…",
+    "commentLabel": "Comment",
+    "commentPlaceholder": "Any additional information",
+    "optional": "(optional)",
+    "errorRequired": "Please fill in name, phone and description",
+    "submitBtn": "Send via Telegram"
+  },
+  "trackOrder": {
+    "title": "Track Order",
+    "lead": "Enter your order number and the phone used to place it.",
+    "orderNumberLabel": "Order number *",
+    "orderNumberPlaceholder": "e.g. 24",
+    "phoneLabel": "Phone *",
+    "phonePlaceholder": "+7 …",
+    "errorRequired": "Please enter order number and phone",
+    "submitBtn": "Check status",
+    "resultTitle": "Order #{{number}}",
+    "resultDesc": "Online tracking is coming soon. For now you can check your status in Telegram — just share your order number and phone."
+  },
+  "catalog": {
+    "emptyTitle": "Designs coming soon",
+    "emptyDesc": "We're working on a new collection. Check back later or submit your own design.",
+    "customCta": "Custom Design →",
+    "catalogEmptyTitle": "Catalog is empty",
+    "emptySubtitle": "We're adding collections — they'll appear here soon.",
+    "customDesignCta": "Order custom design →",
+    "loadError": "Failed to load catalog.",
+    "metaDesc": "Balgyn embroidery collections",
+    "groupNotFound": "Group not found.",
+    "collectionNotFound": "Collection not found.",
+    "collectionsEmptyTitle": "Collections coming soon",
+    "collectionsEmptySubtitle": "No collections in this group yet. Check other categories.",
+    "backToCatalog": "← Back to catalog",
+    "back": "← Back"
+  }
+}

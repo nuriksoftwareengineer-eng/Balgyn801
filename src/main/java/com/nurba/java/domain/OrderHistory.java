@@ -19,7 +19,7 @@ public class OrderHistory  {
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "order_history_seq")
     @SequenceGenerator(
             name = "order_history_seq",
-            sequenceName = "ORDER_STATUS_HIST_ID_SEQ",
+            sequenceName = "order_status_hist_id_seq",   // must match V1 DDL (lowercase)
             allocationSize = 1
     )
     private Long id;

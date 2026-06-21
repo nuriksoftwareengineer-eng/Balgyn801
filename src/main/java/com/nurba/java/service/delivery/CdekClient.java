@@ -61,6 +61,17 @@ public class CdekClient {
         return props.isConfigured();
     }
 
+    /** Использовать ли реальный API (учитывает cdek.provider и наличие ключей). */
+    public boolean useRealApi() {
+        return props.useRealApi();
+    }
+
+    /** Прогрев OAuth-токена для диагностики/healthcheck. Бросает, если не настроено. */
+    public void warmUpToken() {
+        ensureConfigured();
+        accessToken();
+    }
+
     /** Точно идентичный {@link CdekProperties#defaultTariff()} для удобства сервису. */
     public Integer defaultTariff() {
         return props.defaultTariff();
@@ -73,10 +84,14 @@ public class CdekClient {
     /** Поиск города по подстроке. Возвращает топ-N результатов. */
     public List<CdekCityDto> searchCities(String query, int limit) {
         ensureConfigured();
+        // build().encode(UTF_8): значение query — сырое (может быть кириллицей),
+        // даём билдеру самому корректно URL-закодировать его в UTF-8.
+        // (build(true) ошибочно считал значение уже закодированным и падал на не-ASCII.)
         URI uri = UriComponentsBuilder.fromUriString(baseUrl() + "/location/cities")
                 .queryParam("city", query)
                 .queryParam("size", limit)
-                .build(true)
+                .build()
+                .encode(StandardCharsets.UTF_8)
                 .toUri();
         return getJsonArray(uri, CdekCityDto.class);
     }
@@ -103,6 +118,47 @@ public class CdekClient {
         body.put("to_location", Map.of("code", toCityCode));
         body.put("packages", List.of(Map.of("weight", weightGrams)));
         return postJson(URI.create(baseUrl() + "/calculator/tariff"), body, CdekTariffRaw.class);
+    }
+
+    // ── Shipment lifecycle (orders) ───────────────────────────────────────────────
+
+    /**
+     * Создание заказа (отправления): {@code POST /v2/orders}. Тело собирает {@code RealCdekProvider}.
+     * Возвращает сырой ответ и распарсенный uuid (CDEK создаёт заказ асинхронно — трек-номер
+     * появляется позже, через {@link #getCdekOrder(String)} или webhook).
+     */
+    public CdekOrderRaw createCdekOrder(Map<String, Object> body) {
+        ensureConfigured();
+        String raw = postJsonString(URI.create(baseUrl() + "/orders"), body);
+        return new CdekOrderRaw(extractUuid(raw), raw);
+    }
+
+    /** Информация о заказе: {@code GET /v2/orders/{uuid}}. */
+    public CdekOrderRaw getCdekOrder(String uuid) {
+        ensureConfigured();
+        URI uri = UriComponentsBuilder.fromUriString(baseUrl() + "/orders/" + uuid)
+                .build(true).toUri();
+        String raw = getString(uri);
+        return new CdekOrderRaw(uuid, raw);
+    }
+
+    /** Отмена/удаление заказа: {@code DELETE /v2/orders/{uuid}}. */
+    public String deleteCdekOrder(String uuid) {
+        ensureConfigured();
+        return deleteString(URI.create(baseUrl() + "/orders/" + uuid));
+    }
+
+    private String extractUuid(String rawJson) {
+        try {
+            var node = objectMapper.readTree(rawJson);
+            var entity = node.get("entity");
+            if (entity != null && entity.get("uuid") != null) {
+                return entity.get("uuid").asText();
+            }
+        } catch (Exception ignored) {
+            // вернём null — провайдер обработает
+        }
+        return null;
     }
 
     private <T> List<T> getJsonArray(URI uri, Class<T> elementType) {
@@ -148,6 +204,56 @@ public class CdekClient {
         } catch (Exception e) {
             throw new BusinessRuleException("СДЭК: невалидный JSON ответа: " + e.getMessage());
         }
+    }
+
+    /** POST с возвратом сырого тела ответа (для shipment-методов, где провайдер сам парсит JSON). */
+    private String postJsonString(URI uri, Object body) {
+        String payload;
+        try {
+            payload = objectMapper.writeValueAsString(body);
+        } catch (Exception e) {
+            throw new BusinessRuleException("СДЭК: не удалось сериализовать запрос: " + e.getMessage());
+        }
+        HttpRequest req = HttpRequest.newBuilder(uri)
+                .timeout(Duration.ofSeconds(15))
+                .header("Authorization", "Bearer " + accessToken())
+                .header("Content-Type", "application/json")
+                .header("Accept", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(payload, StandardCharsets.UTF_8))
+                .build();
+        HttpResponse<String> resp = send(req);
+        if (resp.statusCode() / 100 != 2) {
+            throw new BusinessRuleException("СДЭК " + uri.getPath() + ": HTTP " + resp.statusCode());
+        }
+        return resp.body();
+    }
+
+    private String getString(URI uri) {
+        HttpRequest req = HttpRequest.newBuilder(uri)
+                .timeout(Duration.ofSeconds(15))
+                .header("Authorization", "Bearer " + accessToken())
+                .header("Accept", "application/json")
+                .GET()
+                .build();
+        HttpResponse<String> resp = send(req);
+        if (resp.statusCode() / 100 != 2) {
+            throw new BusinessRuleException("СДЭК " + uri.getPath() + ": HTTP " + resp.statusCode());
+        }
+        return resp.body();
+    }
+
+    private String deleteString(URI uri) {
+        HttpRequest req = HttpRequest.newBuilder(uri)
+                .timeout(Duration.ofSeconds(15))
+                .header("Authorization", "Bearer " + accessToken())
+                .header("Accept", "application/json")
+                .DELETE()
+                .build();
+        HttpResponse<String> resp = send(req);
+        if (resp.statusCode() / 100 != 2) {
+            throw new BusinessRuleException("СДЭК " + uri.getPath() + ": HTTP " + resp.statusCode());
+        }
+        return resp.body();
     }
 
     private HttpResponse<String> send(HttpRequest req) {
@@ -216,6 +322,10 @@ public class CdekClient {
 
     /** Кешированный OAuth-токен с моментом протухания. */
     private record CachedToken(String token, Instant expiresAt) {
+    }
+
+    /** Ответ shipment-эндпойнтов: распарсенный uuid (если есть) + полное сырое тело для аудита. */
+    public record CdekOrderRaw(String uuid, String rawJson) {
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)

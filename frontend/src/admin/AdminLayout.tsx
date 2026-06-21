@@ -6,7 +6,7 @@ const navClass = ({ isActive }: { isActive: boolean }) =>
   cn(
     "block rounded-[10px] px-3 py-2 text-sm font-semibold transition",
     isActive
-      ? "bg-violet-500/20 text-violet-100"
+      ? "bg-white/15 text-white"
       : "text-zinc-400 hover:bg-white/5 hover:text-zinc-200",
   );
 
@@ -26,18 +26,36 @@ export function AdminLayout() {
           <NavLink to="/admin/orders" className={navClass}>
             Заказы
           </NavLink>
-          <NavLink to="/admin/products" className={navClass}>
-            Товары
+          <NavLink to="/admin/categories" className={navClass}>
+            Категории
+          </NavLink>
+          <NavLink to="/admin/collections" className={navClass}>
+            Коллекции
+          </NavLink>
+          <NavLink to="/admin/designs" className={navClass}>
+            Дизайны
           </NavLink>
           <NavLink to="/admin/customers" className={navClass}>
             Клиенты
+          </NavLink>
+          <NavLink to="/admin/size-charts" className={navClass}>
+            Размерные сетки
+          </NavLink>
+          <NavLink to="/admin/payments" className={navClass}>
+            Платежи
+          </NavLink>
+          <NavLink to="/admin/exchange-rate" className={navClass}>
+            Курс валют
+          </NavLink>
+          <NavLink to="/admin/users" className={navClass}>
+            Пользователи
           </NavLink>
         </nav>
         <div className="mt-auto border-t border-white/10 pt-4">
           <p className="truncate text-xs text-zinc-500">{user?.email}</p>
           <button
             type="button"
-            className="mt-2 text-sm font-semibold text-violet-400 hover:text-violet-300"
+            className="mt-2 text-sm font-semibold text-zinc-300 hover:text-white"
             onClick={logout}
           >
             Выйти

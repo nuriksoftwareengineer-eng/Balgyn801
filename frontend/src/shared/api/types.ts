@@ -61,7 +61,13 @@ export type RefreshTokenRequest = {
   refreshToken: string;
 };
 
-export type PaymentProvider = "KASPI" | "YOOKASSA" | "PAYPAL";
+export type PaymentProvider = "FREEDOM_PAY" | "PAYPAL";
+
+export type PayPalCreateOrderRequest = {
+  orderId: number;
+  returnUrl?: string | null;
+  cancelUrl?: string | null;
+};
 export type PaymentStatus =
   | "PENDING"
   | "SUCCEEDED"
@@ -69,7 +75,28 @@ export type PaymentStatus =
   | "FAILED"
   | "REFUNDED";
 
-export type DeliveryType = "PICKUP" | "TAXI" | "CDEK";
+export type DeliveryType = "PICKUP" | "TAXI" | "CDEK" | "POSTAL" | "INTERNATIONAL";
+
+/** One available delivery option returned by GET /api/v1/delivery/methods. */
+export type DeliveryMethodResponse = {
+  type: DeliveryType;
+  /** Russian display label — render this, never hardcode method names. */
+  labelRu: string;
+  /** False only for PICKUP. */
+  requiresAddress: boolean;
+  /** True for CDEK — show city autocomplete widget. */
+  requiresCitySearch: boolean;
+  /** True for CDEK — show PVZ picker. */
+  requiresPvz: boolean;
+  /**
+   * Non-null when the method is restricted to a specific city.
+   * Display as "Доступно только в: {cityRestriction}".
+   * Never hardcode city names in the frontend.
+   */
+  cityRestriction: string | null;
+  /** 0 for PICKUP (free), flat amount for TAXI, null for variable-price methods. */
+  estimatedFeeKzt: number | null;
+};
 
 export type OrderStatus =
   | "NEW"
@@ -78,7 +105,9 @@ export type OrderStatus =
   | "READY"
   | "SHIPPED"
   | "DELIVERED"
-  | "CANCELLED";
+  | "CANCELLED"
+  | "PENDING_PAYMENT"
+  | "EXPIRED";
 
 export type OrderItemResponse = {
   id: number;
@@ -108,11 +137,18 @@ export type DeliveryAddressResponse = {
 };
 
 export type OrderItemRequest = {
-  productId: number;
+  // Legacy product path
+  productId?: number | null;
   customDesignId?: number | null;
-  quantity: number;
   size?: string | null;
   color?: string | null;
+  // Design catalog path (mutually exclusive with productId)
+  designGarmentId?: number | null;
+  colorId?: number | null;
+  sizeId?: number | null;
+  currency?: string | null;
+  // Shared
+  quantity: number;
 };
 
 /** Тело `PATCH /order/{id}/status` (роль ADMIN). */
@@ -149,7 +185,8 @@ export type CdekTariffRequest = {
 
 /** Позиция корзины для расчёта СДЭК на бэкенде. */
 export type CdekOrderItemRequest = {
-  productId: number;
+  productId?: number | null;
+  designGarmentId?: number | null;
   quantity: number;
 };
 
@@ -193,8 +230,10 @@ export type CreateOrderRequest = {
   comment?: string | null;
   items: OrderItemRequest[];
   address?: DeliveryAddressRequest | null;
-  /** Для CDEK — сумма после «Рассчитать доставку»; для остальных не передаётся. */
-  deliveryFee?: number | null;
+  /** ISO-2 код страны доставки (например "KZ", "RU"). Обязателен для всех типов кроме PICKUP. */
+  countryIso2?: string | null;
+  /** Код ПВЗ СДЭК. Обязателен для CDEK-заказов. */
+  pvzCode?: string | null;
 };
 
 /** Ответ `GET /customer`, `POST /customer`, `PUT /customer` (ADMIN). */
@@ -231,10 +270,49 @@ export type OrderResponse = {
   createdAt: string;
 };
 
+export type CdekShipmentStatus =
+  | "CREATED"
+  | "ACCEPTED"
+  | "IN_TRANSIT"
+  | "ARRIVED"
+  | "DELIVERED"
+  | "RETURNED"
+  | "CANCELLED";
+
+/** Ответ admin-эндпоинтов отправления СДЭК (`/api/v1/cdek-shipment/by-order/...`). */
+export type CdekShipmentResponse = {
+  orderId?: number | null;
+  cdekOrderUuid?: string | null;
+  trackingNumber?: string | null;
+  status?: CdekShipmentStatus | null;
+  estimatedDeliveryDate?: string | null;
+  tariffCode?: number | null;
+  cdekDeliveryMode?: string | null;
+  deliveryPointCode?: string | null;
+  deliveryPointAddress?: string | null;
+  deliveryPrice?: number | null;
+  invoiceUrl?: string | null;
+  barcodeUrl?: string | null;
+  /** true, если отправление создано mock-провайдером. */
+  mock: boolean;
+};
+
 export type PaymentInitRequest = {
   orderId: number;
   provider: PaymentProvider;
   returnUrl?: string | null;
+};
+
+export type ExchangeRateResponse = {
+  kztPerUsd: number;
+  source: string;
+  frozen: boolean;
+  updatedAt: string;
+};
+
+export type SetExchangeRateRequest = {
+  kztPerUsd: number;
+  frozen?: boolean | null;
 };
 
 export type PaymentWebhookRequest = {
@@ -246,6 +324,14 @@ export type PaymentWebhookRequest = {
   amount?: number | null;
   currency?: string | null;
   payload?: Record<string, unknown> | null;
+};
+
+/** Ответ `GET /admin/users` — один зарегистрированный пользователь (только ADMIN). */
+export type AdminUserResponse = {
+  id: number;
+  email: string;
+  roles: string[];
+  createdAt: string;
 };
 
 export type PaymentResponse = {
@@ -261,4 +347,6 @@ export type PaymentResponse = {
   errorMessage?: string | null;
   createdAt: string;
   updatedAt: string;
+  // Only present on PayPal create-order; used to authorise /cancel requests.
+  cancelToken?: string | null;
 };

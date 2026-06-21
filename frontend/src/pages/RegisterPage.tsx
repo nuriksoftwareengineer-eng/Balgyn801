@@ -1,32 +1,23 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/app/auth-context";
 import { ApiError } from "@/shared/api/http";
-import { Button } from "@/shared/ui/button";
+
+const inputClass =
+  "w-full border-b border-[--color-border] bg-transparent py-3 text-[15px] text-black outline-none transition placeholder:text-[--color-muted] focus:border-black";
 
 export function RegisterPage() {
-  const { register, user, loading } = useAuth();
+  const { t } = useTranslation();
+  const { register } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const from =
-    (location.state as { from?: string } | null)?.from ?? undefined;
+  const from = (location.state as { from?: string } | null)?.from ?? undefined;
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [afterAuth, setAfterAuth] = useState(false);
-
-  useEffect(() => {
-    if (!afterAuth || loading) return;
-    if (!user) return;
-    let dest = from ?? "/";
-    if (dest.startsWith("/admin") && !user.roles.includes("ADMIN")) {
-      dest = "/";
-    }
-    navigate(dest, { replace: true });
-    queueMicrotask(() => setAfterAuth(false));
-  }, [afterAuth, loading, user, from, navigate]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -34,10 +25,10 @@ export function RegisterPage() {
     setSubmitting(true);
     try {
       await register(email.trim(), password);
-      setAfterAuth(true);
+      navigate("/login", { replace: true, state: { from, registered: true } });
     } catch (err) {
       setError(
-        err instanceof ApiError ? err.message : "Не удалось зарегистрироваться",
+        err instanceof ApiError ? err.message : t("auth.registerError"),
       );
     } finally {
       setSubmitting(false);
@@ -45,66 +36,70 @@ export function RegisterPage() {
   }
 
   return (
-    <div className="w-full max-w-[400px] rounded-[14px] border border-white/10 bg-zinc-900/80 p-8 shadow-[0_24px_80px_-32px_rgba(139,92,246,0.35)] backdrop-blur-md">
-      <h1 className="font-display mb-2 text-3xl tracking-wide text-zinc-100">
-        Регистрация
+    <>
+      <h1 className="mb-2 text-[32px] font-extrabold uppercase tracking-[-0.02em] text-black">
+        {t("auth.registerHeading")}
       </h1>
-      <p className="mb-6 text-sm text-zinc-500">
-        После регистрации вы получите роль USER. Админ создаётся отдельно (bootstrap
-        или назначение роли в БД).
+      <p className="mb-8 text-[13px] text-[--color-muted]">
+        {t("auth.haveAccount")}{" "}
+        <Link
+          to="/login"
+          state={from ? { from } : undefined}
+          className="font-semibold text-black underline underline-offset-2 hover:opacity-70"
+        >
+          {t("auth.loginLinkText")}
+        </Link>
       </p>
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <label className="flex flex-col gap-1.5 text-sm">
-          <span className="font-medium text-zinc-400">Email</span>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+        <label className="flex flex-col gap-1">
+          <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[--color-muted]">
+            Email
+          </span>
           <input
             type="email"
             autoComplete="email"
             required
+            placeholder="you@example.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="rounded-[10px] border border-white/10 bg-zinc-950 px-3 py-2.5 text-zinc-100 outline-none ring-violet-500/40 focus:border-violet-500/40 focus:ring-2"
+            className={inputClass}
           />
         </label>
-        <label className="flex flex-col gap-1.5 text-sm">
-          <span className="font-medium text-zinc-400">Пароль (от 8 символов)</span>
+
+        <label className="flex flex-col gap-1">
+          <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[--color-muted]">
+            {t("auth.password")}{" "}
+            <span className="normal-case font-normal tracking-normal">
+              {t("auth.passwordHint")}
+            </span>
+          </span>
           <input
             type="password"
             autoComplete="new-password"
             required
             minLength={8}
+            placeholder="••••••••"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="rounded-[10px] border border-white/10 bg-zinc-950 px-3 py-2.5 text-zinc-100 outline-none ring-violet-500/40 focus:border-violet-500/40 focus:ring-2"
+            className={inputClass}
           />
         </label>
 
         {error ? (
-          <p className="m-0 text-sm font-medium text-red-400" role="alert">
+          <p className="text-[13px] font-medium text-[--color-danger]" role="alert">
             {error}
           </p>
         ) : null}
 
-        <Button
+        <button
           type="submit"
-          variant="primary"
-          className="mt-2 w-full rounded-[10px]"
           disabled={submitting}
+          className="mt-2 w-full bg-black py-4 text-[13px] font-bold uppercase tracking-[0.14em] text-white transition hover:bg-zinc-800 disabled:opacity-50"
         >
-          {submitting ? "Создаём…" : "Создать аккаунт"}
-        </Button>
+          {submitting ? t("auth.creatingAccount") : t("auth.createAccount")}
+        </button>
       </form>
-
-      <p className="mt-6 text-center text-sm text-zinc-500">
-        Уже есть аккаунт?{" "}
-        <Link
-          to="/login"
-          state={from ? { from } : undefined}
-          className="font-semibold text-violet-400 hover:underline"
-        >
-          Войти
-        </Link>
-      </p>
-    </div>
+    </>
   );
 }

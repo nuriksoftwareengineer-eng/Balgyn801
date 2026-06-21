@@ -8,4 +8,7 @@ public interface CdekShipmentService {
 
     CdekShipmentResponse getById(Long id);
     List<CdekShipmentResponse> getAll();
+
+    /** Отправление по заказу, или null если ещё не создано (для админки заказа). */
+    CdekShipmentResponse getByOrder(Long orderId);
 }

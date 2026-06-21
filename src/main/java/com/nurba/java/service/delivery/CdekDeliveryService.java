@@ -7,9 +7,15 @@ import com.nurba.java.dto.delivery.CdekOrderTariffRequest;
 import com.nurba.java.dto.delivery.CdekOrderTariffResponse;
 import com.nurba.java.dto.delivery.CdekTariffRequest;
 import com.nurba.java.dto.delivery.CdekTariffResponse;
+import com.nurba.java.domain.DesignGarment;
+import com.nurba.java.domain.DesignGarmentPrice;
+import com.nurba.java.enums.Currency;
 import com.nurba.java.exception.BusinessRuleException;
 import com.nurba.java.exception.NotFoundException;
+import com.nurba.java.repositories.DesignGarmentPriceRepository;
+import com.nurba.java.repositories.DesignGarmentRepository;
 import com.nurba.java.repositories.ProductRepository;
+import com.nurba.java.service.GarmentWeightService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -40,6 +46,9 @@ public class CdekDeliveryService {
 
     private final CdekClient client;
     private final ProductRepository productRepository;
+    private final DesignGarmentRepository designGarmentRepository;
+    private final DesignGarmentPriceRepository designGarmentPriceRepository;
+    private final GarmentWeightService garmentWeightService;
 
     public List<CdekCityDto> searchCities(String query, Integer limit) {
         String q = query == null ? "" : query.trim();
@@ -47,14 +56,14 @@ public class CdekDeliveryService {
         if (q.isBlank()) {
             return List.of();
         }
-        if (!client.isConfigured()) {
+        if (!client.useRealApi()) {
             return stubCities(q, size);
         }
         return client.searchCities(q, size);
     }
 
     public List<CdekDeliveryPointDto> deliveryPoints(int cityCode) {
-        if (!client.isConfigured()) {
+        if (!client.useRealApi()) {
             return stubDeliveryPoints(cityCode);
         }
         return client.deliveryPoints(cityCode);
@@ -65,7 +74,7 @@ public class CdekDeliveryService {
             throw new BusinessRuleException("Пустой запрос расчёта доставки");
         }
         Integer tariff = request.tariffCode() != null ? request.tariffCode() : defaultTariff();
-        if (!client.isConfigured()) {
+        if (!client.useRealApi()) {
             return stubTariff(request.weightGrams(), tariff);
         }
         Integer senderCity = client.senderCity();
@@ -96,29 +105,62 @@ public class CdekDeliveryService {
         }
 
         BigDecimal itemsTotal = BigDecimal.ZERO;
-        int totalQty = 0;
+        int totalWeightGrams = 0;
+        // Legacy product items don't carry an exact garment weight; tracked separately for the
+        // heuristic formula (existing behaviour for product-only carts is preserved exactly).
+        int legacyProductQty = 0;
 
         for (CdekOrderItemRequest item : request.items()) {
-            if (item.productId() == null || item.productId() <= 0) {
+            boolean isDesign  = item.designGarmentId() != null && item.designGarmentId() > 0;
+            boolean isProduct = item.productId()       != null && item.productId()       > 0;
+
+            if (!isDesign && !isProduct) {
                 throw new BusinessRuleException("Некорректный товар в запросе расчёта доставки");
             }
+
             int qty = item.quantity() == null ? 0 : item.quantity();
             if (qty <= 0) {
                 throw new BusinessRuleException("Количество товара для расчёта должно быть больше 0");
             }
-            var product = productRepository.findById(item.productId())
-                    .orElseThrow(() -> new NotFoundException("Товар не найден: id=" + item.productId()));
-            if (product.getPrice() == null) {
-                throw new BusinessRuleException("У товара не задана цена: id=" + item.productId());
+
+            if (isDesign) {
+                DesignGarment garment = designGarmentRepository.findById(item.designGarmentId())
+                        .orElseThrow(() -> new NotFoundException(
+                                "Вариант дизайна не найден: id=" + item.designGarmentId()));
+                DesignGarmentPrice price = designGarmentPriceRepository
+                        .findByDesignGarment_IdAndCurrency(garment.getId(), Currency.KZT)
+                        .orElseThrow(() -> new BusinessRuleException(
+                                "Цена в KZT не задана для варианта: id=" + item.designGarmentId()));
+                itemsTotal = itemsTotal.add(price.getAmount().multiply(BigDecimal.valueOf(qty)));
+                // Weight uses the same source as order creation (GarmentWeightService),
+                // not the legacy heuristic, so pre-order estimates match actual order weight.
+                BigDecimal unitKg = garmentWeightService.weightForType(garment.getGarmentType());
+                totalWeightGrams += unitKg
+                        .multiply(BigDecimal.valueOf(qty))
+                        .multiply(BigDecimal.valueOf(1000))
+                        .setScale(0, RoundingMode.HALF_UP)
+                        .intValue();
+            } else {
+                var product = productRepository.findById(item.productId())
+                        .orElseThrow(() -> new NotFoundException("Товар не найден: id=" + item.productId()));
+                if (product.getPrice() == null) {
+                    throw new BusinessRuleException("У товара не задана цена: id=" + item.productId());
+                }
+                itemsTotal = itemsTotal.add(product.getPrice().multiply(BigDecimal.valueOf(qty)));
+                legacyProductQty += qty;
             }
-            itemsTotal = itemsTotal.add(product.getPrice().multiply(BigDecimal.valueOf(qty)));
-            totalQty += qty;
         }
 
-        int estimatedWeight = estimateWeightGrams(totalQty);
+        // Legacy product items use the existing heuristic; design items contribute exact garment weight.
+        if (legacyProductQty > 0) {
+            totalWeightGrams += estimateWeightGrams(legacyProductQty);
+        }
+        // CDEK rejects weight ≤ 0; guard with the minimum constant.
+        int finalWeightGrams = Math.max(WEIGHT_MIN_GRAMS, totalWeightGrams);
+
         CdekTariffResponse tariff = calculate(new CdekTariffRequest(
                 request.toCityCode(),
-                estimatedWeight,
+                finalWeightGrams,
                 request.tariffCode()
         ));
         BigDecimal itemsTotalScaled = itemsTotal.setScale(2, RoundingMode.HALF_UP);
@@ -128,7 +170,7 @@ public class CdekDeliveryService {
                 tariff.totalPrice(),
                 itemsTotalScaled,
                 orderTotal,
-                estimatedWeight,
+                finalWeightGrams,
                 tariff.currency(),
                 tariff.minDays(),
                 tariff.maxDays(),

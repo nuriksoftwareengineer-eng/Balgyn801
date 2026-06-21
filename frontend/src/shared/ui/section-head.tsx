@@ -15,10 +15,10 @@ export function SectionHead({ title, action, className }: SectionHeadProps) {
         className,
       )}
     >
-      <h2 className="font-display text-4xl tracking-[0.04em] text-zinc-100 md:text-[2rem]">
+      <h2 className="text-3xl font-semibold uppercase tracking-[0.05em] text-black md:text-4xl">
         {title}
       </h2>
-      {action ? <div className="text-sm font-semibold">{action}</div> : null}
+      {action ?? null}
     </div>
   );
 }

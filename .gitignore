@@ -1,5 +1,10 @@
 .DS_Store
 
+# Локальные секреты окружения — скопируйте .env.example в .env (реальные секреты не коммитим)
+.env
+.env.local
+!.env.example
+
 HELP.md
 .gradle
 build/

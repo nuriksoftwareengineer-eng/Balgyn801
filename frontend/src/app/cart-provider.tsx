@@ -2,23 +2,47 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
+import { useAuth } from "@/app/auth-context";
 import {
   CartContext,
   makeCartLineKey,
+  makeDesignLineKey,
   type CartAddOptions,
   type CartLine,
+  type CartLineLegacy,
+  type CartLineDesign,
   type CartProductInput,
+  type CartDesignInput,
 } from "@/app/cart-context";
 
-const STORAGE_KEY = "balgyn_cart_v2";
-const LEGACY_STORAGE_KEY = "balgyn_cart_v1";
+// Корзина хранится по идентификатору пользователя: у каждого аккаунта своя
+// корзина, плюс отдельная гостевая. Logout не удаляет пользовательскую корзину —
+// она восстанавливается при повторном входе под тем же аккаунтом. Чужая корзина
+// при этом не отображается, т.к. ключ хранилища привязан к email.
+const KEY_PREFIX = "balgyn_cart_v3";
+const GUEST_KEY = `${KEY_PREFIX}:guest`;
+// Старые ключи из прежней (единой, в sessionStorage) модели — мигрируем в гостевую.
+const LEGACY_SESSION_KEYS = [
+  "balgyn_cart_v3",
+  "balgyn_cart_v2",
+  "balgyn_cart_v1",
+];
 
-function normalizeCartLine(x: unknown): CartLine | null {
-  if (!x || typeof x !== "object") return null;
-  const l = x as Record<string, unknown>;
+function userKey(email: string): string {
+  return `${KEY_PREFIX}:u:${email.trim().toLowerCase()}`;
+}
+
+function identityKey(identity: string | null): string {
+  return identity ? userKey(identity) : GUEST_KEY;
+}
+
+// ── Normalizers ───────────────────────────────────────────────────────────────
+
+function normalizeLegacyLine(l: Record<string, unknown>): CartLineLegacy | null {
   if (
     typeof l.productId !== "number" ||
     typeof l.title !== "string" ||
@@ -36,6 +60,7 @@ function normalizeCartLine(x: unknown): CartLine | null {
       ? l.lineKey
       : makeCartLineKey(l.productId, size, color);
   return {
+    kind: "legacy",
     lineKey,
     productId: l.productId,
     title: l.title,
@@ -48,15 +73,66 @@ function normalizeCartLine(x: unknown): CartLine | null {
   };
 }
 
-function loadLines(): CartLine[] {
+function normalizeDesignLine(l: Record<string, unknown>): CartLineDesign | null {
+  if (
+    typeof l.designGarmentId !== "number" ||
+    typeof l.designId !== "number" ||
+    typeof l.designSlug !== "string" ||
+    typeof l.groupSlug !== "string" ||
+    typeof l.collectionSlug !== "string" ||
+    typeof l.title !== "string" ||
+    typeof l.garmentType !== "string" ||
+    typeof l.garmentLabel !== "string" ||
+    typeof l.price !== "number" ||
+    typeof l.qty !== "number" ||
+    l.qty <= 0 ||
+    typeof l.colorId !== "number" ||
+    typeof l.colorName !== "string" ||
+    typeof l.colorHex !== "string" ||
+    typeof l.sizeId !== "number" ||
+    typeof l.sizeLabel !== "string"
+  ) {
+    return null;
+  }
+  const lineKey =
+    typeof l.lineKey === "string"
+      ? l.lineKey
+      : makeDesignLineKey(l.designGarmentId, l.colorId, l.sizeId);
+  return {
+    kind: "design",
+    lineKey,
+    designGarmentId: l.designGarmentId,
+    designId: l.designId,
+    designSlug: l.designSlug,
+    groupSlug: l.groupSlug,
+    collectionSlug: l.collectionSlug,
+    title: l.title,
+    garmentType: l.garmentType,
+    garmentLabel: l.garmentLabel,
+    price: l.price,
+    imageUrl: typeof l.imageUrl === "string" ? l.imageUrl : null,
+    qty: l.qty,
+    colorId: l.colorId,
+    colorName: l.colorName,
+    colorHex: l.colorHex,
+    sizeId: l.sizeId,
+    sizeLabel: l.sizeLabel,
+  };
+}
+
+function normalizeCartLine(x: unknown): CartLine | null {
+  if (!x || typeof x !== "object") return null;
+  const l = x as Record<string, unknown>;
+  if (l.kind === "design") return normalizeDesignLine(l);
+  // "legacy" или без kind (миграция со старой схемы)
+  return normalizeLegacyLine(l);
+}
+
+// ── Storage ───────────────────────────────────────────────────────────────────
+
+function readCart(key: string): CartLine[] {
   try {
-    let raw = sessionStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      raw = sessionStorage.getItem(LEGACY_STORAGE_KEY);
-      if (raw) {
-        sessionStorage.removeItem(LEGACY_STORAGE_KEY);
-      }
-    }
+    const raw = localStorage.getItem(key);
     if (!raw) return [];
     const parsed = JSON.parse(raw) as unknown;
     if (!Array.isArray(parsed)) return [];
@@ -68,12 +144,63 @@ function loadLines(): CartLine[] {
   }
 }
 
-function persist(lines: CartLine[]) {
+function writeCart(key: string, lines: CartLine[]) {
   try {
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(lines));
+    localStorage.setItem(key, JSON.stringify(lines));
   } catch {
     /* ignore quota */
   }
+}
+
+function removeCart(key: string) {
+  try {
+    localStorage.removeItem(key);
+  } catch {
+    /* ignore */
+  }
+}
+
+let legacyMigrated = false;
+
+/** Однократно переносит корзину из старой единой схемы (sessionStorage) в гостевую. */
+function migrateLegacyGuestCart() {
+  if (legacyMigrated) return;
+  legacyMigrated = true;
+  try {
+    if (localStorage.getItem(GUEST_KEY)) return; // уже есть гостевая корзина
+    let legacyRaw: string | null = null;
+    for (const k of LEGACY_SESSION_KEYS) {
+      const v = sessionStorage.getItem(k);
+      if (v && legacyRaw == null) legacyRaw = v;
+      sessionStorage.removeItem(k);
+    }
+    if (!legacyRaw) return;
+    const parsed = JSON.parse(legacyRaw) as unknown;
+    if (!Array.isArray(parsed)) return;
+    const lines = parsed
+      .map((row) => normalizeCartLine(row))
+      .filter((row): row is CartLine => row != null);
+    if (lines.length > 0) writeCart(GUEST_KEY, lines);
+  } catch {
+    /* ignore */
+  }
+}
+
+// ── Merge helpers ─────────────────────────────────────────────────────────────
+
+/** Объединяет две корзины по lineKey, суммируя количество одинаковых позиций. */
+function mergeCarts(base: CartLine[], incoming: CartLine[]): CartLine[] {
+  const map = new Map<string, CartLine>();
+  for (const l of base) map.set(l.lineKey, { ...l });
+  for (const l of incoming) {
+    const existing = map.get(l.lineKey);
+    if (existing) {
+      map.set(l.lineKey, { ...existing, qty: existing.qty + l.qty });
+    } else {
+      map.set(l.lineKey, { ...l });
+    }
+  }
+  return Array.from(map.values());
 }
 
 function mergeAdd(
@@ -91,6 +218,7 @@ function mergeAdd(
     return [
       ...lines,
       {
+        kind: "legacy",
         lineKey,
         productId: product.id,
         title: product.title,
@@ -100,7 +228,7 @@ function mergeAdd(
         qty: 1,
         size,
         color,
-      },
+      } satisfies CartLineLegacy,
     ];
   }
   const next = [...lines];
@@ -108,14 +236,86 @@ function mergeAdd(
   return next;
 }
 
-export function CartProvider({ children }: { children: ReactNode }) {
-  const [lines, setLines] = useState<CartLine[]>(() =>
-    typeof sessionStorage === "undefined" ? [] : loadLines(),
-  );
+function mergeAddDesign(lines: CartLine[], input: CartDesignInput): CartLine[] {
+  const lineKey = makeDesignLineKey(input.designGarmentId, input.colorId, input.sizeId);
+  const idx = lines.findIndex((l) => l.lineKey === lineKey);
+  if (idx === -1) {
+    return [
+      ...lines,
+      {
+        kind: "design",
+        lineKey,
+        designGarmentId: input.designGarmentId,
+        designId: input.designId,
+        designSlug: input.designSlug,
+        groupSlug: input.groupSlug,
+        collectionSlug: input.collectionSlug,
+        title: input.title,
+        garmentType: input.garmentType,
+        garmentLabel: input.garmentLabel,
+        price: input.price,
+        imageUrl: input.imageUrl ?? null,
+        qty: 1,
+        colorId: input.colorId,
+        colorName: input.colorName,
+        colorHex: input.colorHex,
+        sizeId: input.sizeId,
+        sizeLabel: input.sizeLabel,
+      } satisfies CartLineDesign,
+    ];
+  }
+  const next = [...lines];
+  next[idx] = { ...next[idx], qty: next[idx].qty + 1 };
+  return next;
+}
 
+// ── Provider ──────────────────────────────────────────────────────────────────
+
+export function CartProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
+  const identity = user?.email ?? null; // null = гость
+
+  const [lines, setLines] = useState<CartLine[]>(() => {
+    if (typeof localStorage === "undefined") return [];
+    migrateLegacyGuestCart();
+    // На монтировании пользователь ещё не загружен (getMe асинхронный) — стартуем
+    // с гостевой корзины; когда identity появится, сработает мёрдж/переключение.
+    return readCart(GUEST_KEY);
+  });
+
+  // Ключ хранилища активной корзины. Ref (а не state), чтобы persist-эффект
+  // всегда писал в актуальный ключ без гонки с эффектом смены идентичности.
+  const activeKeyRef = useRef<string>(GUEST_KEY);
+
+  // Сохраняем активную корзину при любом изменении строк.
   useEffect(() => {
-    persist(lines);
+    writeCart(activeKeyRef.current, lines);
   }, [lines]);
+
+  // Вход/выход: переключаем активную корзину по идентификатору пользователя.
+  useEffect(() => {
+    const nextKey = identityKey(identity);
+    const prevKey = activeKeyRef.current;
+    if (nextKey === prevKey) return;
+
+    if (prevKey === GUEST_KEY && nextKey !== GUEST_KEY) {
+      // Вход под аккаунтом: переносим гостевую корзину в пользовательскую
+      // (мёрдж по позициям) и очищаем гостевую.
+      const guestLines = readCart(GUEST_KEY);
+      const userLines = readCart(nextKey);
+      const merged = mergeCarts(userLines, guestLines);
+      activeKeyRef.current = nextKey;
+      writeCart(nextKey, merged);
+      removeCart(GUEST_KEY);
+      setLines(merged);
+    } else {
+      // Выход (-> гость) или смена аккаунта: показываем корзину новой
+      // идентичности. Прежняя пользовательская корзина остаётся в хранилище
+      // и восстановится при повторном входе.
+      activeKeyRef.current = nextKey;
+      setLines(readCart(nextKey));
+    }
+  }, [identity]);
 
   const totalQty = useMemo(
     () => lines.reduce((acc, l) => acc + l.qty, 0),
@@ -133,6 +333,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
     },
     [],
   );
+
+  const addDesignItem = useCallback((input: CartDesignInput) => {
+    setLines((prev) => mergeAddDesign(prev, input));
+  }, []);
 
   const increment = useCallback((lineKey: string) => {
     setLines((prev) =>
@@ -164,6 +368,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       totalQty,
       subtotal,
       addItem,
+      addDesignItem,
       increment,
       decrement,
       removeLine,
@@ -174,6 +379,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       totalQty,
       subtotal,
       addItem,
+      addDesignItem,
       increment,
       decrement,
       removeLine,

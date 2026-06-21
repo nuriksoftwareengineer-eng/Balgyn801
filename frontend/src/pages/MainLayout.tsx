@@ -1,19 +1,24 @@
-import { Outlet } from "react-router-dom";
-import { AnnouncementBar } from "@/widgets/AnnouncementBar";
-import { AnimatedBackground } from "@/widgets/AnimatedBackground";
+import { Outlet, useLocation } from "react-router-dom";
+import { useCartDrawer } from "@/app/cart-drawer-context";
+import { CartDrawer } from "@/widgets/CartDrawer";
 import { SiteFooter } from "@/widgets/SiteFooter";
-import { SiteHeader } from "@/widgets/SiteHeader";
+import { SiteNavbar } from "@/widgets/SiteNavbar";
 
 export function MainLayout() {
+  const location = useLocation();
+  const { open, closeDrawer } = useCartDrawer();
+  // На главной hero уходит под прозрачную шапку; на остальных страницах
+  // добавляем отступ под фиксированную шапку.
+  const isHome = location.pathname === "/";
+
   return (
-    <div className="relative min-h-screen bg-zinc-950 text-zinc-100 antialiased">
-      <AnimatedBackground />
-      <div className="relative z-10">
-        <AnnouncementBar />
-        <SiteHeader />
+    <div className="flex min-h-screen flex-col bg-white text-black antialiased">
+      <SiteNavbar />
+      <main className={`flex-1 ${isHome ? "" : "pt-[72px] md:pt-[96px]"}`}>
         <Outlet />
-        <SiteFooter />
-      </div>
+      </main>
+      <SiteFooter />
+      <CartDrawer open={open} onClose={closeDrawer} />
     </div>
   );
 }

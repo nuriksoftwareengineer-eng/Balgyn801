@@ -4,7 +4,6 @@ import {
   CONTACT_EMAIL,
   STORE_TELEGRAM_URL,
 } from "@/shared/constants/store-content";
-import { Button } from "@/shared/ui/button";
 import { Container } from "@/shared/ui/container";
 
 export function CustomDesignCTASection() {
@@ -12,62 +11,63 @@ export function CustomDesignCTASection() {
   const navigate = useNavigate();
 
   return (
-    <section className="py-12 md:py-20" id="custom-design">
+    <section className="bg-black py-16 md:py-24" id="custom-design">
       <Container>
         <motion.div
-          initial={{ opacity: 0, y: reduceMotion ? 0 : 20 }}
+          initial={{ opacity: 0, y: reduceMotion ? 0 : 24 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-60px" }}
-          transition={{ duration: reduceMotion ? 0 : 0.5, ease: [0.22, 1, 0.36, 1] }}
-          className="relative overflow-hidden rounded-[20px] border border-violet-500/20 bg-gradient-to-br from-zinc-900 via-zinc-950 to-zinc-900 px-8 py-12 md:px-14 md:py-14"
+          viewport={{ once: true, margin: "-80px" }}
+          transition={{
+            duration: reduceMotion ? 0 : 0.6,
+            ease: [0.22, 1, 0.36, 1],
+          }}
         >
-          <div
-            className="pointer-events-none absolute -right-20 top-1/2 h-64 w-64 -translate-y-1/2 rounded-full bg-violet-600/20 blur-[80px]"
-            aria-hidden
-          />
-          <div className="relative max-w-2xl">
-            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.24em] text-violet-400">
-              Индивидуальный заказ
-            </p>
-            <h2 className="font-display text-3xl tracking-wide text-zinc-100 md:text-4xl">
-              Сделай свой дизайн
-            </h2>
-            <p className="mt-4 text-lg leading-relaxed text-zinc-400">
-              Расскажите идею: логотип, надпись, референс с Pinterest или эскиз.
-              Подберём нитки, технику вышивки и модель (худи, футболка, кепка).
-            </p>
-            <ul className="mt-6 space-y-2 text-sm text-zinc-500">
-              <li className="flex gap-2">
-                <span className="text-violet-400">✓</span>
-                Смета и сроки — после согласования макета
-              </li>
-              <li className="flex gap-2">
-                <span className="text-violet-400">✓</span>
-                Фото перед отправкой, как в каталоге
-              </li>
-            </ul>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Button
+          <div className="grid gap-12 md:grid-cols-2 md:items-center md:gap-20">
+            {/* Left: text */}
+            <div>
+              <p className="text-[0.6rem] font-medium uppercase tracking-[0.3em] text-white/40">
+                Индивидуальный заказ
+              </p>
+              <h2 className="mt-4 font-sans text-3xl font-semibold uppercase tracking-[0.04em] text-white md:text-[2.5rem]">
+                Свой дизайн
+              </h2>
+              <p className="mt-5 text-sm leading-relaxed text-white/55">
+                Расскажите идею: логотип, надпись, референс или эскиз.
+                Подберём нитки, технику вышивки и модель.
+              </p>
+              <ul className="mt-6 space-y-3 text-sm text-white/40">
+                <li className="flex gap-3">
+                  <span className="text-white/70">✓</span>
+                  Смета и сроки — после согласования макета
+                </li>
+                <li className="flex gap-3">
+                  <span className="text-white/70">✓</span>
+                  Фото перед отправкой, как в каталоге
+                </li>
+              </ul>
+            </div>
+
+            {/* Right: CTAs */}
+            <div className="flex flex-col gap-4">
+              <button
                 type="button"
-                variant="primary"
-                className="rounded-full px-8"
                 onClick={() => navigate("/custom-design")}
+                className="w-full border border-white py-4 text-[0.7rem] font-semibold uppercase tracking-[0.18em] text-white transition-colors duration-200 hover:bg-white hover:text-black focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
               >
                 Оставить заявку
-              </Button>
-              <Button
+              </button>
+              <button
                 type="button"
-                variant="outline"
-                className="rounded-full"
                 onClick={() =>
                   window.open(STORE_TELEGRAM_URL, "_blank", "noopener,noreferrer")
                 }
+                className="w-full border border-white/20 py-4 text-[0.7rem] font-semibold uppercase tracking-[0.18em] text-white/50 transition-colors duration-200 hover:border-white hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/50"
               >
                 Написать в Telegram
-              </Button>
+              </button>
               <a
                 href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent("Свой дизайн BALGYN")}`}
-                className="inline-flex items-center rounded-full px-4 py-3 text-sm font-semibold text-zinc-400 underline-offset-4 hover:text-zinc-200 hover:underline"
+                className="text-center text-[0.65rem] text-white/25 transition-colors hover:text-white/50"
               >
                 {CONTACT_EMAIL}
               </a>

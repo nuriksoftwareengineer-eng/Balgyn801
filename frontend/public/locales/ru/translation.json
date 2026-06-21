@@ -1,0 +1,444 @@
+{
+  "nav": {
+    "home": "Главная",
+    "catalog": "Каталог",
+    "customDesign": "Свой дизайн",
+    "about": "О нас",
+    "admin": "Админ",
+    "login": "Вход",
+    "register": "Регистрация",
+    "logout": "Выйти",
+    "orders": "Заказы",
+    "myOrders": "Мои заказы",
+    "profile": "Профиль",
+    "cart": "Корзина",
+    "contacts": "Контакты",
+    "allCollections": "Все коллекции",
+    "loadingCatalog": "Загружаем каталог…"
+  },
+  "header": {
+    "openMenu": "Открыть меню",
+    "closeMenu": "Закрыть меню",
+    "shrinkCatalog": "Свернуть",
+    "expandCatalog": "Развернуть",
+    "profileLabel": "Профиль",
+    "loginLabel": "Войти",
+    "cartLabel": "Корзина",
+    "cartItems": "Корзина, {{count}} поз.",
+    "mobileMenu": "Мобильное меню"
+  },
+  "auth": {
+    "loginHeading": "Войти",
+    "registerHeading": "Создать аккаунт",
+    "loginLinkText": "Войти",
+    "registerLinkText": "Регистрация",
+    "loginError": "Не удалось войти",
+    "noAccount": "Нет аккаунта?",
+    "registerError": "Не удалось зарегистрироваться",
+    "haveAccount": "Уже есть аккаунт?",
+    "password": "Пароль",
+    "passwordHint": "(от 8 символов)",
+    "accountCreated": "Аккаунт создан. Войдите, пожалуйста.",
+    "creatingAccount": "Создаём…",
+    "loggingIn": "Входим…",
+    "createAccount": "Создать аккаунт"
+  },
+  "profile": {
+    "title": "Профиль",
+    "myOrders": "Мои заказы →",
+    "adminPanel": "Панель администратора →",
+    "logout": "Выйти из аккаунта"
+  },
+  "payment": {
+    "selectMethod": "Оплата",
+    "methodDescription": "Выберите способ оплаты и перейдите к платёжной форме.",
+    "payBtn": "Оплатить",
+    "payingBtn": "Переходим…",
+    "freedomPayLabel": "Freedom Pay",
+    "freedomPayDesc": "Оплата картой в Казахстане",
+    "paypalLabel": "PayPal",
+    "paypalDesc": "Международные платежи",
+    "bankCard": "Банковская карта",
+    "bankCardDesc": "Безопасная онлайн-оплата",
+    "confirming": "Подтверждаем платёж…",
+    "kaspi": "Kaspi Bank",
+    "halyk": "Halyk Bank",
+    "kazakhCards": "Карты казахстанских банков",
+    "intlCards": "Международные карты",
+    "paypalAccount": "PayPal аккаунт",
+    "success": {
+      "title": "Оплата прошла успешно",
+      "subtitle": "Платёж подтверждён. Спасибо за покупку!",
+      "orderNumber": "Номер заказа",
+      "amount": "Сумма",
+      "method": "Способ оплаты",
+      "toOrders": "Мои заказы",
+      "toCatalog": "В каталог"
+    },
+    "failed": {
+      "title": "Оплата не выполнена",
+      "subtitle": "Произошла ошибка при обработке платежа. Попробуйте ещё раз или выберите другой способ оплаты.",
+      "orderNumber": "Номер заказа",
+      "retry": "Попробовать снова",
+      "toCart": "Вернуться в корзину",
+      "toCatalog": "В каталог"
+    },
+    "cancelled": {
+      "title": "Оплата отменена",
+      "subtitle": "Вы отменили платёж. Заказ сохранён и ожидает оплаты.",
+      "orderNumber": "Номер заказа",
+      "retry": "Оплатить заказ",
+      "toCart": "Вернуться в корзину",
+      "toCatalog": "В каталог"
+    }
+  },
+  "orders": {
+    "title": "Мои заказы",
+    "empty": "Заказов пока нет.",
+    "emptySubtitle": "Оформите первый заказ в нашем каталоге вышивки.",
+    "toCatalog": "Перейти в каталог",
+    "order": "Заказ",
+    "delivery": "Доставка",
+    "comment": "Комментарий",
+    "status": {
+      "NEW": "Новый",
+      "CONFIRMED": "Подтверждён",
+      "IN_PRODUCTION": "В производстве",
+      "READY": "Готов",
+      "SHIPPED": "Отправлен",
+      "DELIVERED": "Доставлен",
+      "CANCELLED": "Отменён",
+      "PENDING_PAYMENT": "Ожидает оплаты",
+      "EXPIRED": "Просрочен"
+    },
+    "delivery_type": {
+      "PICKUP": "Самовывоз",
+      "TAXI": "Такси / курьер",
+      "CDEK": "СДЭК",
+      "POSTAL": "Казпочта",
+      "INTERNATIONAL": "Международная доставка"
+    },
+    "payment_provider": {
+      "FREEDOM_PAY": "Freedom Pay",
+      "PAYPAL": "PayPal"
+    },
+    "payNow": "Оплатить"
+  },
+  "recovery": {
+    "title": "Незавершённый заказ",
+    "order": "Заказ №{{id}}",
+    "subtitle": "Заказ ожидает оплаты. Оплатите сейчас — или он будет автоматически отменён через час.",
+    "card": "Банковская карта",
+    "dismiss": "Отменить заказ"
+  },
+  "notFound": {
+    "code": "404",
+    "title": "Страница не найдена",
+    "description": "Возможно, ссылка устарела или страница была удалена.",
+    "toHome": "На главную",
+    "toCatalog": "В каталог"
+  },
+  "currency": {
+    "label": "Валюта",
+    "KZT": "₸ KZT",
+    "USD": "$ USD",
+    "EUR": "€ EUR",
+    "RUB": "₽ RUB"
+  },
+  "language": {
+    "ru": "RU",
+    "kk": "KZ",
+    "en": "EN"
+  },
+  "cart": {
+    "empty": "Корзина пуста",
+    "emptyHint": "Добавьте что-нибудь из каталога",
+    "emptyAction": "Пока пусто — загляните в каталог.",
+    "toCatalog": "В каталог",
+    "title": "Корзина",
+    "close": "Закрыть",
+    "remove": "Удалить",
+    "decrease": "Убрать 1",
+    "increase": "Добавить 1",
+    "decreaseQty": "Уменьшить",
+    "increaseQty": "Увеличить",
+    "total": "Итого",
+    "checkout": "Оформить заказ",
+    "clearCart": "Очистить",
+    "hide": "Скрыть",
+    "backToCatalog": "← В каталог",
+    "addedToCart": "«{{title}}» добавлен в корзину.",
+    "items_one": "{{count}} позиция",
+    "items_few": "{{count}} позиции",
+    "items_many": "{{count}} позиций",
+    "goods_one": "{{count}} товар",
+    "goods_few": "{{count}} товара",
+    "goods_many": "{{count}} товаров",
+    "checkoutFlow": {
+      "title": "Оформление заказа",
+      "stepOf": "Шаг {{step}} из 5",
+      "back": "← Назад",
+      "backToCart": "← Корзина",
+      "continue": "Продолжить",
+      "submit": "Подтвердить заказ",
+      "submitting": "Размещаем…",
+      "comment": "Комментарий к заказу",
+      "commentPlaceholder": "Размер, цвет, пожелания по доставке…",
+      "freeDelivery": "Доставка бесплатная",
+      "paidOnReceipt": "оплата при получении",
+      "steps": {
+        "contacts": "Контакты",
+        "region": "Регион",
+        "delivery": "Доставка",
+        "details": "Детали",
+        "summary": "Итог"
+      }
+    },
+    "summary": {
+      "yourOrder": "Ваш заказ",
+      "items": "Товары",
+      "cdekDelivery": "Доставка СДЭК",
+      "atReceipt": "при получении",
+      "onAgreement": "по договорённости"
+    },
+    "order": {
+      "accepted": "Заказ принят",
+      "amount": "Сумма",
+      "delivery": "Доставка",
+      "cdekDelivery": "Доставка СДЭК",
+      "payOnReceipt": "оплата при получении",
+      "contactNote": "Мы свяжемся с вами по указанному телефону.",
+      "payment": "Оплата",
+      "paymentDesc": "Выберите способ оплаты и перейдите к платёжной форме.",
+      "address": "Адрес: ",
+      "apt": "кв./оф.",
+      "close": "Закрыть",
+      "toCatalog": "В каталог"
+    },
+    "form": {
+      "optional": "(необязательно)",
+      "contactsDesc": "Укажите контактные данные — мы свяжемся с вами после получения заказа.",
+      "name": "Имя *",
+      "phone": "Телефон *",
+      "regionDesc": "Выберите регион доставки.",
+      "methodDesc": "Выберите способ получения заказа.",
+      "loadingMethods": "Загружаем методы доставки…",
+      "loadMethodsError": "Не удалось загрузить методы доставки. Попробуйте ещё раз.",
+      "noMethods": "Для выбранной страны доступные методы доставки не найдены.",
+      "availableIn": "Доступно только в:",
+      "free": "Бесплатно",
+      "fromPrice": "от {{price}} ₸",
+      "onAgreement": "по договорённости",
+      "pickupDesc": "После оформления заказа мы свяжемся с вами для уточнения времени и места получения. Доставка бесплатная.",
+      "cdekDesc": "Введите название города и выберите пункт выдачи СДЭК. Сроки доставки рассчитываются автоматически.",
+      "citySearch": "Поиск города *",
+      "cityPlaceholder": "Например, Алматы",
+      "searchingCities": "Поиск городов…",
+      "pvzCount": "Пункт выдачи СДЭК * ({{count}} из {{total}})",
+      "pvzPlaceholder": "Выберите пункт выдачи…",
+      "pvzFilter": "Код, улица или адрес",
+      "pvzNotFound": "Ничего не найдено",
+      "pvzEmpty": "Для этого города список ПВЗ пуст. Попробуйте другой город.",
+      "loadingPvz": "Загружаем пункты выдачи…",
+      "cdekCost": "Стоимость доставки:",
+      "cdekAtReceipt": "оплата при получении",
+      "deliveryDays": "Срок: {{min}}–{{max}} дн.",
+      "recipientSection": "Данные получателя",
+      "recipientName": "Имя получателя *",
+      "recipientPhone": "Телефон получателя *",
+      "addressDesc": "Укажите адрес доставки.",
+      "cityLabel": "Город *",
+      "street": "Улица, дом *",
+      "apt": "Квартира / офис *",
+      "aptPlaceholder": "Нет — «—»",
+      "postal": "Индекс",
+      "recipient": "Получатель *",
+      "summaryDesc": "Проверьте данные перед оформлением заказа.",
+      "contactsSection": "Контакты",
+      "edit": "Изменить",
+      "nameLabel": "Имя",
+      "phoneLabel": "Телефон",
+      "deliverySection": "Доставка",
+      "regionLabel": "Регион",
+      "methodLabel": "Способ",
+      "addressLabel": "Адрес",
+      "cdekCity": "Город СДЭК",
+      "pvzLabel": "Пункт выдачи",
+      "recipientLabel": "Получатель",
+      "cdekDeliveryLabel": "Доставка СДЭК",
+      "costLabel": "Стоимость",
+      "goodsSection": "Товары"
+    },
+    "regions": {
+      "KZ": "Казахстан",
+      "KZ_hint": "Доставка по всему Казахстану",
+      "RU": "РФ / СНГ",
+      "RU_hint": "Россия, Беларусь и другие страны СНГ",
+      "US": "Другие страны",
+      "US_hint": "Международная доставка по всему миру"
+    },
+    "errors": {
+      "fillRequired": "Заполните все обязательные поля",
+      "calculating": "Подождите, рассчитываем сроки доставки…",
+      "selectCdekPoint": "Выберите пункт выдачи СДЭК",
+      "cdekAddressRequired": "Выберите город и пункт выдачи СДЭК",
+      "orderFailed": "Не удалось оформить заказ",
+      "cdekDeliveryError": "Не удалось рассчитать сроки доставки СДЭК",
+      "paymentFailed": "Не удалось инициализировать оплату",
+      "paypalError": "PayPal не вернул ссылку подтверждения. Попробуйте позже.",
+      "paymentUrlError": "Платёжный URL не получен. Попробуйте позже."
+    }
+  },
+  "design": {
+    "notFound": "Дизайн не найден",
+    "back": "← Назад",
+    "noVariants": "Нет доступных вариантов для этого дизайна.",
+    "garment": "Изделие",
+    "color": "Цвет",
+    "colorSelected": "Цвет: {{name}}",
+    "size": "Размер",
+    "sizeChart": "Размерная сетка",
+    "addToCart": "В корзину",
+    "added": "Добавлено ✓",
+    "selectGarment": "Выберите изделие",
+    "selectColor": "Выберите цвет",
+    "selectSize": "Выберите размер",
+    "selectAll": "Выберите изделие, цвет и размер"
+  },
+  "errors": {
+    "loadFailed": "Ошибка загрузки",
+    "noProducts": "В этой категории пока нет товаров.",
+    "loadCatalog": "Не удалось загрузить каталог.",
+    "collectionNotFound": "Коллекция не найдена.",
+    "groupNotFound": "Группа не найдена."
+  },
+  "home": {
+    "announcement": "Бесплатная доставка от суммы заказа · Новые дропы каждую неделю",
+    "trust": {
+      "delivery": { "title": "Доставка", "desc": "По всему миру" },
+      "embroidery": { "title": "Вышивка", "desc": "Алматы, KZ" },
+      "quality": { "title": "Качество", "desc": "100% Cotton" }
+    },
+    "hero": {
+      "badge": "Доставка по всему миру!",
+      "tagline": "Приносим свежесть в твой стиль.",
+      "cta": "Смотреть коллекцию"
+    },
+    "values": {
+      "embroidery": { "title": "Ручная вышивка", "desc": "Каждая вышивка выполняется вручную по нашей фирменной технологии." },
+      "unique": { "title": "Уникальные дизайны", "desc": "Авторские графические образы, не похожие ни на что другое." },
+      "quality": { "title": "Качество материала", "desc": "Отбираем только лучшие ткани: плотный хлопок, Premium fleece." },
+      "limited": { "title": "Лимитированный тираж", "desc": "Малые партии гарантируют эксклюзивность каждой вещи." }
+    },
+    "bestSellers": {
+      "title": "Хиты",
+      "desc": "Подобрано редакцией бренда на основе откликов и продаж за последний месяц.",
+      "empty": "Скоро здесь появятся хиты продаж."
+    },
+    "instagram": {
+      "follow": "Подписаться",
+      "imageAlt": "BALGYN в Instagram"
+    },
+    "featured": {
+      "tag": "Новый дроп",
+      "viewAll": "Смотреть все",
+      "empty": "Товары скоро появятся."
+    },
+    "about": {
+      "title": "О бренде",
+      "desc": "Balgyn — это embroidery-бренд из Алматы, созданный для тех, кто ценит индивидуальность и качество ручной вышивки.",
+      "stat1": { "value": "Тираж", "label": "Малые партии" },
+      "stat2": { "value": "Материал", "label": "100% хлопок" },
+      "stat3": { "value": "Пошив", "label": "Алматы" }
+    },
+    "categories": {
+      "viewAll": "Смотреть →"
+    }
+  },
+  "footer": {
+    "marquee": {
+      "fresh": "оставайся свежей",
+      "embroidery": "вышивка · алматы"
+    },
+    "shop": {
+      "title": "Магазин",
+      "catalog": "Каталог",
+      "customDesign": "Свой дизайн",
+      "about": "О нас"
+    },
+    "help": {
+      "title": "Помощь",
+      "delivery": "Доставка и оплата",
+      "returns": "Возврат и обмен",
+      "trackOrder": "Отследить заказ",
+      "contacts": "Контакты"
+    },
+    "social": {
+      "title": "Соцсети"
+    },
+    "newsletter": {
+      "title": "Рассылка",
+      "desc": "Только обновления и дроп-релизы.",
+      "follow": "Подписаться в Instagram →"
+    },
+    "rights": "© {{year}} BALGYN · Все права защищены · Алматы, KZ",
+    "legal": {
+      "privacy": "Политика",
+      "terms": "Оферта",
+      "returns": "Возврат"
+    }
+  },
+  "product": {
+    "soldOut": "Распродано",
+    "inStock": "В наличии",
+    "outOfStock": "Нет в наличии",
+    "selectSize": "Выбрать размер",
+    "addToCart": "В корзину",
+    "comingSoon": "Ожидаем поступление"
+  },
+  "customDesign": {
+    "title": "Свой дизайн",
+    "lead": "Заполните форму — нажмите кнопку, и Telegram откроется с готовым сообщением. Нам останется только отправить.",
+    "nameLabel": "Имя *",
+    "namePlaceholder": "Ваше имя",
+    "phoneLabel": "Телефон или Telegram *",
+    "phonePlaceholder": "+7 … или @username",
+    "descLabel": "Описание *",
+    "descPlaceholder": "Что вышить, на чём, референсы…",
+    "wishesLabel": "Пожелания",
+    "wishesPlaceholder": "Цвет, размер, срок…",
+    "commentLabel": "Комментарий",
+    "commentPlaceholder": "Любая дополнительная информация",
+    "optional": "(необязательно)",
+    "errorRequired": "Заполните имя, телефон и описание",
+    "submitBtn": "Отправить в Telegram"
+  },
+  "trackOrder": {
+    "title": "Отследить заказ",
+    "lead": "Укажите номер заказа и телефон, на который он был оформлен.",
+    "orderNumberLabel": "Номер заказа *",
+    "orderNumberPlaceholder": "Например, 24",
+    "phoneLabel": "Телефон *",
+    "phonePlaceholder": "+7 …",
+    "errorRequired": "Укажите номер заказа и телефон",
+    "submitBtn": "Проверить статус",
+    "resultTitle": "Заказ №{{number}}",
+    "resultDesc": "Онлайн-трекинг скоро появится. Пока статус можно узнать в Telegram — назовите номер заказа и телефон."
+  },
+  "catalog": {
+    "emptyTitle": "Дизайны скоро появятся",
+    "emptyDesc": "Мы работаем над новой коллекцией. Загляните позже или оформите свой дизайн.",
+    "customCta": "Свой дизайн →",
+    "catalogEmptyTitle": "Каталог пока пуст",
+    "emptySubtitle": "Мы добавляем коллекции — скоро они появятся здесь.",
+    "customDesignCta": "Оформить свой дизайн →",
+    "loadError": "Не удалось загрузить каталог.",
+    "metaDesc": "Коллекции вышивки Balgyn",
+    "groupNotFound": "Группа не найдена.",
+    "collectionNotFound": "Коллекция не найдена.",
+    "collectionsEmptyTitle": "Коллекции скоро появятся",
+    "collectionsEmptySubtitle": "В этой группе пока нет коллекций. Посмотрите другие категории.",
+    "backToCatalog": "← В каталог",
+    "back": "← Назад"
+  }
+}
