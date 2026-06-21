@@ -19,7 +19,7 @@ public class CdekShipmentServiceImpl implements CdekShipmentService {
 
     @Override
     public CdekShipmentResponse getById(Long id) {
-        return cdekMapper.toResponse(cdekShipmentRepository.findById(id)
+        return toResponse(cdekShipmentRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Отправка СДЭК не найдена")));
     }
 
@@ -27,7 +27,22 @@ public class CdekShipmentServiceImpl implements CdekShipmentService {
     public List<CdekShipmentResponse> getAll() {
         return cdekShipmentRepository.findAll()
                 .stream()
-                .map(cdekMapper::toResponse)
+                .map(this::toResponse)
                 .toList();
+    }
+
+    @Override
+    public CdekShipmentResponse getByOrder(Long orderId) {
+        return cdekShipmentRepository.findByOrder_Id(orderId)
+                .map(this::toResponse)
+                .orElse(null);
+    }
+
+    /** Маппинг + признак mock по префиксу UUID. */
+    private CdekShipmentResponse toResponse(com.nurba.java.domain.CdekShipment shipment) {
+        CdekShipmentResponse resp = cdekMapper.toResponse(shipment);
+        resp.setMock(shipment.getCdekOrderUuid() != null
+                && shipment.getCdekOrderUuid().startsWith("MOCK-"));
+        return resp;
     }
 }

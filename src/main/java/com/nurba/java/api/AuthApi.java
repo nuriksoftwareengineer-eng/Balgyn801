@@ -9,6 +9,8 @@ import com.nurba.java.dto.responce.AuthResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,15 +24,23 @@ public interface AuthApi {
 
     @Operation(summary = "Регистрация")
     @PostMapping("/register")
-    AuthResponse register(@Valid @RequestBody RegisterRequest request);
+    AuthResponse register(@Valid @RequestBody RegisterRequest request, HttpServletResponse response);
 
     @Operation(summary = "Вход")
     @PostMapping("/login")
-    AuthResponse login(@Valid @RequestBody LoginRequest request);
+    AuthResponse login(@Valid @RequestBody LoginRequest request, HttpServletResponse response);
 
-    @Operation(summary = "Обновить access-токен по refresh (без пароля)")
+    @Operation(summary = "Обновить access-токен по refresh-токену из тела запроса")
     @PostMapping("/refresh")
     AuthResponse refresh(@Valid @RequestBody RefreshTokenRequest request);
+
+    @Operation(summary = "Обновить access-токен по HttpOnly refresh-cookie (без тела)")
+    @PostMapping("/refresh-cookie")
+    AuthResponse refreshCookie(HttpServletRequest request, HttpServletResponse response);
+
+    @Operation(summary = "Выход — очистить HttpOnly refresh-cookie и отозвать refresh-токен")
+    @PostMapping("/logout")
+    void logout(HttpServletRequest request, HttpServletResponse response);
 
     @Operation(summary = "Текущий пользователь по JWT")
     @GetMapping("/me")

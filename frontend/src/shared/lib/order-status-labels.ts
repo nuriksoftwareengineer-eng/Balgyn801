@@ -19,6 +19,8 @@ const LABELS: Record<OrderStatus, string> = {
   SHIPPED: "Отправлен",
   DELIVERED: "Доставлен",
   CANCELLED: "Отменён",
+  PENDING_PAYMENT: "Ожидает оплаты",
+  EXPIRED: "Просрочен",
 };
 
 export function orderStatusLabel(

@@ -2,20 +2,24 @@ import { motion, useReducedMotion } from "framer-motion";
 import { useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useCart } from "@/app/use-cart";
+import { useCartDrawer } from "@/app/cart-drawer-context";
 import { useProduct } from "@/shared/api/queries";
 import type { Product } from "@/shared/api/types";
 import { formatMoney } from "@/shared/lib/format-money";
 import { cn } from "@/shared/lib/cn";
-import { Button } from "@/shared/ui/button";
 import { Container } from "@/shared/ui/container";
 import { ProductImage } from "@/widgets/ProductImage";
 
 function ProductBuyColumn({ product }: { product: Product }) {
   const { addItem } = useCart();
+  const { openDrawer } = useCartDrawer();
   const navigate = useNavigate();
 
   const sizes = useMemo(
-    () => product.sizes?.filter((s) => s && String(s).trim()) ?? [],
+    () =>
+      product.sizes
+        ?.filter((s) => s && String(s).trim())
+        .map((s) => String(s).trim()) ?? [],
     [product],
   );
   const colors = useMemo(
@@ -24,11 +28,11 @@ function ProductBuyColumn({ product }: { product: Product }) {
     [product],
   );
 
-  const [pickSize, setPickSize] = useState<string | null>(() =>
-    sizes[0] ? String(sizes[0]).trim() : null,
+  const [pickSize, setPickSize] = useState<string | null>(
+    () => sizes[0] ?? null,
   );
-  const [pickColor, setPickColor] = useState<string | null>(() =>
-    colors[0]?.name ? String(colors[0].name).trim() : null,
+  const [pickColor, setPickColor] = useState<string | null>(
+    () => (colors[0]?.name ? String(colors[0].name).trim() : null),
   );
 
   const needSize = sizes.length > 0;
@@ -44,61 +48,71 @@ function ProductBuyColumn({ product }: { product: Product }) {
       size: needSize ? pickSize : null,
       color: needColor ? pickColor : null,
     });
-    navigate("/cart", { state: { justAdded: product.title } });
+    openDrawer();
   }
 
   return (
-    <div className="flex flex-col pt-1">
+    <div className="flex flex-col py-8 lg:px-12 lg:py-0">
       {product.category ? (
-        <p className="mb-1 text-xs font-bold uppercase tracking-[0.12em] text-violet-400/90">
+        <p className="text-[0.6rem] font-medium uppercase tracking-[0.22em] text-[--color-muted]">
           {product.category}
         </p>
       ) : null}
-      <h1 className="font-display text-[clamp(2rem,5vw,3rem)] leading-[1.05] tracking-wide text-zinc-100">
+
+      <h1
+        className="mt-3 font-extrabold uppercase text-black"
+        style={{
+          fontSize: "clamp(1.75rem, 4vw, 3rem)",
+          lineHeight: 1.05,
+          letterSpacing: "-0.02em",
+        }}
+      >
         {product.title}
       </h1>
+
       {product.description ? (
-        <p className="mt-5 whitespace-pre-line text-lg leading-relaxed text-zinc-400">
+        <p className="mt-5 whitespace-pre-line text-sm leading-relaxed text-[--color-muted]">
           {product.description}
         </p>
       ) : null}
 
-      <div className="mt-8 flex flex-wrap items-center gap-4">
-        <span className="text-3xl font-bold text-zinc-100">
+      {/* Price + stock */}
+      <div className="mt-8 flex flex-wrap items-baseline gap-4">
+        <span className="text-2xl font-semibold text-black">
           {formatMoney(product.price)} ₸
         </span>
         <span
           className={cn(
-            "rounded-full px-3 py-1 text-xs font-bold uppercase tracking-[0.06em]",
-            product.inStock
-              ? "bg-green-500/15 text-green-400"
-              : "bg-red-500/12 text-red-400",
+            "text-[0.65rem] uppercase tracking-[0.12em]",
+            product.inStock ? "text-emerald-600" : "text-[--color-danger]",
           )}
         >
           {product.inStock ? "В наличии" : "Нет в наличии"}
         </span>
       </div>
 
+      {/* Size selector */}
       {needSize ? (
         <div className="mt-8">
-          <p className="mb-2 text-sm font-semibold text-zinc-400">Размер</p>
+          <p className="mb-3 text-[0.6rem] uppercase tracking-[0.16em] text-[--color-muted]">
+            Размер
+          </p>
           <div className="flex flex-wrap gap-2">
             {sizes.map((s) => {
-              const label = String(s).trim();
-              const active = pickSize === label;
+              const active = pickSize === s;
               return (
                 <button
-                  key={label}
+                  key={s}
                   type="button"
-                  onClick={() => setPickSize(label)}
+                  onClick={() => setPickSize(s)}
                   className={cn(
-                    "min-w-[2.75rem] rounded-full border px-4 py-2 text-sm font-semibold transition",
+                    "min-w-[3rem] border px-4 py-2.5 text-[0.7rem] font-semibold uppercase tracking-[0.08em] transition-colors duration-150",
                     active
-                      ? "border-violet-500 bg-violet-500/20 text-zinc-100"
-                      : "border-white/15 bg-zinc-900 text-zinc-400 hover:border-violet-500/40 hover:text-zinc-200",
+                      ? "border-black bg-black text-white"
+                      : "border-[--color-border] text-black hover:border-black",
                   )}
                 >
-                  {label}
+                  {s}
                 </button>
               );
             })}
@@ -106,10 +120,13 @@ function ProductBuyColumn({ product }: { product: Product }) {
         </div>
       ) : null}
 
+      {/* Color selector */}
       {needColor ? (
-        <div className="mt-6">
-          <p className="mb-2 text-sm font-semibold text-zinc-400">Цвет</p>
-          <div className="flex flex-wrap gap-3">
+        <div className="mt-7">
+          <p className="mb-3 text-[0.6rem] uppercase tracking-[0.16em] text-[--color-muted]">
+            Цвет{pickColor ? ` — ${pickColor}` : ""}
+          </p>
+          <div className="flex flex-wrap gap-2">
             {colors.map((c) => {
               const name = String(c.name).trim();
               const active = pickColor === name;
@@ -123,15 +140,15 @@ function ProductBuyColumn({ product }: { product: Product }) {
                   type="button"
                   onClick={() => setPickColor(name)}
                   className={cn(
-                    "flex items-center gap-2 rounded-full border px-3 py-2 text-sm font-semibold transition",
+                    "flex items-center gap-2.5 border px-3 py-2.5 text-[0.7rem] font-medium transition-colors duration-150",
                     active
-                      ? "border-violet-500 bg-violet-500/15 text-zinc-100"
-                      : "border-white/15 bg-zinc-900 text-zinc-400 hover:border-violet-500/40 hover:text-zinc-200",
+                      ? "border-black text-black"
+                      : "border-[--color-border] text-[--color-muted] hover:border-black hover:text-black",
                   )}
                 >
                   {hex ? (
                     <span
-                      className="h-5 w-5 rounded-full border border-white/20 shadow-inner"
+                      className="h-3.5 w-3.5 shrink-0 border border-black/10"
                       style={{ backgroundColor: hex }}
                       aria-hidden
                     />
@@ -144,32 +161,32 @@ function ProductBuyColumn({ product }: { product: Product }) {
         </div>
       ) : null}
 
+      {/* CTA buttons */}
       <div className="mt-10 flex flex-wrap gap-3">
-        <Button
+        <button
           type="button"
-          variant="primary"
-          className="rounded-full px-8"
           disabled={!canAdd}
           onClick={handleAddToCart}
+          className="flex-1 bg-black py-4 text-[13px] font-bold uppercase tracking-[0.14em] text-white transition hover:bg-zinc-800 disabled:opacity-40 sm:min-w-[200px] sm:flex-none sm:px-8"
         >
-          {product.inStock ? "В корзину" : "Ожидаем поступление"}
-        </Button>
-        <Button
+          {product.inStock ? "В корзину" : "Нет в наличии"}
+        </button>
+        <button
           type="button"
-          variant="outline"
-          className="rounded-full"
           onClick={() => navigate("/catalog")}
+          className="border border-[--color-border] px-6 py-4 text-[13px] font-bold uppercase tracking-[0.14em] text-black transition hover:border-black"
         >
-          Другие модели
-        </Button>
+          К каталогу
+        </button>
       </div>
     </div>
   );
 }
 
 export function ProductPage() {
-  const { productId } = useParams<{ productId: string }>();
-  const id = Number.parseInt(productId ?? "", 10);
+  // param is the catch-all name used by CatalogParamPage dispatcher; productId is the legacy route name
+  const { productId, param } = useParams<{ productId?: string; param?: string }>();
+  const id = Number.parseInt((productId ?? param) ?? "", 10);
   const navigate = useNavigate();
   const reduceMotion = useReducedMotion();
 
@@ -177,29 +194,42 @@ export function ProductPage() {
     Number.isFinite(id) && id > 0 ? id : undefined,
   );
 
-  const dur = reduceMotion ? 0 : 0.45;
-
   if (!Number.isFinite(id) || id <= 0) {
     return (
       <Container className="py-16">
-        <p className="text-zinc-400">Некорректная ссылка на товар.</p>
-        <Button type="button" variant="outline" className="mt-6" onClick={() => navigate("/catalog")}>
+        <p className="text-[--color-muted]">Некорректная ссылка на товар.</p>
+        <button
+          type="button"
+          onClick={() => navigate("/catalog")}
+          className="mt-6 bg-black px-6 py-3 text-[12px] font-bold uppercase tracking-[0.14em] text-white transition hover:bg-zinc-800"
+        >
           В каталог
-        </Button>
+        </button>
       </Container>
     );
   }
 
   if (isPending) {
     return (
-      <Container className="py-14">
-        <div className="grid gap-10 lg:grid-cols-2 lg:gap-14">
-          <div className="skeleton-shimmer aspect-[4/5] rounded-[14px] border border-white/10 bg-zinc-900" />
-          <div className="space-y-4 pt-2">
-            <div className="skeleton-shimmer h-8 w-4/5 rounded-md bg-zinc-800" />
-            <div className="skeleton-shimmer h-4 w-full rounded-md bg-zinc-800/80" />
-            <div className="skeleton-shimmer h-4 w-5/6 rounded-md bg-zinc-800/80" />
-            <div className="skeleton-shimmer mt-8 h-12 w-40 rounded-full bg-zinc-800" />
+      <Container className="py-8 md:py-14">
+        <div className="mb-8 h-2.5 w-52 animate-pulse bg-[--color-surface]" />
+        <div className="grid gap-10 lg:grid-cols-2">
+          <div className="aspect-[4/5] animate-pulse bg-[--color-surface]" />
+          <div className="space-y-5 py-4">
+            <div className="h-2.5 w-24 animate-pulse bg-[--color-surface]" />
+            <div className="h-10 w-3/4 animate-pulse bg-[--color-surface]" />
+            <div className="space-y-2.5">
+              <div className="h-2.5 w-full animate-pulse bg-[--color-surface]" />
+              <div className="h-2.5 w-5/6 animate-pulse bg-[--color-surface]" />
+              <div className="h-2.5 w-2/3 animate-pulse bg-[--color-surface]" />
+            </div>
+            <div className="h-8 w-32 animate-pulse bg-[--color-surface]" />
+            <div className="flex gap-2">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-11 w-16 animate-pulse bg-[--color-surface]" />
+              ))}
+            </div>
+            <div className="h-12 w-48 animate-pulse bg-[--color-surface]" />
           </div>
         </div>
       </Container>
@@ -209,12 +239,12 @@ export function ProductPage() {
   if (isError || !product) {
     return (
       <Container className="py-16">
-        <p className="font-semibold text-red-400">
+        <p className="font-medium text-[--color-danger]">
           {error instanceof Error ? error.message : "Не удалось загрузить товар"}
         </p>
         <Link
           to="/catalog"
-          className="mt-6 inline-block font-semibold text-violet-400 hover:underline"
+          className="mt-6 inline-block text-sm font-medium text-black hover:underline"
         >
           ← Назад в каталог
         </Link>
@@ -223,39 +253,43 @@ export function ProductPage() {
   }
 
   return (
-    <div className="py-10 md:py-14">
+    <div className="pb-20 md:pb-28">
       <Container>
-        <motion.div
-          initial={{ opacity: 0, y: reduceMotion ? 0 : 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: dur }}
+        {/* Breadcrumb */}
+        <motion.nav
+          className="flex items-center gap-1.5 py-5 text-[0.6rem] uppercase tracking-[0.14em]"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: reduceMotion ? 0 : 0.3 }}
+          aria-label="Навигация"
         >
-          <nav className="mb-8 text-sm text-zinc-500">
-            <Link to="/" className="hover:text-zinc-300">
-              Главная
-            </Link>
-            <span className="mx-2 text-zinc-600">/</span>
-            <Link to="/catalog" className="hover:text-zinc-300">
-              Каталог
-            </Link>
-            <span className="mx-2 text-zinc-600">/</span>
-            <span className="text-zinc-400">{product.title}</span>
-          </nav>
+          <Link to="/" className="text-[--color-muted] transition hover:text-black">
+            Главная
+          </Link>
+          <span className="text-[--color-border]">/</span>
+          <Link to="/catalog" className="text-[--color-muted] transition hover:text-black">
+            Каталог
+          </Link>
+          <span className="text-[--color-border]">/</span>
+          <span className="text-black">{product.title}</span>
+        </motion.nav>
 
-          <div className="grid gap-10 lg:grid-cols-2 lg:gap-14">
-            <motion.div
-              className="overflow-hidden rounded-[14px] border border-white/10 bg-zinc-900"
-              initial={{ opacity: 0, scale: reduceMotion ? 1 : 0.98 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: dur, delay: reduceMotion ? 0 : 0.06 }}
-            >
-              <div className="relative aspect-[4/5] bg-gradient-to-br from-zinc-800 to-zinc-950">
-                <ProductImage product={product} />
-              </div>
-            </motion.div>
-
-            <ProductBuyColumn key={product.id} product={product} />
+        {/* Content grid */}
+        <motion.div
+          className="grid items-start gap-10 border-t border-[--color-border] pt-8 lg:grid-cols-2 lg:gap-0 lg:pt-0"
+          initial={{ opacity: 0, y: reduceMotion ? 0 : 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: reduceMotion ? 0 : 0.45, ease: [0.22, 1, 0.36, 1] }}
+        >
+          {/* Image — sticky on desktop */}
+          <div className="lg:sticky lg:top-[96px] lg:py-12">
+            <div className="aspect-[4/5] overflow-hidden bg-[--color-surface]">
+              <ProductImage product={product} />
+            </div>
           </div>
+
+          {/* Info */}
+          <ProductBuyColumn key={product.id} product={product} />
         </motion.div>
       </Container>
     </div>

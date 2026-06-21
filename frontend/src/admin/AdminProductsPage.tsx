@@ -154,7 +154,7 @@ export function AdminProductsPage() {
               required
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="rounded-[10px] border border-white/10 bg-zinc-950 px-3 py-2 text-zinc-100 outline-none focus:border-violet-500/40 focus:ring-2 focus:ring-violet-500/30"
+              className="rounded-[10px] border border-white/10 bg-zinc-950 px-3 py-2 text-zinc-100 outline-none focus:border-white/40 focus:ring-2 focus:ring-white/20"
             />
           </label>
           <label className="flex flex-col gap-1 text-sm md:col-span-2">
@@ -163,7 +163,7 @@ export function AdminProductsPage() {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
-              className="resize-y rounded-[10px] border border-white/10 bg-zinc-950 px-3 py-2 text-zinc-100 outline-none focus:border-violet-500/40 focus:ring-2 focus:ring-violet-500/30"
+              className="resize-y rounded-[10px] border border-white/10 bg-zinc-950 px-3 py-2 text-zinc-100 outline-none focus:border-white/40 focus:ring-2 focus:ring-white/20"
             />
           </label>
           <label className="flex flex-col gap-1 text-sm md:col-span-2">
@@ -174,7 +174,7 @@ export function AdminProductsPage() {
               required
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="rounded-[10px] border border-white/10 bg-zinc-950 px-3 py-2 text-zinc-100 outline-none focus:border-violet-500/40 focus:ring-2 focus:ring-violet-500/30"
+              className="rounded-[10px] border border-white/10 bg-zinc-950 px-3 py-2 text-zinc-100 outline-none focus:border-white/40 focus:ring-2 focus:ring-white/20"
             >
               {PRODUCT_CATEGORIES.map((c) => (
                 <option key={c} value={c}>
@@ -191,7 +191,7 @@ export function AdminProductsPage() {
               value={sizesText}
               onChange={(e) => setSizesText(e.target.value)}
               placeholder="S, M, L, XL"
-              className="rounded-[10px] border border-white/10 bg-zinc-950 px-3 py-2 text-zinc-100 outline-none focus:border-violet-500/40 focus:ring-2 focus:ring-violet-500/30"
+              className="rounded-[10px] border border-white/10 bg-zinc-950 px-3 py-2 text-zinc-100 outline-none focus:border-white/40 focus:ring-2 focus:ring-white/20"
             />
           </label>
           <label className="flex flex-col gap-1 text-sm md:col-span-2">
@@ -207,7 +207,7 @@ export function AdminProductsPage() {
               onChange={(e) => setColorsText(e.target.value)}
               rows={4}
               placeholder={"Чёрный #1a1a1a\nБелый"}
-              className="resize-y rounded-[10px] border border-white/10 bg-zinc-950 px-3 py-2 font-mono text-sm text-zinc-100 outline-none focus:border-violet-500/40 focus:ring-2 focus:ring-violet-500/30"
+              className="resize-y rounded-[10px] border border-white/10 bg-zinc-950 px-3 py-2 font-mono text-sm text-zinc-100 outline-none focus:border-white/40 focus:ring-2 focus:ring-white/20"
             />
           </label>
           <label className="flex flex-col gap-1 text-sm">
@@ -217,7 +217,7 @@ export function AdminProductsPage() {
               inputMode="decimal"
               value={price}
               onChange={(e) => setPrice(e.target.value)}
-              className="rounded-[10px] border border-white/10 bg-zinc-950 px-3 py-2 text-zinc-100 outline-none focus:border-violet-500/40 focus:ring-2 focus:ring-violet-500/30"
+              className="rounded-[10px] border border-white/10 bg-zinc-950 px-3 py-2 text-zinc-100 outline-none focus:border-white/40 focus:ring-2 focus:ring-white/20"
             />
           </label>
           <div className="flex flex-col gap-2 text-sm md:col-span-2">
@@ -270,7 +270,7 @@ export function AdminProductsPage() {
               type="checkbox"
               checked={inStock}
               onChange={(e) => setInStock(e.target.checked)}
-              className="h-4 w-4 rounded border-white/20 bg-zinc-950 text-violet-500"
+              className="h-4 w-4 rounded border-white/20 bg-zinc-950 accent-zinc-200"
             />
             <span className="text-zinc-300">В наличии</span>
           </label>
@@ -340,7 +340,7 @@ export function AdminProductsPage() {
                     <td className="px-4 py-3">
                       <Link
                         to={`/catalog/${p.id}`}
-                        className="font-semibold text-violet-400 hover:underline"
+                        className="font-semibold text-zinc-300 underline-offset-2 hover:text-white hover:underline"
                         target="_blank"
                         rel="noopener noreferrer"
                       >

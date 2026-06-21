@@ -18,6 +18,8 @@ public record PaymentResponse(
         String webhookEventId,
         String errorMessage,
         LocalDateTime createdAt,
-        LocalDateTime updatedAt
+        LocalDateTime updatedAt,
+        // Only set on PayPal create-order; used to verify cancel requests.
+        String cancelToken
 ) {
 }

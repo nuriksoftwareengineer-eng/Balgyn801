@@ -36,4 +36,9 @@ public class AppUser {
 
     @Column(nullable = false)
     private Instant createdAt;
+
+    // Incremented on logout; refresh tokens with a different version are rejected.
+    @Column(nullable = false)
+    @Builder.Default
+    private int tokenVersion = 0;
 }

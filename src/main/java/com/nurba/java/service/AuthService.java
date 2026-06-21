@@ -3,8 +3,11 @@ package com.nurba.java.service;
 import com.nurba.java.dto.request.LoginRequest;
 import com.nurba.java.dto.request.RefreshTokenRequest;
 import com.nurba.java.dto.request.RegisterRequest;
+import com.nurba.java.dto.responce.AdminUserResponse;
 import com.nurba.java.dto.responce.AuthMeResponse;
 import com.nurba.java.dto.responce.AuthResponse;
+
+import java.util.List;
 
 public interface AuthService {
 
@@ -13,6 +16,9 @@ public interface AuthService {
     AuthResponse login(LoginRequest request);
 
     AuthResponse refresh(RefreshTokenRequest request);
+
+    /** Обновить токены по сырому значению refresh-токена (из HttpOnly cookie). */
+    AuthResponse refreshWithToken(String rawToken);
 
     AuthMeResponse me(String email);
 
@@ -24,4 +30,10 @@ public interface AuthService {
      * чтобы система не осталась без доступа.
      */
     AuthMeResponse revokeAdmin(String currentAdminEmail, String targetEmail);
+
+    /** Список всех зарегистрированных пользователей (только для ADMIN). */
+    List<AdminUserResponse> listUsers();
+
+    /** Инкрементирует token_version пользователя, инвалидируя все его refresh-токены. */
+    void revokeRefreshTokens(String email);
 }

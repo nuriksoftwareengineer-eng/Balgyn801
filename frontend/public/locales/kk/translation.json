@@ -1,0 +1,444 @@
+{
+  "nav": {
+    "home": "Басты",
+    "catalog": "Каталог",
+    "customDesign": "Өз дизайныңыз",
+    "about": "Біз туралы",
+    "admin": "Басқару",
+    "login": "Кіру",
+    "register": "Тіркелу",
+    "logout": "Шығу",
+    "orders": "Тапсырыстар",
+    "myOrders": "Менің тапсырыстарым",
+    "profile": "Профиль",
+    "cart": "Себет",
+    "contacts": "Байланыс",
+    "allCollections": "Барлық коллекциялар",
+    "loadingCatalog": "Каталог жүктелуде…"
+  },
+  "header": {
+    "openMenu": "Мәзірді ашу",
+    "closeMenu": "Мәзірді жабу",
+    "shrinkCatalog": "Жинау",
+    "expandCatalog": "Кеңейту",
+    "profileLabel": "Профиль",
+    "loginLabel": "Кіру",
+    "cartLabel": "Себет",
+    "cartItems": "Себет, {{count}} дана",
+    "mobileMenu": "Мобильді мәзір"
+  },
+  "auth": {
+    "loginHeading": "Кіру",
+    "registerHeading": "Аккаунт жасау",
+    "loginLinkText": "Кіру",
+    "registerLinkText": "Тіркелу",
+    "loginError": "Кіру мүмкін болмады",
+    "noAccount": "Аккаунт жоқ па?",
+    "registerError": "Тіркелу мүмкін болмады",
+    "haveAccount": "Аккаунт бар ма?",
+    "password": "Құпия сөз",
+    "passwordHint": "(8 таңбадан кем емес)",
+    "accountCreated": "Аккаунт жасалды. Кіріңіз.",
+    "creatingAccount": "Жасалуда…",
+    "loggingIn": "Кірілуде…",
+    "createAccount": "Аккаунт жасау"
+  },
+  "profile": {
+    "title": "Профиль",
+    "myOrders": "Менің тапсырыстарым →",
+    "adminPanel": "Басқару панелі →",
+    "logout": "Аккаунттан шығу"
+  },
+  "payment": {
+    "selectMethod": "Төлем",
+    "methodDescription": "Төлем тәсілін таңдап, төлем нысанына өтіңіз.",
+    "payBtn": "Төлеу",
+    "payingBtn": "Өтуде…",
+    "freedomPayLabel": "Freedom Pay",
+    "freedomPayDesc": "Қазақстандағы картамен төлем",
+    "paypalLabel": "PayPal",
+    "paypalDesc": "Халықаралық төлемдер",
+    "bankCard": "Банктік карта",
+    "confirming": "Төлемді растап жатырмыз…",
+    "bankCardDesc": "Қауіпсіз онлайн төлем",
+    "kaspi": "Kaspi Bank",
+    "halyk": "Halyk Bank",
+    "kazakhCards": "Қазақстан банктерінің карталары",
+    "intlCards": "Халықаралық карталар",
+    "paypalAccount": "PayPal аккаунты",
+    "success": {
+      "title": "Төлем сәтті өтті",
+      "subtitle": "Төлем расталды. Сатып алғаныңызға рахмет!",
+      "orderNumber": "Тапсырыс нөмірі",
+      "amount": "Сомасы",
+      "method": "Төлем тәсілі",
+      "toOrders": "Менің тапсырыстарым",
+      "toCatalog": "Каталогқа"
+    },
+    "failed": {
+      "title": "Төлем орындалмады",
+      "subtitle": "Төлемді өңдеу кезінде қате орын алды. Қайталап көріңіз немесе басқа төлем тәсілін таңдаңыз.",
+      "orderNumber": "Тапсырыс нөмірі",
+      "retry": "Қайтадан көру",
+      "toCart": "Себетке оралу",
+      "toCatalog": "Каталогқа"
+    },
+    "cancelled": {
+      "title": "Төлем болдырылмады",
+      "subtitle": "Төлемді болдырмадыңыз. Тапсырыс сақталды және төлемді күтуде.",
+      "orderNumber": "Тапсырыс нөмірі",
+      "retry": "Тапсырысты төлеу",
+      "toCart": "Себетке оралу",
+      "toCatalog": "Каталогқа"
+    }
+  },
+  "orders": {
+    "title": "Менің тапсырыстарым",
+    "empty": "Тапсырыстар жоқ.",
+    "emptySubtitle": "Кесте каталогымызда алғашқы тапсырыс беріңіз.",
+    "toCatalog": "Каталогқа өту",
+    "order": "Тапсырыс",
+    "delivery": "Жеткізу",
+    "comment": "Пікір",
+    "status": {
+      "NEW": "Жаңа",
+      "CONFIRMED": "Расталды",
+      "IN_PRODUCTION": "Өндірісте",
+      "READY": "Дайын",
+      "SHIPPED": "Жіберілді",
+      "DELIVERED": "Жеткізілді",
+      "CANCELLED": "Болдырылмады",
+      "PENDING_PAYMENT": "Төлемді күтуде",
+      "EXPIRED": "Мерзімі өтті"
+    },
+    "delivery_type": {
+      "PICKUP": "Өзін-өзі алу",
+      "TAXI": "Такси / курьер",
+      "CDEK": "СДЭК",
+      "POSTAL": "Қазпошта",
+      "INTERNATIONAL": "Халықаралық жеткізу"
+    },
+    "payment_provider": {
+      "FREEDOM_PAY": "Freedom Pay",
+      "PAYPAL": "PayPal"
+    },
+    "payNow": "Төлеу"
+  },
+  "recovery": {
+    "title": "Аяқталмаған тапсырыс",
+    "order": "Тапсырыс №{{id}}",
+    "subtitle": "Тапсырыс төлемді күтуде. Қазір төлеңіз — бір сағаттан кейін автоматты түрде болдырылмайды.",
+    "card": "Банктік карта",
+    "dismiss": "Тапсырысты болдырмау"
+  },
+  "notFound": {
+    "code": "404",
+    "title": "Бет табылмады",
+    "description": "Сілтеме ескірген немесе бет жойылған болуы мүмкін.",
+    "toHome": "Басты бетке",
+    "toCatalog": "Каталогқа"
+  },
+  "currency": {
+    "label": "Валюта",
+    "KZT": "₸ KZT",
+    "USD": "$ USD",
+    "EUR": "€ EUR",
+    "RUB": "₽ RUB"
+  },
+  "language": {
+    "ru": "RU",
+    "kk": "KZ",
+    "en": "EN"
+  },
+  "cart": {
+    "empty": "Себет бос",
+    "emptyHint": "Каталогтан бірдеңе қосыңыз",
+    "emptyAction": "Себет бос — каталогты қараңыз.",
+    "toCatalog": "Каталогқа",
+    "title": "Себет",
+    "close": "Жабу",
+    "remove": "Жою",
+    "decrease": "1 азайту",
+    "increase": "1 қосу",
+    "decreaseQty": "Азайту",
+    "increaseQty": "Қосу",
+    "total": "Барлығы",
+    "checkout": "Тапсырыс беру",
+    "clearCart": "Тазалау",
+    "hide": "Жасыру",
+    "backToCatalog": "← Каталогқа",
+    "addedToCart": "«{{title}}» себетке қосылды.",
+    "items_one": "{{count}} позиция",
+    "items_few": "{{count}} позиция",
+    "items_many": "{{count}} позиция",
+    "goods_one": "{{count}} тауар",
+    "goods_few": "{{count}} тауар",
+    "goods_many": "{{count}} тауар",
+    "checkoutFlow": {
+      "title": "Тапсырысты рәсімдеу",
+      "stepOf": "{{step}} қадам / 5",
+      "back": "← Артқа",
+      "backToCart": "← Себет",
+      "continue": "Жалғастыру",
+      "submit": "Тапсырысты растау",
+      "submitting": "Орналастыруда…",
+      "comment": "Тапсырысқа пікір",
+      "commentPlaceholder": "Өлшем, түс, жеткізу бойынша тілектер…",
+      "freeDelivery": "Жеткізу тегін",
+      "paidOnReceipt": "алғанда төлем",
+      "steps": {
+        "contacts": "Байланыс",
+        "region": "Аймақ",
+        "delivery": "Жеткізу",
+        "details": "Егжей",
+        "summary": "Қорытынды"
+      }
+    },
+    "summary": {
+      "yourOrder": "Сіздің тапсырысыңыз",
+      "items": "Тауарлар",
+      "cdekDelivery": "СДЭК жеткізу",
+      "atReceipt": "алғанда",
+      "onAgreement": "келісім бойынша"
+    },
+    "order": {
+      "accepted": "Тапсырыс қабылданды",
+      "amount": "Сомасы",
+      "delivery": "Жеткізу",
+      "cdekDelivery": "СДЭК жеткізу",
+      "payOnReceipt": "алғанда төлем",
+      "contactNote": "Біз сізбен көрсетілген телефон нөмірі арқылы байланысамыз.",
+      "payment": "Төлем",
+      "paymentDesc": "Төлем тәсілін таңдап, төлем нысанына өтіңіз.",
+      "address": "Мекенжай: ",
+      "apt": "пән/кеңсе",
+      "close": "Жабу",
+      "toCatalog": "Каталогқа"
+    },
+    "form": {
+      "optional": "(міндетті емес)",
+      "contactsDesc": "Байланыс деректерін енгізіңіз — тапсырысты алғаннан кейін хабарласамыз.",
+      "name": "Аты *",
+      "phone": "Телефон *",
+      "regionDesc": "Жеткізу аймағын таңдаңыз.",
+      "methodDesc": "Тапсырысты алу тәсілін таңдаңыз.",
+      "loadingMethods": "Жеткізу тәсілдері жүктелуде…",
+      "loadMethodsError": "Жеткізу тәсілдерін жүктеу мүмкін болмады. Қайталап көріңіз.",
+      "noMethods": "Таңдалған ел үшін жеткізу тәсілдері табылмады.",
+      "availableIn": "Тек осында қолжетімді:",
+      "free": "Тегін",
+      "fromPrice": "{{price}} ₸ бастап",
+      "onAgreement": "келісім бойынша",
+      "pickupDesc": "Тапсырысты рәсімдегеннен кейін алу уақыты мен орнын нақтылау үшін хабарласамыз. Жеткізу тегін.",
+      "cdekDesc": "Қала атын енгізіп, СДЭК пунктін таңдаңыз. Жеткізу мерзімі автоматты түрде есептеледі.",
+      "citySearch": "Қала іздеу *",
+      "cityPlaceholder": "Мысалы, Алматы",
+      "searchingCities": "Қалалар ізделуде…",
+      "pvzCount": "СДЭК беру нүктесі * ({{count}} / {{total}})",
+      "pvzPlaceholder": "Беру нүктесін таңдаңыз…",
+      "pvzFilter": "Код, көше немесе мекенжай",
+      "pvzNotFound": "Ештеңе табылмады",
+      "pvzEmpty": "Бұл қала үшін ПВЗ тізімі бос. Басқа қаланы көріңіз.",
+      "loadingPvz": "Беру нүктелері жүктелуде…",
+      "cdekCost": "Жеткізу құны:",
+      "cdekAtReceipt": "алғанда төлем",
+      "deliveryDays": "Мерзім: {{min}}–{{max}} күн",
+      "recipientSection": "Алушы деректері",
+      "recipientName": "Алушының аты *",
+      "recipientPhone": "Алушының телефоны *",
+      "addressDesc": "Жеткізу мекенжайын енгізіңіз.",
+      "cityLabel": "Қала *",
+      "street": "Көше, үй *",
+      "apt": "Пән / кеңсе *",
+      "aptPlaceholder": "Жоқ — «—»",
+      "postal": "Индекс",
+      "recipient": "Алушы *",
+      "summaryDesc": "Тапсырысты рәсімдеу алдында деректерді тексеріңіз.",
+      "contactsSection": "Байланыс",
+      "edit": "Өзгерту",
+      "nameLabel": "Аты",
+      "phoneLabel": "Телефон",
+      "deliverySection": "Жеткізу",
+      "regionLabel": "Аймақ",
+      "methodLabel": "Тәсіл",
+      "addressLabel": "Мекенжай",
+      "cdekCity": "СДЭК қаласы",
+      "pvzLabel": "Беру нүктесі",
+      "recipientLabel": "Алушы",
+      "cdekDeliveryLabel": "СДЭК жеткізу",
+      "costLabel": "Құны",
+      "goodsSection": "Тауарлар"
+    },
+    "regions": {
+      "KZ": "Қазақстан",
+      "KZ_hint": "Қазақстан бойынша жеткізу",
+      "RU": "РФ / ТМД",
+      "RU_hint": "Ресей, Беларусь және ТМД елдері",
+      "US": "Басқа елдер",
+      "US_hint": "Бүкіл әлем бойынша халықаралық жеткізу"
+    },
+    "errors": {
+      "fillRequired": "Барлық міндетті өрістерді толтырыңыз",
+      "calculating": "Күтіңіз, жеткізу мерзімін есептеп жатырмыз…",
+      "selectCdekPoint": "СДЭК беру нүктесін таңдаңыз",
+      "cdekAddressRequired": "Қала мен СДЭК беру нүктесін таңдаңыз",
+      "orderFailed": "Тапсырысты рәсімдеу мүмкін болмады",
+      "cdekDeliveryError": "СДЭК жеткізу мерзімін есептеу мүмкін болмады",
+      "paymentFailed": "Төлемді бастау мүмкін болмады",
+      "paypalError": "PayPal растау сілтемесін қайтармады. Кейінірек қайталаңыз.",
+      "paymentUrlError": "Төлем URL алынбады. Кейінірек қайталаңыз."
+    }
+  },
+  "design": {
+    "notFound": "Дизайн табылмады",
+    "back": "← Артқа",
+    "noVariants": "Бұл дизайн үшін қолжетімді нұсқалар жоқ.",
+    "garment": "Бұйым",
+    "color": "Түс",
+    "colorSelected": "Түс: {{name}}",
+    "size": "Өлшем",
+    "sizeChart": "Өлшем кестесі",
+    "addToCart": "Себетке",
+    "added": "Қосылды ✓",
+    "selectGarment": "Бұйымды таңдаңыз",
+    "selectColor": "Түсті таңдаңыз",
+    "selectSize": "Өлшемді таңдаңыз",
+    "selectAll": "Бұйым, түс және өлшем таңдаңыз"
+  },
+  "errors": {
+    "loadFailed": "Жүктеу қатесі",
+    "noProducts": "Бұл санатта тауарлар жоқ.",
+    "loadCatalog": "Каталогты жүктеу мүмкін болмады.",
+    "collectionNotFound": "Коллекция табылмады.",
+    "groupNotFound": "Топ табылмады."
+  },
+  "home": {
+    "announcement": "Тапсырыс сомасынан тегін жеткізу · Апта сайын жаңа дроп",
+    "trust": {
+      "delivery": { "title": "Жеткізу", "desc": "Бүкіл әлем бойынша" },
+      "embroidery": { "title": "Кесте", "desc": "Алматы, KZ" },
+      "quality": { "title": "Сапа", "desc": "100% Cotton" }
+    },
+    "hero": {
+      "badge": "Бүкіл әлемге жеткізу!",
+      "tagline": "Стиліңе жаңалық әкелеміз.",
+      "cta": "Коллекцияны қарау"
+    },
+    "values": {
+      "embroidery": { "title": "Қол кесте", "desc": "Әрбір кесте өзіміздің технологиямен қолмен жасалады." },
+      "unique": { "title": "Бірегей дизайндар", "desc": "Ешнәрсеге ұқсамайтын авторлық графикалық образдар." },
+      "quality": { "title": "Материал сапасы", "desc": "Тек үздік маталарды таңдаймыз: тығыз мақта, Premium fleece." },
+      "limited": { "title": "Шектеулі тираж", "desc": "Аз партиялар әрбір затты ерекше етеді." }
+    },
+    "bestSellers": {
+      "title": "Хиттер",
+      "desc": "Бренд редакциясы соңғы ай бойынша пікірлер мен сатылымдар негізінде таңдады.",
+      "empty": "Жақында хит сатылымдар пайда болады."
+    },
+    "instagram": {
+      "follow": "Жазылу",
+      "imageAlt": "BALGYN Instagram-да"
+    },
+    "featured": {
+      "tag": "Жаңа дроп",
+      "viewAll": "Барлығын көру",
+      "empty": "Өнімдер жақында пайда болады."
+    },
+    "about": {
+      "title": "Бренд туралы",
+      "desc": "Balgyn — Алматыдан шыққан embroidery бренді, жеке стильді және қол кесте сапасын бағалайтындарға арналған.",
+      "stat1": { "value": "Тираж", "label": "Аз партиялар" },
+      "stat2": { "value": "Материал", "label": "100% мақта" },
+      "stat3": { "value": "Тігу", "label": "Алматы" }
+    },
+    "categories": {
+      "viewAll": "Қарау →"
+    }
+  },
+  "footer": {
+    "marquee": {
+      "fresh": "жаңа бол",
+      "embroidery": "кесте · алматы"
+    },
+    "shop": {
+      "title": "Дүкен",
+      "catalog": "Каталог",
+      "customDesign": "Өз дизайны",
+      "about": "Біз туралы"
+    },
+    "help": {
+      "title": "Көмек",
+      "delivery": "Жеткізу және төлем",
+      "returns": "Қайтару және айырбас",
+      "trackOrder": "Тапсырысты бақылау",
+      "contacts": "Байланыс"
+    },
+    "social": {
+      "title": "Әлеуметтік желілер"
+    },
+    "newsletter": {
+      "title": "Жаңалықтар",
+      "desc": "Тек жаңартулар мен дроп-релиздер.",
+      "follow": "Instagram-да жазылу →"
+    },
+    "rights": "© {{year}} BALGYN · Барлық құқықтар қорғалған · Алматы, KZ",
+    "legal": {
+      "privacy": "Саясат",
+      "terms": "Оферта",
+      "returns": "Қайтару"
+    }
+  },
+  "product": {
+    "soldOut": "Таусылды",
+    "inStock": "Қолда бар",
+    "outOfStock": "Қолда жоқ",
+    "selectSize": "Өлшемді таңдаңыз",
+    "addToCart": "Себетке",
+    "comingSoon": "Келуін күтіп жатырмыз"
+  },
+  "customDesign": {
+    "title": "Өз дизайныңыз",
+    "lead": "Нысанды толтырыңыз — батырманы басыңыз, Telegram дайын хабармен ашылады. Бізге тек жіберу ғана қалады.",
+    "nameLabel": "Аты *",
+    "namePlaceholder": "Сіздің атыңыз",
+    "phoneLabel": "Телефон немесе Telegram *",
+    "phonePlaceholder": "+7 … немесе @username",
+    "descLabel": "Сипаттама *",
+    "descPlaceholder": "Не кестелеу керек, неге, мысалдар…",
+    "wishesLabel": "Тілектер",
+    "wishesPlaceholder": "Түс, өлшем, мерзім…",
+    "commentLabel": "Пікір",
+    "commentPlaceholder": "Кез келген қосымша ақпарат",
+    "optional": "(міндетті емес)",
+    "errorRequired": "Атыңызды, телефоныңызды және сипаттаманы толтырыңыз",
+    "submitBtn": "Telegram-ға жіберу"
+  },
+  "trackOrder": {
+    "title": "Тапсырысты бақылау",
+    "lead": "Тапсырыс нөмірін және ол рәсімделген телефонды енгізіңіз.",
+    "orderNumberLabel": "Тапсырыс нөмірі *",
+    "orderNumberPlaceholder": "Мысалы, 24",
+    "phoneLabel": "Телефон *",
+    "phonePlaceholder": "+7 …",
+    "errorRequired": "Тапсырыс нөмірі мен телефонды енгізіңіз",
+    "submitBtn": "Мәртебені тексеру",
+    "resultTitle": "Тапсырыс №{{number}}",
+    "resultDesc": "Онлайн-трекинг жақында пайда болады. Қазір мәртебені Telegram-да білуге болады — тапсырыс нөмірін және телефонды айтыңыз."
+  },
+  "catalog": {
+    "emptyTitle": "Дизайндар жақында пайда болады",
+    "emptyDesc": "Біз жаңа коллекциямен жұмыс жасап жатырмыз. Кейінірек кіріңіз немесе өз дизайныңызды жасаңыз.",
+    "customCta": "Өз дизайны →",
+    "catalogEmptyTitle": "Каталог әзірше бос",
+    "emptySubtitle": "Біз коллекциялар қосып жатырмыз — жақында пайда болады.",
+    "customDesignCta": "Өз дизайныңызды рәсімдеу →",
+    "loadError": "Каталогты жүктеу мүмкін болмады.",
+    "metaDesc": "Balgyn кестесі коллекциялары",
+    "groupNotFound": "Топ табылмады.",
+    "collectionNotFound": "Коллекция табылмады.",
+    "collectionsEmptyTitle": "Коллекциялар жақында пайда болады",
+    "collectionsEmptySubtitle": "Бұл топта әзірше коллекциялар жоқ. Басқа санаттарды қараңыз.",
+    "backToCatalog": "← Каталогқа",
+    "back": "← Артқа"
+  }
+}

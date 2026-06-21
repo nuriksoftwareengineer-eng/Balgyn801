@@ -7,7 +7,7 @@ export function PageLoadFallback() {
       aria-live="polite"
     >
       <div
-        className="h-8 w-8 animate-spin rounded-full border-2 border-white/10 border-t-violet-500"
+        className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-200 border-t-black"
         aria-hidden
       />
       <span className="text-sm">Загрузка…</span>

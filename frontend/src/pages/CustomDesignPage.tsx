@@ -1,147 +1,161 @@
 import { type FormEvent, useState } from "react";
 import { Link } from "react-router-dom";
-import {
-  CONTACT_EMAIL,
-  STORE_TELEGRAM_URL,
-} from "@/shared/constants/store-content";
-import { Button } from "@/shared/ui/button";
+import { useTranslation } from "react-i18next";
+import { STORE_TELEGRAM_URL } from "@/shared/constants/store-content";
 import { Container } from "@/shared/ui/container";
 
+const inputClass =
+  "w-full border-b border-[--color-border] bg-transparent py-3 text-[15px] text-black outline-none transition placeholder:text-[--color-muted] focus:border-black";
+
+const labelClass =
+  "text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-[--color-muted]";
+
+function tgUsername(url: string): string {
+  return url.replace(/^https?:\/\/t\.me\//, "").split("?")[0];
+}
+
 export function CustomDesignPage() {
+  const { t } = useTranslation();
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [description, setDescription] = useState("");
-  const [referenceUrl, setReferenceUrl] = useState("");
+  const [wishes, setWishes] = useState("");
+  const [comment, setComment] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [hint, setHint] = useState(false);
+
+  function buildTelegramLink(): string {
+    // Message to store owner is always in Russian (business language)
+    const message = [
+      "Новая заявка BALGYN",
+      "",
+      `Имя: ${name.trim()}`,
+      `Телефон: ${phone.trim()}`,
+      `Описание: ${description.trim()}`,
+      `Пожелания: ${wishes.trim() || "—"}`,
+      `Комментарий: ${comment.trim() || "—"}`,
+    ].join("\n");
+
+    const username = tgUsername(STORE_TELEGRAM_URL);
+    return `https://t.me/${username}?text=${encodeURIComponent(message)}`;
+  }
 
   function submit(e: FormEvent) {
     e.preventDefault();
     setError(null);
     if (!name.trim() || !phone.trim() || !description.trim()) {
-      setError("Заполните имя, телефон и описание идеи");
+      setError(t("customDesign.errorRequired"));
       return;
     }
-    const subject = encodeURIComponent("Заявка: свой дизайн BALGYN");
-    const body = encodeURIComponent(
-      `Имя: ${name.trim()}\nТелефон: ${phone.trim()}\n\nИдея / ТЗ:\n${description.trim()}\n\nРеференс (ссылка): ${referenceUrl.trim() || "—"}\n`,
-    );
-    window.location.href = `mailto:${CONTACT_EMAIL}?subject=${subject}&body=${body}`;
-    setHint(true);
+    window.open(buildTelegramLink(), "_blank", "noopener,noreferrer");
   }
 
   return (
-    <div className="py-12 md:py-16">
-      <Container className="max-w-2xl">
-        <Link
-          to="/"
-          className="mb-6 inline-block text-sm font-semibold text-violet-400 hover:underline"
-        >
-          ← На главную
-        </Link>
-        <h1 className="font-display text-4xl tracking-wide text-zinc-100 md:text-5xl">
-          Свой дизайн
-        </h1>
-        <p className="mt-4 text-lg leading-relaxed text-zinc-400">
-          Опишите задачу — откроется черновик письма на нашу почту. Так мы
-          соберём заявки до запуска полноценной формы в личном кабинете.
-        </p>
+    <>
+      {/* ── Hero ─────────────────────────────────────────────── */}
+      <div className="border-b border-[--color-border] bg-black">
+        <Container className="py-12 md:py-16">
+          <nav className="mb-5 flex items-center gap-2 text-[0.55rem] uppercase tracking-[0.16em] text-white/40">
+            <Link to="/" className="transition hover:text-white/70">{t("nav.home")}</Link>
+            <span>/</span>
+            <span className="text-white/70">{t("customDesign.title")}</span>
+          </nav>
+          <h1 className="text-4xl font-extrabold uppercase tracking-[-0.02em] text-white md:text-6xl">
+            {t("customDesign.title")}
+          </h1>
+        </Container>
+      </div>
 
-        <ol className="mt-8 space-y-3 text-sm text-zinc-500">
-          <li>
-            <span className="font-semibold text-violet-400">1.</span> Текст,
-            логотип или ссылка на референс
-          </li>
-          <li>
-            <span className="font-semibold text-violet-400">2.</span> Желаемая
-            вещь (худи, футболка, размер)
-          </li>
-          <li>
-            <span className="font-semibold text-violet-400">3.</span> Мы ответим
-            с ориентиром по цене и сроку
-          </li>
-        </ol>
+      {/* ── Content ──────────────────────────────────────────── */}
+      <Container className="py-10 md:py-14">
+        <div className="max-w-2xl">
+          <p className="mb-10 text-[15px] leading-relaxed text-[--color-muted]">
+            {t("customDesign.lead")}
+          </p>
 
-        <form
-          onSubmit={submit}
-          className="mt-10 space-y-5 rounded-[14px] border border-white/10 bg-zinc-900/40 p-6 md:p-8"
-        >
-          <label className="flex flex-col gap-1.5 text-sm">
-            <span className="text-zinc-400">Имя</span>
-            <input
-              required
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="rounded-[10px] border border-white/10 bg-zinc-950 px-3 py-2.5 text-zinc-100 outline-none focus:border-violet-500/40 focus:ring-2 focus:ring-violet-500/25"
-            />
-          </label>
-          <label className="flex flex-col gap-1.5 text-sm">
-            <span className="text-zinc-400">Телефон или Telegram</span>
-            <input
-              required
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="+7 … или @username"
-              className="rounded-[10px] border border-white/10 bg-zinc-950 px-3 py-2.5 text-zinc-100 outline-none focus:border-violet-500/40 focus:ring-2 focus:ring-violet-500/25"
-            />
-          </label>
-          <label className="flex flex-col gap-1.5 text-sm">
-            <span className="text-zinc-400">Описание идеи</span>
-            <textarea
-              required
-              rows={5}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Что вышить, цвета, размер, пожелания…"
-              className="resize-y rounded-[10px] border border-white/10 bg-zinc-950 px-3 py-2.5 text-zinc-100 outline-none focus:border-violet-500/40 focus:ring-2 focus:ring-violet-500/25"
-            />
-          </label>
-          <label className="flex flex-col gap-1.5 text-sm">
-            <span className="text-zinc-400">Ссылка на референс (необязательно)</span>
-            <input
-              type="url"
-              value={referenceUrl}
-              onChange={(e) => setReferenceUrl(e.target.value)}
-              placeholder="https://…"
-              className="rounded-[10px] border border-white/10 bg-zinc-950 px-3 py-2.5 text-zinc-100 outline-none focus:border-violet-500/40 focus:ring-2 focus:ring-violet-500/25"
-            />
-          </label>
+          <form onSubmit={submit} className="flex flex-col gap-8">
+            <label className="flex flex-col gap-1.5">
+              <span className={labelClass}>{t("customDesign.nameLabel")}</span>
+              <input
+                required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder={t("customDesign.namePlaceholder")}
+                className={inputClass}
+              />
+            </label>
 
-          {error ? (
-            <p className="text-sm font-medium text-red-400">{error}</p>
-          ) : null}
-          {hint ? (
-            <p className="text-sm text-zinc-300">
-              Если почта не открылась — дублируйте заявку в{" "}
-              <a
-                href={STORE_TELEGRAM_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-semibold text-violet-400 hover:underline"
-              >
-                Telegram
-              </a>
-              .
-            </p>
-          ) : null}
+            <label className="flex flex-col gap-1.5">
+              <span className={labelClass}>{t("customDesign.phoneLabel")}</span>
+              <input
+                required
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder={t("customDesign.phonePlaceholder")}
+                className={inputClass}
+              />
+            </label>
 
-          <div className="flex flex-wrap gap-3 pt-2">
-            <Button type="submit" variant="primary" className="rounded-full px-8">
-              Отправить заявку
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              className="rounded-full"
-              onClick={() =>
-                window.open(STORE_TELEGRAM_URL, "_blank", "noopener,noreferrer")
-              }
+            <label className="flex flex-col gap-1.5">
+              <span className={labelClass}>{t("customDesign.descLabel")}</span>
+              <textarea
+                required
+                rows={4}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder={t("customDesign.descPlaceholder")}
+                className={`${inputClass} resize-y`}
+              />
+            </label>
+
+            <label className="flex flex-col gap-1.5">
+              <span className={labelClass}>
+                {t("customDesign.wishesLabel")}{" "}
+                <span className="normal-case font-normal tracking-normal">
+                  {t("customDesign.optional")}
+                </span>
+              </span>
+              <textarea
+                rows={3}
+                value={wishes}
+                onChange={(e) => setWishes(e.target.value)}
+                placeholder={t("customDesign.wishesPlaceholder")}
+                className={`${inputClass} resize-y`}
+              />
+            </label>
+
+            <label className="flex flex-col gap-1.5">
+              <span className={labelClass}>
+                {t("customDesign.commentLabel")}{" "}
+                <span className="normal-case font-normal tracking-normal">
+                  {t("customDesign.optional")}
+                </span>
+              </span>
+              <input
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                placeholder={t("customDesign.commentPlaceholder")}
+                className={inputClass}
+              />
+            </label>
+
+            {error ? (
+              <p className="text-[13px] font-medium text-[--color-danger]" role="alert">
+                {error}
+              </p>
+            ) : null}
+
+            <button
+              type="submit"
+              className="mt-2 flex w-full items-center justify-center gap-3 bg-black py-4 text-[13px] font-bold uppercase tracking-[0.14em] text-white transition hover:bg-zinc-800 sm:w-auto sm:px-10"
             >
-              Telegram
-            </Button>
-          </div>
-        </form>
+              <svg viewBox="0 0 24 24" className="h-5 w-5 fill-current" aria-hidden="true">
+                <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
+              </svg>
+              {t("customDesign.submitBtn")}
+            </button>
+          </form>
+        </div>
       </Container>
-    </div>
+    </>
   );
 }

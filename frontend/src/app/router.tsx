@@ -2,18 +2,26 @@ import { lazy, Suspense } from "react";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { AdminLayout } from "@/admin/AdminLayout";
 import { RequireAdmin } from "@/admin/RequireAdmin";
+import { RequireAuth } from "@/app/RequireAuth";
 import { AuthShellLayout } from "@/pages/AuthShellLayout";
 import { MainLayout } from "@/pages/MainLayout";
 import { PageLoadFallback } from "@/shared/ui/page-load-fallback";
+import { ErrorBoundary } from "@/shared/ui/error-boundary";
 
 const HomePage = lazy(() =>
   import("@/pages/HomePage").then((m) => ({ default: m.HomePage })),
 );
-const CatalogPage = lazy(() =>
-  import("@/pages/CatalogPage").then((m) => ({ default: m.CatalogPage })),
+const CatalogIndexPage = lazy(() =>
+  import("@/pages/CatalogIndexPage").then((m) => ({ default: m.CatalogIndexPage })),
 );
-const ProductPage = lazy(() =>
-  import("@/pages/ProductPage").then((m) => ({ default: m.ProductPage })),
+const CatalogParamPage = lazy(() =>
+  import("@/pages/CatalogParamPage").then((m) => ({ default: m.CatalogParamPage })),
+);
+const CollectionPage = lazy(() =>
+  import("@/pages/CollectionPage").then((m) => ({ default: m.CollectionPage })),
+);
+const DesignPage = lazy(() =>
+  import("@/pages/DesignPage").then((m) => ({ default: m.DesignPage })),
 );
 const CartPage = lazy(() =>
   import("@/pages/CartPage").then((m) => ({ default: m.CartPage })),
@@ -26,6 +34,28 @@ const CustomDesignPage = lazy(() =>
 const AboutPage = lazy(() =>
   import("@/pages/AboutPage").then((m) => ({ default: m.AboutPage })),
 );
+const TermsPage = lazy(() =>
+  import("@/pages/TermsPage").then((m) => ({ default: m.TermsPage })),
+);
+const PrivacyPage = lazy(() =>
+  import("@/pages/PrivacyPage").then((m) => ({ default: m.PrivacyPage })),
+);
+const ReturnsPage = lazy(() =>
+  import("@/pages/ReturnsPage").then((m) => ({ default: m.ReturnsPage })),
+);
+const DeliveryInfoPage = lazy(() =>
+  import("@/pages/DeliveryInfoPage").then((m) => ({
+    default: m.DeliveryInfoPage,
+  })),
+);
+const ContactsPage = lazy(() =>
+  import("@/pages/ContactsPage").then((m) => ({ default: m.ContactsPage })),
+);
+const TrackOrderPage = lazy(() =>
+  import("@/pages/TrackOrderPage").then((m) => ({
+    default: m.TrackOrderPage,
+  })),
+);
 const LoginPage = lazy(() =>
   import("@/pages/LoginPage").then((m) => ({ default: m.LoginPage })),
 );
@@ -36,6 +66,34 @@ const PaymentReturnPage = lazy(() =>
   import("@/pages/PaymentReturnPage").then((m) => ({
     default: m.PaymentReturnPage,
   })),
+);
+const PaymentSuccessPage = lazy(() =>
+  import("@/pages/PaymentSuccessPage").then((m) => ({
+    default: m.PaymentSuccessPage,
+  })),
+);
+const PaymentFailedPage = lazy(() =>
+  import("@/pages/PaymentFailedPage").then((m) => ({
+    default: m.PaymentFailedPage,
+  })),
+);
+const PaymentCancelledPage = lazy(() =>
+  import("@/pages/PaymentCancelledPage").then((m) => ({
+    default: m.PaymentCancelledPage,
+  })),
+);
+const NotFoundPage = lazy(() =>
+  import("@/pages/NotFoundPage").then((m) => ({
+    default: m.NotFoundPage,
+  })),
+);
+const OrderHistoryPage = lazy(() =>
+  import("@/pages/OrderHistoryPage").then((m) => ({
+    default: m.OrderHistoryPage,
+  })),
+);
+const ProfilePage = lazy(() =>
+  import("@/pages/ProfilePage").then((m) => ({ default: m.ProfilePage })),
 );
 const AdminDashboardPage = lazy(() =>
   import("@/admin/AdminDashboardPage").then((m) => ({
@@ -57,9 +115,49 @@ const AdminProductsPage = lazy(() =>
     default: m.AdminProductsPage,
   })),
 );
+const AdminCategoriesPage = lazy(() =>
+  import("@/admin/AdminCategoriesPage").then((m) => ({
+    default: m.AdminCategoriesPage,
+  })),
+);
+const AdminCollectionsPage = lazy(() =>
+  import("@/admin/AdminCollectionsPage").then((m) => ({
+    default: m.AdminCollectionsPage,
+  })),
+);
+const AdminDesignsPage = lazy(() =>
+  import("@/admin/AdminDesignsPage").then((m) => ({
+    default: m.AdminDesignsPage,
+  })),
+);
+const AdminDesignVariantsPage = lazy(() =>
+  import("@/admin/AdminDesignVariantsPage").then((m) => ({
+    default: m.AdminDesignVariantsPage,
+  })),
+);
 const AdminCustomersPage = lazy(() =>
   import("@/admin/AdminCustomersPage").then((m) => ({
     default: m.AdminCustomersPage,
+  })),
+);
+const AdminSizeChartsPage = lazy(() =>
+  import("@/admin/AdminSizeChartsPage").then((m) => ({
+    default: m.AdminSizeChartsPage,
+  })),
+);
+const AdminPaymentsPage = lazy(() =>
+  import("@/admin/AdminPaymentsPage").then((m) => ({
+    default: m.AdminPaymentsPage,
+  })),
+);
+const AdminExchangeRatePage = lazy(() =>
+  import("@/admin/AdminExchangeRatePage").then((m) => ({
+    default: m.AdminExchangeRatePage,
+  })),
+);
+const AdminUsersPage = lazy(() =>
+  import("@/admin/AdminUsersPage").then((m) => ({
+    default: m.AdminUsersPage,
   })),
 );
 
@@ -80,15 +178,31 @@ const router = createBrowserRouter([
         path: "catalog",
         element: (
           <Suspense fallback={<PageLoadFallback />}>
-            <CatalogPage />
+            <CatalogIndexPage />
           </Suspense>
         ),
       },
       {
-        path: "catalog/:productId",
+        path: "catalog/:param",
         element: (
           <Suspense fallback={<PageLoadFallback />}>
-            <ProductPage />
+            <CatalogParamPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "catalog/:groupSlug/:collectionSlug",
+        element: (
+          <Suspense fallback={<PageLoadFallback />}>
+            <CollectionPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "catalog/:groupSlug/:collectionSlug/:designSlug",
+        element: (
+          <Suspense fallback={<PageLoadFallback />}>
+            <DesignPage />
           </Suspense>
         ),
       },
@@ -117,12 +231,122 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "payment-return",
+        path: "terms",
         element: (
           <Suspense fallback={<PageLoadFallback />}>
-            <PaymentReturnPage />
+            <TermsPage />
           </Suspense>
         ),
+      },
+      {
+        path: "privacy",
+        element: (
+          <Suspense fallback={<PageLoadFallback />}>
+            <PrivacyPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "returns",
+        element: (
+          <Suspense fallback={<PageLoadFallback />}>
+            <ReturnsPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "delivery",
+        element: (
+          <Suspense fallback={<PageLoadFallback />}>
+            <DeliveryInfoPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "contacts",
+        element: (
+          <Suspense fallback={<PageLoadFallback />}>
+            <ContactsPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "track-order",
+        element: (
+          <Suspense fallback={<PageLoadFallback />}>
+            <TrackOrderPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "payment-return",
+        element: (
+          <ErrorBoundary>
+            <Suspense fallback={<PageLoadFallback />}>
+              <PaymentReturnPage />
+            </Suspense>
+          </ErrorBoundary>
+        ),
+      },
+      {
+        path: "payment/success",
+        element: (
+          <ErrorBoundary>
+            <Suspense fallback={<PageLoadFallback />}>
+              <PaymentSuccessPage />
+            </Suspense>
+          </ErrorBoundary>
+        ),
+      },
+      {
+        path: "payment/failed",
+        element: (
+          <ErrorBoundary>
+            <Suspense fallback={<PageLoadFallback />}>
+              <PaymentFailedPage />
+            </Suspense>
+          </ErrorBoundary>
+        ),
+      },
+      {
+        path: "payment/cancelled",
+        element: (
+          <ErrorBoundary>
+            <Suspense fallback={<PageLoadFallback />}>
+              <PaymentCancelledPage />
+            </Suspense>
+          </ErrorBoundary>
+        ),
+      },
+      {
+        path: "*",
+        element: (
+          <Suspense fallback={<PageLoadFallback />}>
+            <NotFoundPage />
+          </Suspense>
+        ),
+      },
+      // Auth-protected routes (inside MainLayout for header/footer)
+      {
+        element: <RequireAuth />,
+        children: [
+          {
+            path: "orders",
+            element: (
+              <Suspense fallback={<PageLoadFallback />}>
+                <OrderHistoryPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "profile",
+            element: (
+              <Suspense fallback={<PageLoadFallback />}>
+                <ProfilePage />
+              </Suspense>
+            ),
+          },
+        ],
       },
     ],
   },
@@ -179,6 +403,38 @@ const router = createBrowserRouter([
             ),
           },
           {
+            path: "categories",
+            element: (
+              <Suspense fallback={<PageLoadFallback />}>
+                <AdminCategoriesPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "collections",
+            element: (
+              <Suspense fallback={<PageLoadFallback />}>
+                <AdminCollectionsPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "designs",
+            element: (
+              <Suspense fallback={<PageLoadFallback />}>
+                <AdminDesignsPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "designs/:designId/variants",
+            element: (
+              <Suspense fallback={<PageLoadFallback />}>
+                <AdminDesignVariantsPage />
+              </Suspense>
+            ),
+          },
+          {
             path: "products",
             element: (
               <Suspense fallback={<PageLoadFallback />}>
@@ -191,6 +447,38 @@ const router = createBrowserRouter([
             element: (
               <Suspense fallback={<PageLoadFallback />}>
                 <AdminCustomersPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "size-charts",
+            element: (
+              <Suspense fallback={<PageLoadFallback />}>
+                <AdminSizeChartsPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "payments",
+            element: (
+              <Suspense fallback={<PageLoadFallback />}>
+                <AdminPaymentsPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "exchange-rate",
+            element: (
+              <Suspense fallback={<PageLoadFallback />}>
+                <AdminExchangeRatePage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "users",
+            element: (
+              <Suspense fallback={<PageLoadFallback />}>
+                <AdminUsersPage />
               </Suspense>
             ),
           },

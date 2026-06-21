@@ -2,19 +2,23 @@ import { motion, useReducedMotion } from "framer-motion";
 import { useProducts } from "@/shared/api/queries";
 import { ProductCard } from "@/widgets/ProductCard";
 
-function SkeletonGrid() {
+type GridVariant = "default" | "catalog";
+
+const GRID_CLASSES: Record<GridVariant, string> = {
+  default: "gap-[22px] sm:grid-cols-2 lg:grid-cols-[repeat(auto-fill,minmax(260px,1fr))]",
+  catalog: "gap-5 sm:grid-cols-2 lg:grid-cols-3",
+};
+
+function SkeletonGrid({ variant }: { variant: GridVariant }) {
   return (
-    <div className="grid gap-[22px] sm:grid-cols-2 lg:grid-cols-[repeat(auto-fill,minmax(260px,1fr))]">
-      {Array.from({ length: 6 }).map((_, i) => (
-        <div
-          key={i}
-          className="overflow-hidden rounded-[14px] border border-white/10 bg-zinc-900"
-        >
-          <div className="skeleton-shimmer aspect-[4/5] bg-zinc-800/90" />
-          <div className="space-y-3 p-[18px]">
-            <div className="skeleton-shimmer h-4 w-3/4 rounded bg-zinc-800" />
-            <div className="skeleton-shimmer h-4 w-1/2 rounded bg-zinc-800/80" />
-            <div className="skeleton-shimmer mt-2 h-10 w-full rounded-[10px] bg-zinc-800/70" />
+    <div className={`grid ${GRID_CLASSES[variant]}`}>
+      {Array.from({ length: variant === "catalog" ? 6 : 6 }).map((_, i) => (
+        <div key={i} className="overflow-hidden border border-[--color-border] bg-white">
+          <div className="skeleton-shimmer aspect-[4/5] bg-[--color-surface]" />
+          <div className="space-y-3 p-4">
+            <div className="skeleton-shimmer h-4 w-3/4 bg-[--color-surface]" />
+            <div className="skeleton-shimmer h-4 w-1/2 bg-[--color-surface]" />
+            <div className="skeleton-shimmer mt-2 h-9 w-full bg-[--color-surface]" />
           </div>
         </div>
       ))}
@@ -41,19 +45,22 @@ const cardVariants = {
 
 export function ProductCatalogGrid({
   categoryFilter = null,
+  variant = "default",
 }: {
   categoryFilter?: string | null;
+  variant?: GridVariant;
 }) {
   const { data: products, isPending, isError, error } =
     useProducts(categoryFilter);
   const reduceMotion = useReducedMotion();
+  const gridClass = GRID_CLASSES[variant];
 
   if (isPending) {
     return (
       <div className="py-6">
-        <SkeletonGrid />
-        <p className="mt-8 text-center text-sm text-zinc-500">
-          Загружаем каталог из API…
+        <SkeletonGrid variant={variant} />
+        <p className="mt-8 text-center text-sm text-[--color-muted]">
+          Загружаем каталог…
         </p>
       </div>
     );
@@ -61,7 +68,7 @@ export function ProductCatalogGrid({
 
   if (isError) {
     return (
-      <div className="py-12 text-center font-semibold text-red-400">
+      <div className="py-12 text-center text-sm font-semibold text-[--color-danger]">
         {error instanceof Error ? error.message : "Ошибка загрузки"}
       </div>
     );
@@ -69,15 +76,15 @@ export function ProductCatalogGrid({
 
   if (!products?.length) {
     return (
-      <p className="text-center text-zinc-400">
-        Пока нет товаров. Добавьте позиции через админку или Swagger (POST /product).
+      <p className="py-16 text-center text-sm text-[--color-muted]">
+        В этой категории пока нет товаров.
       </p>
     );
   }
 
   if (reduceMotion) {
     return (
-      <div className="grid gap-[22px] sm:grid-cols-2 lg:grid-cols-[repeat(auto-fill,minmax(260px,1fr))]">
+      <div className={`grid ${gridClass}`}>
         {products.map((product) => (
           <ProductCard key={product.id} product={product} />
         ))}
@@ -87,7 +94,7 @@ export function ProductCatalogGrid({
 
   return (
     <motion.div
-      className="grid gap-[22px] sm:grid-cols-2 lg:grid-cols-[repeat(auto-fill,minmax(260px,1fr))]"
+      className={`grid ${gridClass}`}
       variants={listVariants}
       initial="hidden"
       animate="show"
