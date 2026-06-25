@@ -78,6 +78,7 @@ export function AdminOrdersPage() {
                 <th className="px-4 py-3 font-semibold">Дата</th>
                 <th className="px-4 py-3 font-semibold">Клиент</th>
                 <th className="px-4 py-3 font-semibold">Телефон</th>
+                <th className="px-4 py-3 font-semibold">Товар</th>
                 <th className="px-4 py-3 font-semibold">Доставка</th>
                 <th className="px-4 py-3 font-semibold">Статус</th>
                 <th className="px-4 py-3 font-semibold">Сумма</th>
@@ -101,6 +102,14 @@ export function AdminOrdersPage() {
                   </td>
                   <td className="px-4 py-3 tabular-nums text-zinc-400">
                     {o.customerPhone}
+                  </td>
+                  <td className="max-w-[160px] truncate px-4 py-3 text-zinc-300">
+                    {(() => {
+                      const first = o.items?.[0];
+                      const name = first?.productTitle ?? first?.designName ?? "—";
+                      const count = (o.items?.length ?? 0) > 1 ? ` +${(o.items?.length ?? 1) - 1}` : "";
+                      return name + count;
+                    })()}
                   </td>
                   <td className="px-4 py-3 text-zinc-400">
                     {deliveryTypeLabel(o.deliveryType)}

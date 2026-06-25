@@ -394,6 +394,20 @@ export async function capturePayPalOrder(paypalOrderId: string): Promise<Payment
   );
 }
 
+/**
+ * Верифицирует pg_sig из success-redirect FreedomPay и подтверждает заказ.
+ * Принимает все query-параметры из URL /payment-return?pg_payment_id=...
+ * Не использует check_payment.php — только локальная проверка MD5 подписи.
+ */
+export async function verifyFreedomPayRedirect(
+  redirectParams: Record<string, string>,
+): Promise<PaymentResponse> {
+  return apiFetch<PaymentResponse>("/payments/freedom-pay/verify-redirect", {
+    method: "POST",
+    body: JSON.stringify(redirectParams),
+  });
+}
+
 /** Вебхук-пайплайн (для локального/интеграционного теста без провайдера). */
 export async function submitPaymentWebhook(
   provider: PaymentProvider,

@@ -2,6 +2,7 @@ package com.nurba.java.controller;
 
 import com.nurba.java.config.FreedomPayProperties;
 import com.nurba.java.config.PayPalProperties;
+import org.springframework.beans.factory.annotation.Value;
 import com.nurba.java.domain.Order;
 import com.nurba.java.domain.Payment;
 import com.nurba.java.domain.ProcessedWebhookEvent;
@@ -39,6 +40,9 @@ import java.util.Optional;
 @RequestMapping("/api/v1/payments/stub")
 @RequiredArgsConstructor
 public class PaymentStubController {
+
+    @Value("${app.frontend.base-url:http://localhost:5174}")
+    private String frontendBaseUrl;
 
     private final PayPalProperties payPalProperties;
     private final FreedomPayProperties freedomPayProperties;
@@ -132,10 +136,10 @@ public class PaymentStubController {
             log.info("[PAYMENT-STUB] FreedomPay already processed: {}", providerPaymentId);
         }
 
-        String successUrl = freedomPayProperties.getSuccessUrl();
-        String location = successUrl.isBlank()
-                ? "http://localhost:5174/payment/success?orderId=" + orderId
-                : successUrl + (successUrl.contains("?") ? "&" : "?") + "orderId=" + orderId;
+        // Stub already confirmed payment + order — go directly to success page.
+        // Do NOT use freedomPayProperties.getSuccessUrl() here: that now points to /payment-return
+        // (for real FreedomPay flow), but the stub doesn't need the check_payment.php verification step.
+        String location = frontendBaseUrl + "/payment/success?orderId=" + orderId;
 
         return ResponseEntity.status(HttpStatus.FOUND)
                 .header(HttpHeaders.LOCATION, location)

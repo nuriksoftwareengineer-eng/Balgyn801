@@ -49,6 +49,25 @@ public class FreedomPayProperties {
         return isPlaceholder(merchantId) || isPlaceholder(secretKey);
     }
 
+    /**
+     * Script name used in MD5 signature for the browser success redirect.
+     * FreedomPay sets scriptName = basename(pg_success_url) when signing the redirect.
+     * E.g. successUrl="http://localhost:5174/payment-return" → scriptName="payment-return".
+     */
+    public String getSuccessScriptName() {
+        String url = successUrl;
+        if (url == null || url.isBlank()) return "payment-return";
+        // Strip query string
+        int qIdx = url.indexOf('?');
+        if (qIdx >= 0) url = url.substring(0, qIdx);
+        // Strip trailing slashes
+        while (url.endsWith("/")) url = url.substring(0, url.length() - 1);
+        // Last path segment
+        int lastSlash = url.lastIndexOf('/');
+        String segment = lastSlash >= 0 ? url.substring(lastSlash + 1) : url;
+        return segment.isBlank() ? "payment-return" : segment;
+    }
+
     private static boolean isPlaceholder(String value) {
         return value == null || value.isBlank() || value.startsWith("YOUR_");
     }

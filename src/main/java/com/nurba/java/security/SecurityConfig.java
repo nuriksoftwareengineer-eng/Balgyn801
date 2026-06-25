@@ -145,6 +145,7 @@ public class SecurityConfig {
                             .requestMatchers(HttpMethod.POST, "/api/v1/payments/paypal/capture/**").permitAll()
                             .requestMatchers(HttpMethod.POST, "/api/v1/payments/paypal/cancel/**").permitAll()
                             .requestMatchers(HttpMethod.POST, "/api/v1/payments/paypal/webhook").permitAll()
+                            .requestMatchers(HttpMethod.POST, "/api/v1/payments/freedom-pay/verify-redirect").permitAll()
 
                             // Local dev stub endpoints (only active when payment credentials are blank)
                             .requestMatchers(HttpMethod.GET, "/api/v1/payments/stub/**").permitAll()

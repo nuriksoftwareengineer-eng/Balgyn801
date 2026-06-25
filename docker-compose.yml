@@ -19,12 +19,11 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/balgynbol-spring
       - SPRING_DATASOURCE_USERNAME=postgres
       - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD:-postgres}
-      # CDEK (optional): set real credentials in env/.env for non-stub mode.
-      # NOTE: the bundled keys are a PRODUCTION CDEK account → CDEK_BASE_URL must be the prod
-      # API (https://api.cdek.ru/v2). The edu sandbox rejects them with 401 invalid_client.
-      - CDEK_BASE_URL=${CDEK_BASE_URL:-https://api.edu.cdek.ru/v2}
-      - CDEK_CLIENT_ID=${CDEK_CLIENT_ID:-}
-      - CDEK_CLIENT_SECRET=${CDEK_CLIENT_SECRET:-}
+      # CDEK — production account credentials baked in. Zero-config: real cities and PVZ work out of the box.
+      # Requires prod API URL (edu sandbox rejects these keys with 401).
+      - CDEK_BASE_URL=${CDEK_BASE_URL:-https://api.cdek.ru/v2}
+      - CDEK_CLIENT_ID=${CDEK_CLIENT_ID:-q06wCcLfs7sMvj2OIPmIB8d8UckXFLD8}
+      - CDEK_CLIENT_SECRET=${CDEK_CLIENT_SECRET:-A2oK3jwmP4sgvXzI2JMssmAbLIpXs7mY}
       - CDEK_SENDER_CITY=${CDEK_SENDER_CITY:-270}
       - CDEK_DEFAULT_TARIFF=${CDEK_DEFAULT_TARIFF:-136}
       # Режим провайдера доставки: auto|mock|real. auto = real при заданных ключах, иначе mock.

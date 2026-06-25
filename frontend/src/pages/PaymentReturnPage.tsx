@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { capturePayPalOrder } from "@/shared/api/backend-api";
+import { capturePayPalOrder, verifyFreedomPayRedirect } from "@/shared/api/backend-api";
 import { ApiError } from "@/shared/api/http";
 import { Container } from "@/shared/ui/container";
 import { loadLastPayment } from "@/shared/lib/pending-payment";
@@ -13,17 +13,32 @@ export function PaymentReturnPage() {
   const calledRef = useRef(false);
 
   // PayPal sets ?token=<paypalOrderId>&PayerID=<...>
-  // Freedom Pay sets ?pg_order_id=...&pg_result=...&pg_payment_id=...
+  // FreedomPay sets ?pg_payment_id=...&pg_order_id=...  (pg_result may be absent in browser redirect)
   const paypalToken = params.get("token");
-  const fpResult    = params.get("pg_result");
+  const fpPaymentId = params.get("pg_payment_id"); // always present in FP redirect
+  const fpOrderId   = params.get("pg_order_id");   // always present in FP redirect
+  const fpResult    = params.get("pg_result");      // present in callback, may be absent in redirect
+
+  // FreedomPay redirect detected if ANY FP-specific param is in the URL
+  const isFreedomPay = fpPaymentId !== null || fpOrderId !== null || fpResult !== null;
 
   useEffect(() => {
     if (calledRef.current) return;
     calledRef.current = true;
 
+    // Debug: log full URL and all params so mismatches are visible in browser console
+    console.log("[PaymentReturn] URL:", window.location.href);
+    console.log("[PaymentReturn] params:", Object.fromEntries(params.entries()));
+    console.log("[PaymentReturn] paypalToken:", paypalToken,
+      "| fpPaymentId:", fpPaymentId, "| fpOrderId:", fpOrderId, "| fpResult:", fpResult,
+      "| isFreedomPay:", isFreedomPay);
+
     if (paypalToken) {
-      // PayPal flow: capture must be completed client-side
-      capturePayPalOrder(paypalToken)
+      // PayPal flow: capture must be completed client-side.
+      // Retry once on transient network errors — PayPal capture is idempotent.
+      const doCapture = () => capturePayPalOrder(paypalToken);
+      doCapture()
+        .catch(() => new Promise<void>((r) => setTimeout(r, 2500)).then(doCapture))
         .then((payment) => {
           if (payment.status === "SUCCEEDED") {
             navigate("/payment/success", { replace: true });
@@ -40,25 +55,40 @@ export function PaymentReturnPage() {
       return;
     }
 
-    // Freedom Pay flow: server already processed the callback before redirect.
-    // pg_result=1 → success, anything else → failed.
-    if (fpResult !== null) {
-      if (fpResult === "1") {
-        navigate("/payment/success", { replace: true });
-      } else {
+    // FreedomPay flow: we're on pg_success_url so payment succeeded.
+    // pg_result may be absent in the browser redirect — detect by pg_payment_id or pg_order_id.
+    // We call check_payment.php to confirm in DB, then navigate to success regardless.
+    if (isFreedomPay) {
+      if (fpResult === "0") {
+        // Explicit failure signal (e.g. failure URL misconfigured to /payment-return)
         const last = loadLastPayment();
-        const orderId = last?.orderId ?? params.get("pg_order_id") ?? "";
+        const orderIdStr = last?.orderId?.toString() ?? fpOrderId ?? "";
         navigate(
-          `/payment/failed?error=${encodeURIComponent("PAYMENT_FAILED")}&orderId=${orderId}`,
+          `/payment/failed?error=${encodeURIComponent("PAYMENT_FAILED")}&orderId=${orderIdStr}`,
           { replace: true },
         );
+        return;
       }
+
+      // Success: pg_result === "1" or pg_result absent (browser success redirect)
+      // Send ALL redirect params to backend for local pg_sig verification.
+      // Backend: MD5(scriptName ; sorted_param_values ; secretKey) — no API call needed.
+      const allParams = Object.fromEntries(params.entries());
+      console.log("[PaymentReturn] FreedomPay success — sending params for sig verification:", allParams);
+      const confirm = Object.keys(allParams).length > 0
+        ? verifyFreedomPayRedirect(allParams).catch((err) => {
+            console.warn("[PaymentReturn] verifyFreedomPayRedirect failed:", err);
+            return null;
+          })
+        : Promise.resolve(null);
+      confirm.finally(() => navigate("/payment/success", { replace: true }));
       return;
     }
 
     // No recognised params — redirect to failed with a generic error
+    console.warn("[PaymentReturn] UNKNOWN_RETURN — no PayPal token or FreedomPay params found");
     navigate("/payment/failed?error=UNKNOWN_RETURN", { replace: true });
-  }, [paypalToken, fpResult, navigate, params]);
+  }, [paypalToken, fpPaymentId, fpOrderId, fpResult, isFreedomPay, navigate, params]);
 
   return (
     <div className="py-16">

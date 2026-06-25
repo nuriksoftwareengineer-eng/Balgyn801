@@ -111,11 +111,21 @@ export type OrderStatus =
 
 export type OrderItemResponse = {
   id: number;
-  productTitle: string;
+  // Product-based (null for design-based orders)
+  productTitle?: string | null;
+  // Design-based (null for product-based orders)
+  designGarmentId?: number | null;
+  garmentType?: string | null;
+  designName?: string | null;
+  colorId?: number | null;
+  colorHex?: string | null;
+  sizeId?: number | null;
+  // Shared
   quantity: number;
   unitPrice: number;
   sizeLabel?: string | null;
   colorName?: string | null;
+  currency?: string | null;
 };
 
 export type DeliveryAddressRequest = {

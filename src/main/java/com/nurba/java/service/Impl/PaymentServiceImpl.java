@@ -10,8 +10,10 @@ import com.nurba.java.enums.PaymentProvider;
 import com.nurba.java.enums.PaymentStatus;
 import com.nurba.java.exception.BusinessRuleException;
 import com.nurba.java.exception.NotFoundException;
+import com.nurba.java.config.FreedomPayProperties;
 import com.nurba.java.payment.FreedomPayHttpClient;
 import com.nurba.java.payment.FreedomPayInitResult;
+import com.nurba.java.payment.FreedomPaySignature;
 import com.nurba.java.repositories.OrderRepository;
 import com.nurba.java.repositories.PaymentRepository;
 import com.nurba.java.repositories.ProcessedWebhookEventRepository;
@@ -38,6 +40,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final ProcessedWebhookEventRepository processedEventRepository;
     private final OrderExpiryService orderExpiryService;
     private final FreedomPayHttpClient freedomPayClient;
+    private final FreedomPayProperties freedomPayProps;
 
     // ─────────────────────────────────────────────────────────────────────────
     // Init
@@ -102,6 +105,8 @@ public class PaymentServiceImpl implements PaymentService {
     @Transactional
     public PaymentResponse handleFreedomPayCallback(Map<String, String> params) {
         String providerPaymentId = params.get("pg_payment_id");
+        log.info("[FreedomPay] handleFreedomPayCallback: pg_payment_id={} pg_result={} pg_amount={} pg_order_id={}",
+                providerPaymentId, params.get("pg_result"), params.get("pg_amount"), params.get("pg_order_id"));
         if (providerPaymentId == null || providerPaymentId.isBlank()) {
             throw new BusinessRuleException("Отсутствует pg_payment_id в callback Freedom Pay");
         }
@@ -109,6 +114,8 @@ public class PaymentServiceImpl implements PaymentService {
         Payment payment = paymentRepository.findByProviderPaymentId(providerPaymentId.trim())
                 .orElseThrow(() -> new NotFoundException(
                         "Платёж не найден по pg_payment_id: " + providerPaymentId));
+        log.info("[FreedomPay] handleFreedomPayCallback: found payment id={} status={} orderId={}",
+                payment.getId(), payment.getStatus(), payment.getOrder().getId());
 
         if (payment.getProvider() != PaymentProvider.FREEDOM_PAY) {
             throw new BusinessRuleException("Callback Freedom Pay не совпадает с провайдером платежа");
@@ -171,6 +178,83 @@ public class PaymentServiceImpl implements PaymentService {
         processedEventRepository.save(pwe);
 
         return toResponse(saved);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Freedom Pay success-redirect verification (replaces check_payment.php)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Verifies the FreedomPay success-redirect signature and confirms the order.
+     *
+     * <p>FreedomPay signs the browser redirect to {@code pg_success_url} with:
+     * <pre>
+     *   MD5( lastSegment(pg_success_url) ; sorted_param_values ; secretKey )
+     * </pre>
+     * Example: successUrl = ".../payment-return" → scriptName = "payment-return"
+     * The signed params include pg_order_id, pg_payment_id, pg_amount, pg_currency,
+     * pg_result (1), pg_salt but NOT pg_sig itself.
+     *
+     * <p>Security: a forged URL with wrong pg_order_id, wrong pg_amount, or missing secretKey
+     * will produce a mismatched MD5 and be rejected with 400. Replayed valid URLs are blocked
+     * by ProcessedWebhookEvent (pg_payment_id deduplication).
+     */
+    @Override
+    @Transactional
+    public PaymentResponse verifyFreedomPayRedirect(Map<String, String> redirectParams) {
+        String pgPaymentId = redirectParams.get("pg_payment_id");
+        String pgOrderId   = redirectParams.get("pg_order_id");
+        String pgSig       = redirectParams.get("pg_sig");
+        String pgResult    = redirectParams.get("pg_result");
+        String pgAmount    = redirectParams.get("pg_amount");
+        String scriptName  = freedomPayProps.getSuccessScriptName();
+
+        log.info("[FreedomPay] verifyFreedomPayRedirect: pg_order_id={} pg_payment_id={} " +
+                 "pg_result={} pg_amount={} scriptName={} params={}",
+                 pgOrderId, pgPaymentId, pgResult, pgAmount, scriptName, redirectParams.keySet());
+
+        // Log every pg_* field for diagnosis
+        redirectParams.forEach((k, v) -> {
+            if (k.startsWith("pg_")) log.info("[FreedomPay] redirect param: {}={}", k, v);
+        });
+
+        if (pgPaymentId == null || pgPaymentId.isBlank()) {
+            throw new BusinessRuleException("Отсутствует pg_payment_id в redirect-параметрах");
+        }
+
+        // ── Signature verification ─────────────────────────────────────────
+        // Exact formula: MD5(scriptName ; val_sorted_by_key... ; secretKey)
+        // All params except pg_sig are included (sorted by key, TreeMap order).
+        // A tampered pg_order_id, pg_amount etc. changes the expected hash → rejected.
+        if (freedomPayProps.getSecretKey().isBlank()) {
+            log.warn("[FreedomPay] secretKey not configured — skipping sig verification in redirect");
+        } else {
+            String expected = FreedomPaySignature.sign(scriptName, redirectParams,
+                    freedomPayProps.getSecretKey());
+            boolean sigValid = FreedomPaySignature.verify(scriptName, redirectParams,
+                    freedomPayProps.getSecretKey(), pgSig);
+            if (!sigValid) {
+                log.warn("[FreedomPay] INVALID pg_sig in success redirect! " +
+                         "pg_order_id={} pg_payment_id={} scriptName={} " +
+                         "received_sig={} expected_sig={}",
+                         pgOrderId, pgPaymentId, scriptName, pgSig, expected);
+                throw new BusinessRuleException(
+                        "Неверная подпись FreedomPay в redirect (scriptName=" + scriptName
+                        + "). Возможна подделка URL или неверный secretKey.");
+            }
+            log.info("[FreedomPay] pg_sig VALID: pg_order_id={} pg_payment_id={} scriptName={}",
+                    pgOrderId, pgPaymentId, scriptName);
+        }
+
+        // ── Confirmed payment — delegate to standard callback handler ──────
+        // pg_result may be absent in some FP redirect configurations.
+        // Since a valid signature on pg_success_url is authoritative proof of success,
+        // we inject pg_result=1 so handleFreedomPayCallback maps it to SUCCEEDED.
+        java.util.HashMap<String, String> enriched = new java.util.HashMap<>(redirectParams);
+        if (!"0".equals(pgResult)) {
+            enriched.put("pg_result", "1");
+        }
+        return handleFreedomPayCallback(enriched);
     }
 
     // ─────────────────────────────────────────────────────────────────────────

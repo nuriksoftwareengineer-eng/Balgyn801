@@ -164,7 +164,7 @@ const AdminUsersPage = lazy(() =>
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <MainLayout />,
+    element: <ErrorBoundary><MainLayout /></ErrorBoundary>,
     children: [
       {
         index: true,
@@ -351,7 +351,7 @@ const router = createBrowserRouter([
     ],
   },
   {
-    element: <AuthShellLayout />,
+    element: <ErrorBoundary><AuthShellLayout /></ErrorBoundary>,
     children: [
       {
         path: "login",
@@ -376,7 +376,7 @@ const router = createBrowserRouter([
     element: <RequireAdmin />,
     children: [
       {
-        element: <AdminLayout />,
+        element: <ErrorBoundary><AdminLayout /></ErrorBoundary>,
         children: [
           {
             index: true,
