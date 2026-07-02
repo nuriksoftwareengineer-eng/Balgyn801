@@ -14,6 +14,8 @@ import com.nurba.java.repositories.AppUserRepository;
 import com.nurba.java.security.JwtProperties;
 import com.nurba.java.security.JwtService;
 import com.nurba.java.service.AuthService;
+import com.nurba.java.service.EmailService;
+import com.nurba.java.service.TelegramNotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -37,6 +39,8 @@ public class AuthServiceImpl implements AuthService {
     private final JwtService jwtService;
     private final JwtProperties jwtProperties;
     private final AuthenticationManager authenticationManager;
+    private final EmailService emailService;
+    private final TelegramNotificationService telegramNotificationService;
 
     @Override
     @Transactional
@@ -54,6 +58,9 @@ public class AuthServiceImpl implements AuthService {
                 .build();
 
         appUserRepository.save(user);
+
+        emailService.sendRegistrationEmail(user.getEmail(), user.getEmail());
+        telegramNotificationService.notifyNewUser(user.getEmail());
 
         return buildAuthResponse(user);
     }

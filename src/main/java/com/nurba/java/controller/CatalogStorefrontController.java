@@ -42,4 +42,19 @@ public class CatalogStorefrontController implements CatalogStorefrontApi {
     public DesignDetailResponse getDesignBySlug(String slug) {
         return service.getDesignBySlug(slug);
     }
+
+    @Override
+    public List<DesignResponse> getPopular(int limit) {
+        return service.getPopular(limit);
+    }
+
+    @Override
+    public List<DesignResponse> getNewArrivals(int limit) {
+        return service.getNewArrivals(limit);
+    }
+
+    @Override
+    public List<DesignResponse> getRecommendations(Long designId, int limit) {
+        return service.getRecommendations(designId, limit);
+    }
 }

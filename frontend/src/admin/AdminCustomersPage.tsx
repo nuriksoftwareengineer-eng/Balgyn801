@@ -5,11 +5,13 @@ import {
   createCustomer,
   deleteCustomer,
   updateCustomer,
-  getCustomers,
+  searchAdminCustomers,
 } from "@/shared/api/backend-api";
 import { ApiError } from "@/shared/api/http";
 import type { CustomerRequest, CustomerResponse } from "@/shared/api/types";
 import { Button } from "@/shared/ui/button";
+import { AdminPagination, AdminSearchBar } from "@/shared/ui/admin-pagination";
+import { useDebounce } from "@/shared/hooks/useDebounce";
 
 function formatCustomerDate(iso: string | undefined | null) {
   if (!iso) return "—";
@@ -48,13 +50,15 @@ export function AdminCustomersPage() {
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [modal, setModal] = useState<"create" | "edit" | null>(null);
   const [form, setForm] = useState<CustomerRequest>(() => emptyForm());
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(0);
+  const debouncedSearch = useDebounce(search, 300);
 
   const q = useQuery({
-    queryKey: ["admin-customers"],
+    queryKey: ["admin-customers", debouncedSearch, page],
     queryFn: async () => {
       if (!token) throw new Error("Нет токена");
-      const list = await getCustomers(token);
-      return [...list].sort((a, b) => b.id - a.id);
+      return searchAdminCustomers(token, { q: debouncedSearch, page, size: 50 });
     },
     enabled: !!token,
   });
@@ -152,9 +156,11 @@ export function AdminCustomersPage() {
 
   const busy = createMut.isPending || updateMut.isPending;
 
+  const customers = q.data?.content ?? [];
+
   return (
     <div>
-      <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+      <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
         <h1 className="font-display text-4xl tracking-wide text-zinc-100">
           Клиенты
         </h1>
@@ -163,15 +169,27 @@ export function AdminCustomersPage() {
         </Button>
       </div>
 
+      <div className="mb-5 flex flex-wrap items-center gap-3">
+        <AdminSearchBar
+          value={search}
+          onChange={(v) => { setSearch(v); setPage(0); }}
+          placeholder="Поиск по имени или телефону…"
+        />
+        {q.data && (
+          <span className="text-xs text-zinc-500">{q.data.totalElements} клиентов</span>
+        )}
+      </div>
+
       {q.isPending ? (
         <p className="text-zinc-500">Загрузка…</p>
       ) : q.isError ? (
         <p className="text-red-400">
           {q.error instanceof Error ? q.error.message : "Ошибка загрузки"}
         </p>
-      ) : !q.data?.length ? (
-        <p className="text-zinc-500">Пока нет записей в справочнике клиентов.</p>
+      ) : customers.length === 0 ? (
+        <p className="text-zinc-500">Клиентов не найдено.</p>
       ) : (
+        <>
         <div className="overflow-x-auto rounded-[14px] border border-white/10">
           <table className="w-full min-w-[720px] border-collapse text-left text-sm">
             <thead>
@@ -185,7 +203,7 @@ export function AdminCustomersPage() {
               </tr>
             </thead>
             <tbody>
-              {q.data.map((c) => (
+              {customers.map((c) => (
                 <tr
                   key={c.id}
                   className="border-b border-white/5 hover:bg-white/[0.03]"
@@ -233,6 +251,16 @@ export function AdminCustomersPage() {
             </tbody>
           </table>
         </div>
+        {q.data && (
+          <AdminPagination
+            page={q.data.page}
+            totalPages={q.data.totalPages}
+            totalElements={q.data.totalElements}
+            size={q.data.size}
+            onPage={setPage}
+          />
+        )}
+        </>
       )}
 
       {deleteError ? (

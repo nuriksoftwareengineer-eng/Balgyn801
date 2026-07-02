@@ -17,6 +17,8 @@ public interface DesignMapper {
     @Mapping(target = "collection", ignore = true)
     @Mapping(target = "garments", ignore = true)
     @Mapping(target = "status", ignore = true)
+    @Mapping(target = "newArrival", ignore = true)
+    @Mapping(target = "viewCount", ignore = true)
     Design toEntity(CreateDesignRequest request);
 
     @Mapping(source = "collection.id", target = "collectionId")

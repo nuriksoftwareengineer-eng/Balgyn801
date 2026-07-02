@@ -9,4 +9,6 @@ public class CatalogGroupResponse {
     private String slug;
     private Integer sortOrder;
     private Boolean active;
+    private String coverImageUrl;
+    private String bannerImageUrl;
 }

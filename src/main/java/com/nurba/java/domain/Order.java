@@ -89,6 +89,12 @@ public class Order {
     @OneToOne(mappedBy = "order", fetch = FetchType.LAZY)
     private DeliveryAddress deliveryAddress;
 
+    @Column(name = "coupon_code", length = 50)
+    private String couponCode;
+
+    @Column(name = "discount_amount", precision = 10, scale = 2)
+    private BigDecimal discountAmount;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

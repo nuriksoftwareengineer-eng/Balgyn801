@@ -9,9 +9,11 @@ import com.nurba.java.exception.NotFoundException;
 import com.nurba.java.mapper.CollectionMapper;
 import com.nurba.java.repositories.CatalogGroupRepository;
 import com.nurba.java.repositories.CollectionRepository;
+import com.nurba.java.repositories.DesignRepository;
 import com.nurba.java.service.CollectionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -22,9 +24,11 @@ public class CollectionServiceImpl implements CollectionService {
 
     private final CollectionRepository repository;
     private final CatalogGroupRepository groupRepository;
+    private final DesignRepository designRepository;
     private final CollectionMapper mapper;
 
     @Override
+    @Transactional(readOnly = true)
     public List<CollectionResponse> getAll(Long groupId) {
         List<Collection> list = (groupId != null)
                 ? repository.findByCatalogGroup_Id(groupId)
@@ -33,11 +37,13 @@ public class CollectionServiceImpl implements CollectionService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public CollectionResponse getById(Long id) {
         return mapper.toResponse(findOrThrow(id));
     }
 
     @Override
+    @Transactional
     public CollectionResponse create(CreateCollectionRequest request) {
         if (repository.existsBySlug(request.getSlug())) {
             throw new BusinessRuleException("Slug already in use: " + request.getSlug());
@@ -51,6 +57,7 @@ public class CollectionServiceImpl implements CollectionService {
     }
 
     @Override
+    @Transactional
     public CollectionResponse update(Long id, CreateCollectionRequest request) {
         Collection entity = findOrThrow(id);
         CatalogGroup group = groupRepository.findById(request.getGroupId())
@@ -68,8 +75,13 @@ public class CollectionServiceImpl implements CollectionService {
     }
 
     @Override
+    @Transactional
     public void delete(Long id) {
         findOrThrow(id);
+        if (designRepository.existsByCollection_Id(id)) {
+            throw new BusinessRuleException(
+                    "Нельзя удалить коллекцию: в ней есть дизайны. Сначала удалите дизайны.");
+        }
         repository.deleteById(id);
     }
 

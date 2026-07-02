@@ -1,11 +1,14 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/app/auth-context";
-import { getOrders } from "@/shared/api/backend-api";
+import { searchAdminOrders } from "@/shared/api/backend-api";
 import { deliveryTypeLabel } from "@/shared/lib/delivery-labels";
 import { formatMoney } from "@/shared/lib/format-money";
 import { orderStatusLabel } from "@/shared/lib/order-status-labels";
 import { cn } from "@/shared/lib/cn";
+import { AdminPagination, AdminSearchBar } from "@/shared/ui/admin-pagination";
+import { useDebounce } from "@/shared/hooks/useDebounce";
 
 const ORDER_STATUS_STYLES: Record<string, string> = {
   PENDING_PAYMENT:  "bg-yellow-900/40 text-yellow-400",
@@ -40,26 +43,34 @@ function resolveItemsTotal(totalPrice: number, deliveryFee?: number | null): num
 
 export function AdminOrdersPage() {
   const { token } = useAuth();
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(0);
+  const debouncedSearch = useDebounce(search, 300);
 
   const q = useQuery({
-    queryKey: ["admin-orders"],
-    queryFn: async () => {
-      if (!token) throw new Error("Нет токена");
-      const list = await getOrders(token);
-      return [...list].sort((a, b) => {
-        const ta = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-        const tb = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-        return tb - ta;
-      });
-    },
+    queryKey: ["admin-orders-search", debouncedSearch, page],
+    queryFn: () => searchAdminOrders(token!, { q: debouncedSearch, page, size: 50 }),
     enabled: !!token,
   });
 
+  const orders = q.data?.content ?? [];
+
   return (
     <div>
-      <h1 className="mb-8 text-2xl font-bold text-zinc-100">
-        Заказы
-      </h1>
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
+        <h1 className="text-2xl font-bold text-zinc-100">Заказы</h1>
+        {q.data && (
+          <span className="text-xs text-zinc-500">{q.data.totalElements} заказов</span>
+        )}
+      </div>
+
+      <div className="mb-5">
+        <AdminSearchBar
+          value={search}
+          onChange={(v) => { setSearch(v); setPage(0); }}
+          placeholder="Поиск по имени, телефону, статусу…"
+        />
+      </div>
 
       {q.isPending ? (
         <p className="text-zinc-500">Загрузка…</p>
@@ -67,76 +78,96 @@ export function AdminOrdersPage() {
         <p className="text-red-400">
           {q.error instanceof Error ? q.error.message : "Ошибка загрузки"}
         </p>
-      ) : !q.data?.length ? (
-        <p className="text-zinc-500">Пока нет заказов.</p>
+      ) : orders.length === 0 ? (
+        <p className="text-zinc-500">Заказов не найдено.</p>
       ) : (
-        <div className="overflow-x-auto rounded-[14px] border border-white/10">
-          <table className="w-full min-w-[760px] border-collapse text-left text-sm">
-            <thead>
-              <tr className="border-b border-white/10 bg-zinc-900/80 text-xs uppercase tracking-wide text-zinc-500">
-                <th className="px-4 py-3 font-semibold">№</th>
-                <th className="px-4 py-3 font-semibold">Дата</th>
-                <th className="px-4 py-3 font-semibold">Клиент</th>
-                <th className="px-4 py-3 font-semibold">Телефон</th>
-                <th className="px-4 py-3 font-semibold">Доставка</th>
-                <th className="px-4 py-3 font-semibold">Статус</th>
-                <th className="px-4 py-3 font-semibold">Сумма</th>
-                <th className="px-4 py-3 font-semibold"> </th>
-              </tr>
-            </thead>
-            <tbody>
-              {q.data.map((o) => (
-                <tr
-                  key={o.id}
-                  className="border-b border-white/5 hover:bg-white/[0.03]"
-                >
-                  <td className="px-4 py-3 tabular-nums text-zinc-500">
-                    {o.id}
-                  </td>
-                  <td className="px-4 py-3 text-zinc-400">
-                    {formatDate(o.createdAt)}
-                  </td>
-                  <td className="max-w-[160px] truncate px-4 py-3 font-medium text-zinc-100">
-                    {o.customerName}
-                  </td>
-                  <td className="px-4 py-3 tabular-nums text-zinc-400">
-                    {o.customerPhone}
-                  </td>
-                  <td className="px-4 py-3 text-zinc-400">
-                    {deliveryTypeLabel(o.deliveryType)}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={cn(
-                      "rounded px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-[0.08em]",
-                      ORDER_STATUS_STYLES[o.status ?? ""] ?? "bg-zinc-700/60 text-zinc-400",
-                    )}>
-                      {orderStatusLabel(o.status)}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 tabular-nums text-zinc-300">
-                    <p className="m-0 text-xs text-zinc-500">
-                      Товары: {formatMoney(resolveItemsTotal(o.totalPrice, o.deliveryFee))} ₸
-                    </p>
-                    <p className="m-0 text-xs text-zinc-500">
-                      Доставка: {formatMoney(o.deliveryFee ?? 0)} ₸
-                    </p>
-                    <p className="m-0 font-semibold text-zinc-200">
-                      Итого: {formatMoney(o.totalPrice)} ₸
-                    </p>
-                  </td>
-                  <td className="px-4 py-3">
-                    <Link
-                      to={`/admin/orders/${o.id}`}
-                      className="font-semibold text-zinc-300 underline-offset-2 hover:text-white hover:underline"
-                    >
-                      Открыть
-                    </Link>
-                  </td>
+        <>
+          <div className="overflow-x-auto rounded-[14px] border border-white/10">
+            <table className="w-full min-w-[760px] border-collapse text-left text-sm">
+              <thead>
+                <tr className="border-b border-white/10 bg-zinc-900/80 text-xs uppercase tracking-wide text-zinc-500">
+                  <th className="px-4 py-3 font-semibold">№</th>
+                  <th className="px-4 py-3 font-semibold">Дата</th>
+                  <th className="px-4 py-3 font-semibold">Клиент</th>
+                  <th className="px-4 py-3 font-semibold">Телефон</th>
+                  <th className="px-4 py-3 font-semibold">Товар</th>
+                  <th className="px-4 py-3 font-semibold">Доставка</th>
+                  <th className="px-4 py-3 font-semibold">Статус</th>
+                  <th className="px-4 py-3 font-semibold">Сумма</th>
+                  <th className="px-4 py-3 font-semibold"> </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {orders.map((o) => (
+                  <tr
+                    key={o.id}
+                    className="border-b border-white/5 hover:bg-white/[0.03]"
+                  >
+                    <td className="px-4 py-3 tabular-nums text-zinc-500">
+                      {o.id}
+                    </td>
+                    <td className="px-4 py-3 text-zinc-400">
+                      {formatDate(o.createdAt)}
+                    </td>
+                    <td className="max-w-[160px] truncate px-4 py-3 font-medium text-zinc-100">
+                      {o.customerName}
+                    </td>
+                    <td className="px-4 py-3 tabular-nums text-zinc-400">
+                      {o.customerPhone}
+                    </td>
+                    <td className="max-w-[160px] truncate px-4 py-3 text-zinc-300">
+                      {(() => {
+                        const first = o.items?.[0];
+                        const name = first?.productTitle ?? first?.designName ?? "—";
+                        const count = (o.items?.length ?? 0) > 1 ? ` +${(o.items?.length ?? 1) - 1}` : "";
+                        return name + count;
+                      })()}
+                    </td>
+                    <td className="px-4 py-3 text-zinc-400">
+                      {deliveryTypeLabel(o.deliveryType)}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={cn(
+                        "rounded px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-[0.08em]",
+                        ORDER_STATUS_STYLES[o.status ?? ""] ?? "bg-zinc-700/60 text-zinc-400",
+                      )}>
+                        {orderStatusLabel(o.status)}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 tabular-nums text-zinc-300">
+                      <p className="m-0 text-xs text-zinc-500">
+                        Товары: {formatMoney(resolveItemsTotal(o.totalPrice, o.deliveryFee))} ₸
+                      </p>
+                      <p className="m-0 text-xs text-zinc-500">
+                        Доставка: {formatMoney(o.deliveryFee ?? 0)} ₸
+                      </p>
+                      <p className="m-0 font-semibold text-zinc-200">
+                        Итого: {formatMoney(o.totalPrice)} ₸
+                      </p>
+                    </td>
+                    <td className="px-4 py-3">
+                      <Link
+                        to={`/admin/orders/${o.id}`}
+                        className="font-semibold text-zinc-300 underline-offset-2 hover:text-white hover:underline"
+                      >
+                        Открыть
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {q.data && (
+            <AdminPagination
+              page={q.data.page}
+              totalPages={q.data.totalPages}
+              totalElements={q.data.totalElements}
+              size={q.data.size}
+              onPage={setPage}
+            />
+          )}
+        </>
       )}
     </div>
   );

@@ -85,6 +85,19 @@ CDEK_CLIENT_ID=<your CDEK client ID>
 CDEK_CLIENT_SECRET=<your CDEK client secret>
 CDEK_SENDER_CITY=270
 CDEK_DEFAULT_TARIFF=136
+
+# Email (optional — registration, order, payment notifications)
+MAIL_ENABLED=true
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USERNAME=<smtp username>
+MAIL_PASSWORD=<smtp app password>
+MAIL_FROM=noreply@balgyn.kz
+
+# Telegram admin alerts (optional — new order, payment, new user)
+TELEGRAM_ENABLED=true
+TELEGRAM_BOT_TOKEN=<from @BotFather>
+TELEGRAM_CHAT_ID=<admin chat/group id, from @userinfobot>
 ```
 
 ### 5. Build and start production stack
@@ -200,6 +213,25 @@ Flyway runs new migrations on startup automatically.
 | `PAYPAL_CLIENT_ID` | _(blank)_ | **Blank = PayPal stub mode.** |
 | `PAYPAL_CLIENT_SECRET` | _(blank)_ | OAuth2 client secret. |
 | `PAYPAL_WEBHOOK_ID` | _(blank)_ | Required for webhook signature verification. |
+
+### Email
+
+| Variable | Default | Description |
+|---|---|---|
+| `MAIL_ENABLED` | `false` | `false` = no emails sent (registration/order/payment hooks become no-ops). |
+| `MAIL_HOST` | `smtp.gmail.com` | SMTP host. |
+| `MAIL_PORT` | `587` | SMTP port (STARTTLS). |
+| `MAIL_USERNAME` | _(blank)_ | SMTP auth username. |
+| `MAIL_PASSWORD` | _(blank)_ | SMTP auth password (use an App Password for Gmail). |
+| `MAIL_FROM` | `noreply@balgyn.kz` | From-address on outgoing emails. |
+
+### Telegram
+
+| Variable | Default | Description |
+|---|---|---|
+| `TELEGRAM_ENABLED` | `false` | `false` = no Telegram alerts sent. |
+| `TELEGRAM_BOT_TOKEN` | _(blank)_ | Bot token from @BotFather. |
+| `TELEGRAM_CHAT_ID` | _(blank)_ | Chat/group ID to receive admin alerts (new order, payment success/fail, new user). |
 
 ### MinIO
 

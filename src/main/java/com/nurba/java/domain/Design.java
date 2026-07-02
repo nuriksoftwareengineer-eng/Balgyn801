@@ -50,6 +50,12 @@ public class Design {
     @Column(name = "sort_order")
     private Integer sortOrder;
 
+    @Column(name = "is_new_arrival", nullable = false)
+    private boolean isNewArrival = false;
+
+    @Column(name = "view_count", nullable = false)
+    private int viewCount = 0;
+
     private LocalDateTime createdAt;
 
     @Column(name = "published_at")

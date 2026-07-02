@@ -13,5 +13,7 @@ public class CatalogGroupDetailResponse {
     private String name;
     private String slug;
     private Integer sortOrder;
+    private String coverImageUrl;
+    private String bannerImageUrl;
     private List<CollectionResponse> collections;
 }

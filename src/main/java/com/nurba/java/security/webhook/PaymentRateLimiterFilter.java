@@ -30,11 +30,10 @@ import java.util.concurrent.ConcurrentHashMap;
 public class PaymentRateLimiterFilter extends OncePerRequestFilter {
 
     private static final Logger log = LoggerFactory.getLogger(PaymentRateLimiterFilter.class);
-    private static final String INIT_PATH                = "/api/v1/payments/init";
-    private static final String CALLBACK_PREFIX          = "/api/v1/payments/callback/";
-    private static final String PAYPAL_WEBHOOK_PATH      = "/api/v1/payments/paypal/webhook";
-    private static final String PAYPAL_CREATE_ORDER_PATH = "/api/v1/payments/paypal/create-order";
-    private static final String PAYPAL_CAPTURE_PREFIX    = "/api/v1/payments/paypal/capture/";
+    private static final String INIT_PATH           = "/api/v1/payments/init";
+    private static final String CAPTURE_PREFIX      = "/api/v1/payments/capture/";
+    private static final String CALLBACK_PREFIX     = "/api/v1/payments/callback/";
+    private static final String PAYPAL_WEBHOOK_PATH = "/api/v1/payments/paypal/webhook";
 
     private final PaymentWebhookProperties properties;
     private final SecurityRateLimitProperties rateLimitProperties;
@@ -45,10 +44,9 @@ public class PaymentRateLimiterFilter extends OncePerRequestFilter {
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = requestPath(request);
         return !INIT_PATH.equals(path)
+                && !path.startsWith(CAPTURE_PREFIX)
                 && !path.startsWith(CALLBACK_PREFIX)
-                && !PAYPAL_WEBHOOK_PATH.equals(path)
-                && !PAYPAL_CREATE_ORDER_PATH.equals(path)
-                && !path.startsWith(PAYPAL_CAPTURE_PREFIX);
+                && !PAYPAL_WEBHOOK_PATH.equals(path);
     }
 
     @Override
@@ -57,17 +55,14 @@ public class PaymentRateLimiterFilter extends OncePerRequestFilter {
                                     FilterChain chain) throws ServletException, IOException {
 
         String path = requestPath(request);
-        boolean isUserFacing = INIT_PATH.equals(path)
-                || PAYPAL_CREATE_ORDER_PATH.equals(path)
-                || path.startsWith(PAYPAL_CAPTURE_PREFIX);
+        boolean isUserFacing = INIT_PATH.equals(path) || path.startsWith(CAPTURE_PREFIX);
         int limit = isUserFacing
                 ? properties.getInitRateLimitPerMinute()
                 : properties.getWebhookRateLimitPerMinute();
 
         String ip = resolveClientIp(request);
         String keyPrefix = INIT_PATH.equals(path) ? "init:"
-                : PAYPAL_CREATE_ORDER_PATH.equals(path) ? "paypal-create:"
-                : path.startsWith(PAYPAL_CAPTURE_PREFIX) ? "paypal-capture:"
+                : path.startsWith(CAPTURE_PREFIX) ? "capture:"
                 : PAYPAL_WEBHOOK_PATH.equals(path) ? "paypal-webhook:"
                 : "callback:";
         String key = keyPrefix + ip;

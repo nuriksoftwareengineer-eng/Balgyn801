@@ -58,4 +58,8 @@ public class CreateOrderRequest {
     /** Код ПВЗ СДЭК (если выбран пункт выдачи). Сохраняется в снапшот адреса. */
     @Size(max = 50)
     private String pvzCode;
+
+    /** Промокод (опционально). Проверяется и применяется бэкендом. */
+    @Size(max = 50)
+    private String couponCode;
 }

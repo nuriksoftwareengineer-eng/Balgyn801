@@ -1,7 +1,7 @@
 import { type FormEvent, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { STORE_TELEGRAM_URL } from "@/shared/constants/store-content";
+import { SUPPORT_TELEGRAM_URL} from "@/shared/constants/store-content";
 import { Container } from "@/shared/ui/container";
 
 const inputClass =
@@ -35,7 +35,7 @@ export function CustomDesignPage() {
       `Комментарий: ${comment.trim() || "—"}`,
     ].join("\n");
 
-    const username = tgUsername(STORE_TELEGRAM_URL);
+    const username = tgUsername(SUPPORT_TELEGRAM_URL);
     return `https://t.me/${username}?text=${encodeURIComponent(message)}`;
   }
 

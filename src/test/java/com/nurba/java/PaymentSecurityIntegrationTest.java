@@ -262,7 +262,7 @@ class PaymentSecurityIntegrationTest {
     @Test
     void initPayment_calledTwice_returnsSamePayment_noDuplicate() throws Exception {
         long orderId = createOrder(1);
-        String body = "{\"orderId\":" + orderId + "}";
+        String body = "{\"orderId\":" + orderId + ",\"provider\":\"FREEDOM_PAY\"}";
 
         MvcResult r1 = mockMvc.perform(post(INIT_URL)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -437,7 +437,7 @@ class PaymentSecurityIntegrationTest {
     }
 
     private String initPaymentAndGetProviderPaymentId(long orderId) throws Exception {
-        String body = "{\"orderId\":" + orderId + "}";
+        String body = "{\"orderId\":" + orderId + ",\"provider\":\"FREEDOM_PAY\"}";
         MvcResult result = mockMvc.perform(post(INIT_URL)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))

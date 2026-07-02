@@ -35,6 +35,14 @@ Work through this checklist before going live. Every unchecked item is a risk.
 
 ---
 
+## Notifications (optional)
+
+- [ ] Email: `MAIL_ENABLED=true` + `MAIL_HOST`/`MAIL_PORT`/`MAIL_USERNAME`/`MAIL_PASSWORD`/`MAIL_FROM` set, if you want registration/order/payment emails
+- [ ] Telegram: `TELEGRAM_ENABLED=true` + `TELEGRAM_BOT_TOKEN`/`TELEGRAM_CHAT_ID` set, if you want admin alerts
+- [ ] If left disabled (`MAIL_ENABLED=false` / `TELEGRAM_ENABLED=false`, the default), the app runs fine without them — all notification calls are no-ops
+
+---
+
 ## Delivery
 
 - [ ] CDEK: `CDEK_BASE_URL=https://api.cdek.ru/v2` (NOT the sandbox URL)

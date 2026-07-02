@@ -28,4 +28,6 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
             """)
     boolean hasPurchasedDesign(@Param("userId") Long userId,
                                @Param("designId") Long designId);
+
+    boolean existsByDesignGarment_Design_Id(Long designId);
 }

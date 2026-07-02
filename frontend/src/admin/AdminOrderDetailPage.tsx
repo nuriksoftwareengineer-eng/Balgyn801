@@ -443,10 +443,10 @@ export function AdminOrderDetailPage() {
                 {o.items.map((line) => (
                   <tr key={line.id} className="border-b border-white/5">
                     <td className="py-3 pr-4 text-zinc-100">
-                      {line.productTitle}
+                      {line.productTitle ?? line.designName ?? "—"}
                     </td>
                     <td className="py-3 pr-4 text-sm text-zinc-500">
-                      {[line.sizeLabel, line.colorName].filter(Boolean).join(" · ") ||
+                      {[line.garmentType, line.sizeLabel, line.colorName].filter(Boolean).join(" · ") ||
                         "—"}
                     </td>
                     <td className="py-3 pr-4 tabular-nums text-zinc-400">

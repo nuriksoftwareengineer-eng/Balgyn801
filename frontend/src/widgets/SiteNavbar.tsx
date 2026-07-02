@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { ShoppingBag, Menu, X, User, Globe } from "lucide-react";
+import { ShoppingBag, Menu, X, User, Globe, Heart } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useCart } from "@/app/use-cart";
 import { useCartDrawer } from "@/app/cart-drawer-context";
 import { useAuth } from "@/app/auth-context";
 import { useCurrency, type Currency } from "@/app/currency-context";
+import { useWishlist } from "@/app/wishlist-context";
 import { CompactDropdown } from "@/shared/ui/CompactDropdown";
 
 const LANGS = ["ru", "kk", "en"] as const;
@@ -19,6 +20,7 @@ export function SiteNavbar() {
   const { totalQty } = useCart();
   const { openDrawer } = useCartDrawer();
   const { user } = useAuth();
+  const { count: wishlistCount } = useWishlist();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -106,6 +108,20 @@ export function SiteNavbar() {
               <User className="h-[26px] w-[26px]" />
             </Link>
 
+            {/* Wishlist */}
+            <Link
+              to="/wishlist"
+              aria-label={t("nav.wishlist", "Избранное")}
+              className={`relative hidden transition-colors md:flex ${mutedCls}`}
+            >
+              <Heart className="h-[26px] w-[26px]" />
+              {wishlistCount > 0 && (
+                <span className="absolute -right-2 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white">
+                  {wishlistCount > 9 ? "9+" : wishlistCount}
+                </span>
+              )}
+            </Link>
+
             {/* Cart */}
             <button
               type="button"
@@ -163,6 +179,9 @@ export function SiteNavbar() {
                 {t(l.labelKey)}
               </Link>
             ))}
+            <Link to="/wishlist" className="text-[28px] font-bold uppercase tracking-[-0.02em]">
+              {t("nav.wishlist", "Избранное")}
+            </Link>
             <Link
               to={user ? "/profile" : "/login"}
               className="text-[28px] font-bold uppercase tracking-[-0.02em]"

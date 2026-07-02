@@ -365,7 +365,7 @@ class InventoryReleaseIntegrationTest {
     }
 
     private InitResult initPayment(long orderId) throws Exception {
-        String body = "{\"orderId\":" + orderId + "}";
+        String body = "{\"orderId\":" + orderId + ",\"provider\":\"FREEDOM_PAY\"}";
         MvcResult result = mockMvc.perform(post(INIT_URL)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))

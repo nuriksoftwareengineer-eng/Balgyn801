@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Marquee } from "@/widgets/home/Marquee";
+import { STORE_TELEGRAM_URL, TELEGRAM_CHANNEL_URL } from "@/shared/constants/store-content";
 
 const linkClass =
   "text-[14px] text-[#D9D9D9] transition-colors hover:text-white";
@@ -37,16 +38,17 @@ export function SiteFooter() {
 
           <div className="flex flex-col gap-4">
             <h4 className="mb-2 text-[12px] font-semibold uppercase tracking-wider">{t("footer.social.title")}</h4>
-            <a href="https://instagram.com/balgyn_shop" target="_blank" rel="noopener noreferrer" className={linkClass}>Instagram</a>
-            <a href="https://tiktok.com/@balgyn_shop" target="_blank" rel="noopener noreferrer" className={linkClass}>TikTok</a>
-            <a href="https://instagram.com/balgyn_shop/reels/" target="_blank" rel="noopener noreferrer" className={linkClass}>Reels</a>
+            <a href="https://instagram.com/balgyn.bol" target="_blank" rel="noopener noreferrer" className={linkClass}>Instagram</a>
+            <a href="https://tiktok.com/@balgyn.bol" target="_blank" rel="noopener noreferrer" className={linkClass}>TikTok</a>
+            <a href={STORE_TELEGRAM_URL} target="_blank" rel="noopener noreferrer" className={linkClass}>Telegram</a>
+            <a href={TELEGRAM_CHANNEL_URL} target="_blank" rel="noopener noreferrer" className={linkClass}>{t("footer.social.telegramChannel")}</a>
           </div>
 
           <div className="col-span-2 flex flex-col gap-4 md:col-span-1">
             <h4 className="mb-2 text-[12px] font-semibold uppercase tracking-wider">{t("footer.newsletter.title")}</h4>
             <p className="mb-2 text-[14px] text-[#D9D9D9]">{t("footer.newsletter.desc")}</p>
             <a
-              href="https://instagram.com/balgyn_shop"
+              href="https://instagram.com/balgyn.bol"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex w-fit items-center gap-2 border-b border-[#7A7A7A] pb-2 text-[14px] text-[#D9D9D9] transition-colors hover:border-white hover:text-white"

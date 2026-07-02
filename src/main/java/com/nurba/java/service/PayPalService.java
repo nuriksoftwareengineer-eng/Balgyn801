@@ -4,13 +4,14 @@ import com.nurba.java.dto.responce.PaymentResponse;
 
 import java.util.Map;
 
+/**
+ * Handles the two PayPal flows that don't fit the generic PaymentGateway contract:
+ * webhook events (raw body + RSA signature, not Map&lt;String,String&gt;) and buyer-initiated
+ * cancel (HMAC token, no provider round-trip). Order creation and capture go through
+ * PaymentController → PaymentService → PaymentGatewayRegistry → PayPalGateway instead —
+ * see PaymentGateway.handleCallback() javadoc.
+ */
 public interface PayPalService {
-
-    /** Creates a PayPal order for the given internal order ID and returns the approval URL. */
-    PaymentResponse createOrder(Long orderId, String returnUrl, String cancelUrl);
-
-    /** Captures a previously approved PayPal order (called after buyer approves on PayPal). */
-    PaymentResponse captureOrder(String paypalOrderId);
 
     /** Handles an incoming PayPal webhook event (signature already verified by controller). */
     void handleWebhook(String rawBody, Map<String, String> headers);

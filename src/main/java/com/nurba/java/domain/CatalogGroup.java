@@ -32,6 +32,14 @@ public class CatalogGroup {
     @Column(nullable = false)
     private Boolean active = true;
 
+    /** Card preview image — used on the catalog index page. */
+    @Column(name = "cover_image_url", length = 512)
+    private String coverImageUrl;
+
+    /** Full-width header image — used on the group detail page. */
+    @Column(name = "banner_image_url", length = 512)
+    private String bannerImageUrl;
+
     private LocalDateTime createdAt;
 
     @OneToMany(mappedBy = "catalogGroup", fetch = FetchType.LAZY)

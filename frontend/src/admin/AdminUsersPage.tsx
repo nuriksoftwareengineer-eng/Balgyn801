@@ -2,12 +2,14 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/app/auth-context";
 import {
-  getAdminUsers,
   grantAdminRole,
   revokeAdminRole,
+  searchAdminUsers,
 } from "@/shared/api/backend-api";
 import { ApiError } from "@/shared/api/http";
 import type { AdminUserResponse } from "@/shared/api/types";
+import { AdminPagination, AdminSearchBar } from "@/shared/ui/admin-pagination";
+import { useDebounce } from "@/shared/hooks/useDebounce";
 
 function RoleBadge({ role }: { role: string }) {
   const isAdmin = role === "ADMIN";
@@ -41,17 +43,20 @@ export function AdminUsersPage() {
   const qc = useQueryClient();
   const [actionErr, setActionErr] = useState<string | null>(null);
   const [actionMsg, setActionMsg] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(0);
+  const debouncedSearch = useDebounce(search, 300);
 
-  const { data: users = [], isLoading, error } = useQuery({
-    queryKey: ["admin-users"],
-    queryFn: () => getAdminUsers(token!),
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["admin-users-search", debouncedSearch, page],
+    queryFn: () => searchAdminUsers(token!, { q: debouncedSearch, page, size: 50 }),
     enabled: !!token,
   });
 
   const grantMut = useMutation({
     mutationFn: (email: string) => grantAdminRole(email, token!),
     onSuccess: (res) => {
-      void qc.invalidateQueries({ queryKey: ["admin-users"] });
+      void qc.invalidateQueries({ queryKey: ["admin-users-search"] });
       setActionErr(null);
       setActionMsg(`Роль ADMIN выдана: ${res.email}`);
     },
@@ -64,7 +69,7 @@ export function AdminUsersPage() {
   const revokeMut = useMutation({
     mutationFn: (email: string) => revokeAdminRole(email, token!),
     onSuccess: (res) => {
-      void qc.invalidateQueries({ queryKey: ["admin-users"] });
+      void qc.invalidateQueries({ queryKey: ["admin-users-search"] });
       setActionErr(null);
       setActionMsg(`ADMIN снят: ${res.email}`);
     },
@@ -94,12 +99,25 @@ export function AdminUsersPage() {
     revokeMut.mutate(u.email);
   }
 
+  const users = data?.content ?? [];
+
   return (
     <div>
       <h1 className="mb-1 text-2xl font-bold text-zinc-100">Пользователи</h1>
       <p className="mb-6 text-sm text-zinc-500">
         Все зарегистрированные аккаунты. Здесь можно выдать или снять роль ADMIN.
       </p>
+
+      <div className="mb-5 flex flex-wrap items-center gap-3">
+        <AdminSearchBar
+          value={search}
+          onChange={(v) => { setSearch(v); setPage(0); }}
+          placeholder="Поиск по email…"
+        />
+        {data && (
+          <span className="text-xs text-zinc-500">{data.totalElements} пользователей</span>
+        )}
+      </div>
 
       {actionErr && (
         <p className="mb-4 rounded-[8px] border border-red-400/20 bg-red-400/10 px-4 py-3 text-sm text-red-400">
@@ -121,7 +139,6 @@ export function AdminUsersPage() {
 
       {users.length > 0 && (
         <>
-          <p className="mb-3 text-xs text-zinc-500">{users.length} пользователей</p>
           <div className="overflow-x-auto rounded-[12px] border border-white/10">
             <table className="w-full min-w-[640px] text-sm">
               <thead>
@@ -184,7 +201,20 @@ export function AdminUsersPage() {
               </tbody>
             </table>
           </div>
+          {data && (
+            <AdminPagination
+              page={data.page}
+              totalPages={data.totalPages}
+              totalElements={data.totalElements}
+              size={data.size}
+              onPage={setPage}
+            />
+          )}
         </>
+      )}
+
+      {!isLoading && users.length === 0 && (
+        <p className="text-sm text-zinc-500">Пользователи не найдены.</p>
       )}
     </div>
   );

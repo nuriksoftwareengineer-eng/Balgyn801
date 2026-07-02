@@ -5,6 +5,7 @@ import jakarta.persistence.LockModeType;
 import jakarta.persistence.QueryHint;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.jpa.repository.QueryHints;
 import org.springframework.data.repository.query.Param;
@@ -28,6 +29,10 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
      * Concurrent callers block here, then re-read the already-decremented quantity,
      * preventing overselling without application-level retries.
      */
+    @Modifying
+    @Query("DELETE FROM Inventory i WHERE i.designGarment.id IN :ids")
+    void deleteByDesignGarmentIds(@Param("ids") Collection<Long> ids);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @QueryHints(@QueryHint(name = "jakarta.persistence.lock.timeout", value = "3000"))
     @Query("SELECT i FROM Inventory i WHERE i.designGarment.id = :garmentId AND i.color.id = :colorId AND i.size.id = :sizeId")

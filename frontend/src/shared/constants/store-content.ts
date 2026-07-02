@@ -17,7 +17,14 @@ export const PRODUCT_CATEGORIES = CATEGORY_LABELS.filter(
 );
 
 /** Почта для подписки и обратной связи — замените на боевой ящик команды. */
-export const CONTACT_EMAIL = "hello@balgyn.local";
+export const CONTACT_EMAIL = "zhakaevdias228@Gmail.com";
 
-/** Ссылка на Telegram магазина (или заглушка до публикации канала). */
-export const STORE_TELEGRAM_URL = "https://t.me/balgyn_shop";
+/** Telegram: прямой чат с магазином (поддержка / заказы). */
+export const STORE_TELEGRAM_URL = "https://t.me/balgyncatalog";
+export const SUPPORT_TELEGRAM_URL = "https://t.me/balgynbol";
+
+/** Telegram Channel — канал для обновлений и дропов. */
+export const TELEGRAM_CHANNEL_URL = "https://t.me/balgyn_channel";
+
+/** WhatsApp номер магазина. */
+export const WHATSAPP_URL = "https://wa.me/77001234567";

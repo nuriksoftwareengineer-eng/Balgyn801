@@ -1,5 +1,6 @@
 package com.nurba.java.dto.request;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -25,4 +26,7 @@ public class CreateDesignRequest {
 
     /** Дополнительные изображения галереи (список URL). Главное фото — в mainImageUrl. */
     private List<String> gallery = new ArrayList<>();
+
+    @JsonProperty("isNewArrival")
+    private boolean isNewArrival = false;
 }

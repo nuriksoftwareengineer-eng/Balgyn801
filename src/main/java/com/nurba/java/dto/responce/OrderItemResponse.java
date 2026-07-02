@@ -12,15 +12,22 @@ public class OrderItemResponse {
     private Long id;
 
     // ── Product-based fields (null for design-based orders) ────────────────
+    private Long   productId;
     private String productTitle;
 
     // ── Design-based fields (null for product-based orders) ────────────────
     private Long   designGarmentId;
     private String garmentType;
     private String designName;
+    private String designSlug;
+    private String groupSlug;
+    private String collectionSlug;
     private Long   colorId;
     private String colorHex;
     private Long   sizeId;
+
+    /** Repeat-order convenience: design's main image (design-based) or product image (legacy). */
+    private String mainImageUrl;
 
     // ── Shared ─────────────────────────────────────────────────────────────
     private Integer    quantity;

@@ -219,7 +219,7 @@ class InventoryDeductionIntegrationTest {
     private record InitResult(long paymentId, String providerPaymentId, String amount) {}
 
     private InitResult initPayment(long orderId) throws Exception {
-        String body = "{\"orderId\": " + orderId + "}";
+        String body = "{\"orderId\": " + orderId + ", \"provider\": \"FREEDOM_PAY\"}";
         MvcResult result = mockMvc.perform(post("/api/v1/payments/init")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))

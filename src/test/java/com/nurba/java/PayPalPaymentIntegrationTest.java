@@ -35,6 +35,8 @@ import com.nurba.java.repositories.PaymentRepository;
 import com.nurba.java.repositories.ProcessedWebhookEventRepository;
 import com.nurba.java.repositories.SizeRepository;
 import com.nurba.java.security.webhook.PaymentRateLimiterFilter;
+import com.nurba.java.service.EmailService;
+import com.nurba.java.service.TelegramNotificationService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -56,6 +58,8 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.timeout;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -81,8 +85,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 })
 class PayPalPaymentIntegrationTest {
 
-    private static final String CREATE_ORDER_URL  = "/api/v1/payments/paypal/create-order";
-    private static final String CAPTURE_URL       = "/api/v1/payments/paypal/capture/";
+    private static final String INIT_URL          = "/api/v1/payments/init";
+    private static final String CAPTURE_URL       = "/api/v1/payments/capture/";
     private static final String WEBHOOK_URL       = "/api/v1/payments/paypal/webhook";
 
     private static final String FAKE_PAYPAL_ORDER_ID  = "PP-ORDER-TEST-001";
@@ -97,6 +101,8 @@ class PayPalPaymentIntegrationTest {
 
     @MockitoBean private PayPalOrdersClient payPalOrdersClient;
     @MockitoBean private PayPalWebhookVerifier payPalWebhookVerifier;
+    @MockitoBean private TelegramNotificationService telegramNotificationService;
+    @MockitoBean private EmailService emailService;
 
     @Autowired private CatalogGroupRepository catalogGroupRepository;
     @Autowired private CollectionRepository collectionRepository;
@@ -158,9 +164,9 @@ class PayPalPaymentIntegrationTest {
     void createOrder_returnsApprovalUrl() throws Exception {
         long orderId = createOrder();
 
-        mockMvc.perform(post(CREATE_ORDER_URL)
+        mockMvc.perform(post(INIT_URL)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"orderId\":" + orderId + "}"))
+                        .content("{\"orderId\":" + orderId + ",\"provider\":\"PAYPAL\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.provider").value("PAYPAL"))
                 .andExpect(jsonPath("$.status").value("PENDING"))
@@ -181,13 +187,13 @@ class PayPalPaymentIntegrationTest {
     @Test
     void createOrder_idempotent_returnsSamePayment() throws Exception {
         long orderId = createOrder();
-        String body = "{\"orderId\":" + orderId + "}";
+        String body = "{\"orderId\":" + orderId + ",\"provider\":\"PAYPAL\"}";
 
-        MvcResult r1 = mockMvc.perform(post(CREATE_ORDER_URL)
+        MvcResult r1 = mockMvc.perform(post(INIT_URL)
                         .contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isOk()).andReturn();
 
-        MvcResult r2 = mockMvc.perform(post(CREATE_ORDER_URL)
+        MvcResult r2 = mockMvc.perform(post(INIT_URL)
                         .contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isOk()).andReturn();
 
@@ -205,12 +211,12 @@ class PayPalPaymentIntegrationTest {
     void captureOrder_completed_confirmsOrderAndPayment() throws Exception {
         long orderId = createOrder();
         // Init PayPal payment first
-        mockMvc.perform(post(CREATE_ORDER_URL)
+        mockMvc.perform(post(INIT_URL)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"orderId\":" + orderId + "}"))
+                        .content("{\"orderId\":" + orderId + ",\"provider\":\"PAYPAL\"}"))
                 .andExpect(status().isOk());
 
-        mockMvc.perform(post(CAPTURE_URL + FAKE_PAYPAL_ORDER_ID))
+        mockMvc.perform(post(CAPTURE_URL + FAKE_PAYPAL_ORDER_ID + "?provider=PAYPAL"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("SUCCEEDED"));
 
@@ -228,9 +234,9 @@ class PayPalPaymentIntegrationTest {
     @Test
     void captureOrder_denied_failsPayment() throws Exception {
         long orderId = createOrder();
-        mockMvc.perform(post(CREATE_ORDER_URL)
+        mockMvc.perform(post(INIT_URL)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"orderId\":" + orderId + "}"))
+                        .content("{\"orderId\":" + orderId + ",\"provider\":\"PAYPAL\"}"))
                 .andExpect(status().isOk());
 
         // Override mock: capture returns VOIDED (non-COMPLETED)
@@ -239,12 +245,69 @@ class PayPalPaymentIntegrationTest {
                 FAKE_PAYPAL_ORDER_ID, "VOIDED", List.of(unit));
         when(payPalOrdersClient.captureOrder(anyString())).thenReturn(deniedCapture);
 
-        mockMvc.perform(post(CAPTURE_URL + FAKE_PAYPAL_ORDER_ID))
+        mockMvc.perform(post(CAPTURE_URL + FAKE_PAYPAL_ORDER_ID + "?provider=PAYPAL"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("FAILED"));
 
         Payment payment = paymentRepository.findByProviderPaymentId(FAKE_PAYPAL_ORDER_ID).orElseThrow();
         assertThat(payment.getStatus()).isEqualTo(PaymentStatus.FAILED);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Notification architecture (Task 1/2 audit fix) — PayPal must fire the same
+    // Telegram/email hooks as FreedomPay/VTB, via PaymentServiceImpl.applyResult(),
+    // for both the REST capture path and the webhook path.
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @Test
+    void captureOrder_completed_notifiesTelegram() throws Exception {
+        long orderId = createOrder();
+        mockMvc.perform(post(INIT_URL)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"orderId\":" + orderId + ",\"provider\":\"PAYPAL\"}"))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post(CAPTURE_URL + FAKE_PAYPAL_ORDER_ID + "?provider=PAYPAL"))
+                .andExpect(status().isOk());
+
+        verify(telegramNotificationService, timeout(2000))
+                .notifyPaymentSuccess(any(Order.class));
+    }
+
+    @Test
+    void webhook_captureCompleted_notifiesTelegram() throws Exception {
+        long orderId = createOrder();
+        mockMvc.perform(post(INIT_URL)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"orderId\":" + orderId + ",\"provider\":\"PAYPAL\"}"))
+                .andExpect(status().isOk());
+
+        String webhookBody = buildWebhookEvent("EVT-NOTIFY-001", "PAYMENT.CAPTURE.COMPLETED", FAKE_PAYPAL_ORDER_ID);
+        mockMvc.perform(post(WEBHOOK_URL)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(webhookBody))
+                .andExpect(status().isOk());
+
+        verify(telegramNotificationService, timeout(2000))
+                .notifyPaymentSuccess(any(Order.class));
+    }
+
+    @Test
+    void webhook_captureDenied_notifiesTelegramOfFailure() throws Exception {
+        long orderId = createOrder();
+        mockMvc.perform(post(INIT_URL)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"orderId\":" + orderId + ",\"provider\":\"PAYPAL\"}"))
+                .andExpect(status().isOk());
+
+        String webhookBody = buildWebhookEvent("EVT-DENY-001", "PAYMENT.CAPTURE.DENIED", FAKE_PAYPAL_ORDER_ID);
+        mockMvc.perform(post(WEBHOOK_URL)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(webhookBody))
+                .andExpect(status().isOk());
+
+        verify(telegramNotificationService, timeout(2000))
+                .notifyPaymentFailed(any(Order.class));
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -254,9 +317,9 @@ class PayPalPaymentIntegrationTest {
     @Test
     void webhook_captureCompleted_confirmsOrder() throws Exception {
         long orderId = createOrder();
-        mockMvc.perform(post(CREATE_ORDER_URL)
+        mockMvc.perform(post(INIT_URL)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"orderId\":" + orderId + "}"))
+                        .content("{\"orderId\":" + orderId + ",\"provider\":\"PAYPAL\"}"))
                 .andExpect(status().isOk());
 
         String webhookBody = buildWebhookEvent("EVT-001", "PAYMENT.CAPTURE.COMPLETED", FAKE_PAYPAL_ORDER_ID);
@@ -283,9 +346,9 @@ class PayPalPaymentIntegrationTest {
     @Test
     void webhook_duplicate_isIdempotent() throws Exception {
         long orderId = createOrder();
-        mockMvc.perform(post(CREATE_ORDER_URL)
+        mockMvc.perform(post(INIT_URL)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"orderId\":" + orderId + "}"))
+                        .content("{\"orderId\":" + orderId + ",\"provider\":\"PAYPAL\"}"))
                 .andExpect(status().isOk());
 
         String webhookBody = buildWebhookEvent("EVT-DUP", "PAYMENT.CAPTURE.COMPLETED", FAKE_PAYPAL_ORDER_ID);
@@ -313,18 +376,18 @@ class PayPalPaymentIntegrationTest {
     @Test
     void captureOrder_calledTwice_isIdempotent_noDoubleCapture() throws Exception {
         long orderId = createOrder();
-        mockMvc.perform(post(CREATE_ORDER_URL)
+        mockMvc.perform(post(INIT_URL)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"orderId\":" + orderId + "}"))
+                        .content("{\"orderId\":" + orderId + ",\"provider\":\"PAYPAL\"}"))
                 .andExpect(status().isOk());
 
         // First capture — succeeds
-        mockMvc.perform(post(CAPTURE_URL + FAKE_PAYPAL_ORDER_ID))
+        mockMvc.perform(post(CAPTURE_URL + FAKE_PAYPAL_ORDER_ID + "?provider=PAYPAL"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("SUCCEEDED"));
 
         // Second capture — payment already SUCCEEDED → returns existing record, skips PayPal API
-        mockMvc.perform(post(CAPTURE_URL + FAKE_PAYPAL_ORDER_ID))
+        mockMvc.perform(post(CAPTURE_URL + FAKE_PAYPAL_ORDER_ID + "?provider=PAYPAL"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("SUCCEEDED"));
 
@@ -337,9 +400,9 @@ class PayPalPaymentIntegrationTest {
     @Test
     void captureOrder_onAlreadyConfirmedOrder_doesNotReConfirm() throws Exception {
         long orderId = createOrder();
-        mockMvc.perform(post(CREATE_ORDER_URL)
+        mockMvc.perform(post(INIT_URL)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"orderId\":" + orderId + "}"))
+                        .content("{\"orderId\":" + orderId + ",\"provider\":\"PAYPAL\"}"))
                 .andExpect(status().isOk());
 
         // Confirm via webhook first
@@ -372,18 +435,18 @@ class PayPalPaymentIntegrationTest {
         order.setStatus(OrderStatus.CANCELLED);
         orderRepository.save(order);
 
-        mockMvc.perform(post(CREATE_ORDER_URL)
+        mockMvc.perform(post(INIT_URL)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"orderId\":" + orderId + "}"))
+                        .content("{\"orderId\":" + orderId + ",\"provider\":\"PAYPAL\"}"))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
     void webhook_captureCompleted_withLinksFallback_confirmsOrder() throws Exception {
         long orderId = createOrder();
-        mockMvc.perform(post(CREATE_ORDER_URL)
+        mockMvc.perform(post(INIT_URL)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"orderId\":" + orderId + "}"))
+                        .content("{\"orderId\":" + orderId + ",\"provider\":\"PAYPAL\"}"))
                 .andExpect(status().isOk());
 
         // No supplementary_data — must use links[rel=up] fallback
@@ -403,6 +466,7 @@ class PayPalPaymentIntegrationTest {
     @Test
     void webhook_invalidSignature_returns400() throws Exception {
         when(payPalWebhookVerifier.verify(anyString(), any())).thenReturn(false);
+        // No payment to init — sig is rejected before service layer
 
         String webhookBody = buildWebhookEvent("EVT-BAD", "PAYMENT.CAPTURE.COMPLETED", FAKE_PAYPAL_ORDER_ID);
 

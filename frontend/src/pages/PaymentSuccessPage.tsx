@@ -37,6 +37,7 @@ export function PaymentSuccessPage() {
   const providerLabel =
     provider === "PAYPAL" ? "PayPal" :
     provider === "FREEDOM_PAY" ? "Freedom Pay" :
+    provider === "VTB_KZ" ? "VTB Kazakhstan" :
     provider ?? "—";
 
   return (

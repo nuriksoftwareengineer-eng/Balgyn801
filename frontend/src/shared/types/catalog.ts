@@ -6,6 +6,8 @@ export interface CatalogGroupSummary {
   slug: string;
   sortOrder: number;
   active: boolean;
+  coverImageUrl?: string | null;
+  bannerImageUrl?: string | null;
 }
 
 export interface CollectionSummary {

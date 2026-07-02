@@ -14,12 +14,16 @@ export interface AdminGroup {
   slug: string;
   sortOrder: number | null;
   active: boolean;
+  coverImageUrl?: string | null;
+  bannerImageUrl?: string | null;
 }
 
 export interface AdminGroupRequest {
   name: string;
   slug: string;
   sortOrder?: number;
+  coverImageUrl?: string | null;
+  bannerImageUrl?: string | null;
 }
 
 export interface AdminCollection {
@@ -61,6 +65,7 @@ export interface AdminDesign {
   gallery: string[];
   status: DesignStatus;
   activeGarmentCount: number;
+  isNewArrival?: boolean;
 }
 
 export interface AdminDesignRequest {
@@ -70,6 +75,7 @@ export interface AdminDesignRequest {
   description?: string | null;
   mainImageUrl?: string | null;
   gallery?: string[];
+  isNewArrival?: boolean;
 }
 
 // ─── Categories (CatalogGroup) ────────────────────────────────────────────────
@@ -161,6 +167,13 @@ export function publishDesign(id: number, token: string): Promise<AdminDesign> {
 
 export function archiveDesign(id: number, token: string): Promise<AdminDesign> {
   return apiFetch<AdminDesign>(`/admin/catalog/designs/${id}/archive`, {
+    method: "PATCH",
+    token,
+  });
+}
+
+export function restoreDesign(id: number, token: string): Promise<AdminDesign> {
+  return apiFetch<AdminDesign>(`/admin/catalog/designs/${id}/restore`, {
     method: "PATCH",
     token,
   });

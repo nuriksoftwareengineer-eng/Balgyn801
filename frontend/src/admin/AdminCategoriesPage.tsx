@@ -38,6 +38,8 @@ export function AdminCategoriesPage() {
   const [slug, setSlug] = useState("");
   const [slugTouched, setSlugTouched] = useState(false);
   const [sortOrder, setSortOrder] = useState("0");
+  const [coverImageUrl, setCoverImageUrl] = useState("");
+  const [bannerImageUrl, setBannerImageUrl] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
 
   function resetForm() {
@@ -46,6 +48,8 @@ export function AdminCategoriesPage() {
     setSlug("");
     setSlugTouched(false);
     setSortOrder("0");
+    setCoverImageUrl("");
+    setBannerImageUrl("");
     setFormError(null);
   }
 
@@ -55,6 +59,8 @@ export function AdminCategoriesPage() {
     setSlug(g.slug);
     setSlugTouched(true);
     setSortOrder(String(g.sortOrder ?? 0));
+    setCoverImageUrl(g.coverImageUrl ?? "");
+    setBannerImageUrl(g.bannerImageUrl ?? "");
     setFormError(null);
   }
 
@@ -64,6 +70,8 @@ export function AdminCategoriesPage() {
         name: name.trim(),
         slug: (slug.trim() || slugify(name)).trim(),
         sortOrder: Number.parseInt(sortOrder, 10) || 0,
+        coverImageUrl: coverImageUrl.trim() || null,
+        bannerImageUrl: bannerImageUrl.trim() || null,
       };
       if (!body.name) throw new Error("Укажите название");
       if (!body.slug) throw new Error("Укажите slug");
@@ -135,6 +143,30 @@ export function AdminCategoriesPage() {
               onChange={(e) => setSortOrder(e.target.value)}
               className={`${inputClass} w-32`}
             />
+          </label>
+          <label className="flex flex-col gap-1.5">
+            <span className="text-xs text-zinc-400">Cover image URL</span>
+            <input
+              value={coverImageUrl}
+              onChange={(e) => setCoverImageUrl(e.target.value)}
+              placeholder="https://..."
+              className={inputClass}
+            />
+            {coverImageUrl && (
+              <img src={coverImageUrl} alt="cover preview" className="mt-1 h-20 w-full object-cover rounded border border-white/10" />
+            )}
+          </label>
+          <label className="flex flex-col gap-1.5">
+            <span className="text-xs text-zinc-400">Banner image URL</span>
+            <input
+              value={bannerImageUrl}
+              onChange={(e) => setBannerImageUrl(e.target.value)}
+              placeholder="https://..."
+              className={inputClass}
+            />
+            {bannerImageUrl && (
+              <img src={bannerImageUrl} alt="banner preview" className="mt-1 h-12 w-full object-cover rounded border border-white/10" />
+            )}
           </label>
 
           {formError && <p className="text-xs text-red-400">{formError}</p>}

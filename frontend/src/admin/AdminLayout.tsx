@@ -44,11 +44,20 @@ export function AdminLayout() {
           <NavLink to="/admin/payments" className={navClass}>
             Платежи
           </NavLink>
+          <NavLink to="/admin/coupons" className={navClass}>
+            Промокоды
+          </NavLink>
           <NavLink to="/admin/exchange-rate" className={navClass}>
             Курс валют
           </NavLink>
           <NavLink to="/admin/users" className={navClass}>
             Пользователи
+          </NavLink>
+          <NavLink to="/admin/site-settings" className={navClass}>
+            Настройки сайта
+          </NavLink>
+          <NavLink to="/admin/reviews" className={navClass}>
+            Отзывы
           </NavLink>
         </nav>
         <div className="mt-auto border-t border-white/10 pt-4">

@@ -1,5 +1,6 @@
 package com.nurba.java.dto.responce;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.nurba.java.enums.DesignStatus;
 import lombok.Data;
 
@@ -24,4 +25,7 @@ public class DesignResponse {
     private LocalDateTime publishedAt;
     private LocalDateTime archivedAt;
     private Integer activeGarmentCount;
+    @JsonProperty("isNewArrival")
+    private boolean isNewArrival;
+    private int viewCount;
 }

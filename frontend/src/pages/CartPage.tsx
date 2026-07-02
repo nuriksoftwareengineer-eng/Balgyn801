@@ -9,16 +9,17 @@ import { isLegacyLine, isDesignLine } from "@/app/cart-context";
 import {
   calculateCdekTariffByOrder,
   createOrder,
-  createPayPalOrder,
   getDeliveryMethods,
   initPayment,
   listCdekDeliveryPoints,
   searchCdekCities,
+  validateCoupon,
 } from "@/shared/api/backend-api";
 import type {
   CdekCity,
   CdekDeliveryPoint,
   CdekOrderTariffResponse,
+  CouponValidateResponse,
   CreateOrderRequest,
   DeliveryAddressRequest,
   DeliveryMethodResponse,
@@ -326,6 +327,62 @@ function SummarySidebar({
   );
 }
 
+// ── Payment providers config ───────────────────────────────────────────────────
+
+const PAYMENT_PROVIDERS = [
+  {
+    id: "FREEDOM_PAY" as PaymentProvider,
+    titleKey: "payment.bankCard",
+    descKey: "payment.bankCardDesc",
+    footerKey: "payment.freedomPayNetworks",
+    logo: (selected: boolean) => (
+      <div className="flex items-center gap-1.5">
+        <span className={cn(
+          "flex h-[22px] w-[34px] items-center justify-center rounded border text-[9px] font-black italic",
+          selected ? "border-white/30 bg-white/10 text-white" : "border-zinc-200 bg-white text-[#1434CB]",
+        )}>VISA</span>
+        <svg width="34" height="22" viewBox="0 0 34 22" fill="none" className={cn(
+          "rounded border",
+          selected ? "border-white/30" : "border-zinc-200",
+        )}>
+          <rect width="34" height="22" fill={selected ? "rgba(255,255,255,0.08)" : "white"} rx="2"/>
+          <circle cx="13" cy="11" r="6" fill="#EB001B" fillOpacity="0.9"/>
+          <circle cx="21" cy="11" r="6" fill="#F79E1B" fillOpacity="0.9"/>
+          <path d="M17 6.2a6 6 0 0 1 0 9.6 6 6 0 0 1 0-9.6z" fill="#FF5F00" fillOpacity="0.8"/>
+        </svg>
+      </div>
+    ),
+  },
+  {
+    id: "PAYPAL" as PaymentProvider,
+    titleKey: "payment.paypalLabel",
+    descKey: "payment.paypalDesc",
+    footerKey: "payment.paypalNetworks",
+    logo: (selected: boolean) => (
+      <div className={cn(
+        "flex h-[22px] w-[56px] items-center justify-center rounded border text-[11px] font-extrabold tracking-tight",
+        selected ? "border-white/30 bg-white/10 text-white" : "border-zinc-200 bg-[#003087] text-white",
+      )}>
+        <span className="text-[#009CDE]">Pay</span><span>Pal</span>
+      </div>
+    ),
+  },
+  {
+    id: "VTB_KZ" as PaymentProvider,
+    titleKey: "payment.vtbCard",
+    descKey: "payment.vtbCardDesc",
+    footerKey: "payment.vtbNetworks",
+    logo: (selected: boolean) => (
+      <div className={cn(
+        "flex h-[22px] w-[42px] items-center justify-center rounded border text-[9px] font-extrabold tracking-widest",
+        selected ? "border-white/30 bg-white/10 text-white" : "border-zinc-200 bg-[#003087] text-white",
+      )}>
+        VTB
+      </div>
+    ),
+  },
+];
+
 // ── Order success ──────────────────────────────────────────────────────────────
 
 function OrderSuccess({
@@ -434,103 +491,46 @@ function OrderSuccess({
         <p className="mb-4 text-sm text-[--color-muted]">
           {t("cart.order.paymentDesc")}
         </p>
-        <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {/* Bank Card (Freedom Pay) */}
-          <button
-            type="button"
-            onClick={() => onPaymentProviderChange("FREEDOM_PAY")}
-            className={cn(
-              "relative flex flex-col gap-3 border p-4 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black",
-              paymentProvider === "FREEDOM_PAY"
-                ? "border-black bg-black text-white"
-                : "border-[--color-border] bg-white text-black hover:border-black/60",
-            )}
-            aria-pressed={paymentProvider === "FREEDOM_PAY"}
-          >
-            {paymentProvider === "FREEDOM_PAY" && (
-              <span className="absolute right-3 top-3 flex h-4 w-4 items-center justify-center rounded-full bg-white text-black">
-                <svg width="8" height="7" viewBox="0 0 8 7" fill="none" aria-hidden="true">
-                  <path d="M1 3.5l2 2 4-4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </span>
-            )}
-            {/* Card brand logos */}
-            <div className="flex items-center gap-1.5">
-              {/* Visa */}
-              <span className={cn(
-                "flex h-[22px] w-[34px] items-center justify-center rounded border text-[9px] font-black italic",
-                paymentProvider === "FREEDOM_PAY"
-                  ? "border-white/30 bg-white/10 text-white"
-                  : "border-zinc-200 bg-white text-[#1434CB]",
-              )}>VISA</span>
-              {/* Mastercard */}
-              <svg width="34" height="22" viewBox="0 0 34 22" fill="none" className={cn(
-                "rounded border",
-                paymentProvider === "FREEDOM_PAY" ? "border-white/30" : "border-zinc-200",
-              )}>
-                <rect width="34" height="22" fill={paymentProvider === "FREEDOM_PAY" ? "rgba(255,255,255,0.08)" : "white"} rx="2"/>
-                <circle cx="13" cy="11" r="6" fill="#EB001B" fillOpacity="0.9"/>
-                <circle cx="21" cy="11" r="6" fill="#F79E1B" fillOpacity="0.9"/>
-                <path d="M17 6.2a6 6 0 0 1 0 9.6 6 6 0 0 1 0-9.6z" fill="#FF5F00" fillOpacity="0.8"/>
-              </svg>
-            </div>
-            <div>
-              <p className="text-[13px] font-bold leading-tight">{t("payment.bankCard")}</p>
-              <p className={cn(
-                "mt-0.5 text-[11px]",
-                paymentProvider === "FREEDOM_PAY" ? "text-white/70" : "text-[--color-muted]",
-              )}>{t("payment.bankCardDesc")}</p>
-            </div>
-            <p className={cn(
-              "text-[11px]",
-              paymentProvider === "FREEDOM_PAY" ? "text-white/50" : "text-zinc-400",
-            )}>
-              Kaspi · Halyk · Visa · Mastercard
-            </p>
-          </button>
-
-          {/* PayPal card */}
-          <button
-            type="button"
-            onClick={() => onPaymentProviderChange("PAYPAL")}
-            className={cn(
-              "relative flex flex-col gap-3 border p-4 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black",
-              paymentProvider === "PAYPAL"
-                ? "border-black bg-black text-white"
-                : "border-[--color-border] bg-white text-black hover:border-black/60",
-            )}
-            aria-pressed={paymentProvider === "PAYPAL"}
-          >
-            {paymentProvider === "PAYPAL" && (
-              <span className="absolute right-3 top-3 flex h-4 w-4 items-center justify-center rounded-full bg-white text-black">
-                <svg width="8" height="7" viewBox="0 0 8 7" fill="none" aria-hidden="true">
-                  <path d="M1 3.5l2 2 4-4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </span>
-            )}
-            {/* PayPal logo */}
-            <div className={cn(
-              "flex h-[22px] w-[56px] items-center justify-center rounded border text-[11px] font-extrabold tracking-tight",
-              paymentProvider === "PAYPAL"
-                ? "border-white/30 bg-white/10 text-white"
-                : "border-zinc-200 bg-[#003087] text-white",
-            )}>
-              <span className="text-[#009CDE]">Pay</span><span>Pal</span>
-            </div>
-            <div>
-              <p className="text-[13px] font-bold leading-tight">PayPal</p>
-              <p className={cn(
-                "mt-0.5 text-[11px]",
-                paymentProvider === "PAYPAL" ? "text-white/70" : "text-[--color-muted]",
-              )}>{t("payment.paypalDesc")}</p>
-            </div>
-            <p className={cn(
-              "text-[11px]",
-              paymentProvider === "PAYPAL" ? "text-white/50" : "text-zinc-400",
-            )}>
-              Visa · Mastercard · Amex · {t("payment.paypalAccount")}
-            </p>
-          </button>
+        <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+          {PAYMENT_PROVIDERS.map((p) => {
+            const selected = paymentProvider === p.id;
+            return (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => onPaymentProviderChange(p.id)}
+                className={cn(
+                  "relative flex flex-col gap-3 border p-4 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black",
+                  selected
+                    ? "border-black bg-black text-white"
+                    : "border-[--color-border] bg-white text-black hover:border-black/60",
+                )}
+                aria-pressed={selected}
+              >
+                {selected && (
+                  <span className="absolute right-3 top-3 flex h-4 w-4 items-center justify-center rounded-full bg-white text-black">
+                    <svg width="8" height="7" viewBox="0 0 8 7" fill="none" aria-hidden="true">
+                      <path d="M1 3.5l2 2 4-4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </span>
+                )}
+                {p.logo(selected)}
+                <div>
+                  <p className="text-[13px] font-bold leading-tight">{t(p.titleKey)}</p>
+                  <p className={cn(
+                    "mt-0.5 text-[11px]",
+                    selected ? "text-white/70" : "text-[--color-muted]",
+                  )}>{t(p.descKey)}</p>
+                </div>
+                <p className={cn(
+                  "text-[11px]",
+                  selected ? "text-white/50" : "text-zinc-400",
+                )}>
+                  {t(p.footerKey)}
+                </p>
+              </button>
+            );
+          })}
         </div>
         <button
           type="button"
@@ -620,33 +620,23 @@ function RecoveryBanner({
         <p className="mb-3 text-[0.6rem] font-semibold uppercase tracking-[0.16em] text-black">
           {t("cart.order.payment")}
         </p>
-        <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <button
-            type="button"
-            onClick={() => onProviderChange("FREEDOM_PAY")}
-            className={cn(
-              "flex items-center gap-2 border px-4 py-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black",
-              provider === "FREEDOM_PAY"
-                ? "border-black bg-black text-white"
-                : "border-[--color-border] bg-white text-black hover:border-black/60",
-            )}
-            aria-pressed={provider === "FREEDOM_PAY"}
-          >
-            <span className="text-[12px] font-bold">{t("recovery.card")}</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => onProviderChange("PAYPAL")}
-            className={cn(
-              "flex items-center gap-2 border px-4 py-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black",
-              provider === "PAYPAL"
-                ? "border-black bg-black text-white"
-                : "border-[--color-border] bg-white text-black hover:border-black/60",
-            )}
-            aria-pressed={provider === "PAYPAL"}
-          >
-            <span className="text-[12px] font-bold">PayPal</span>
-          </button>
+        <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+          {PAYMENT_PROVIDERS.map((p) => (
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => onProviderChange(p.id)}
+              className={cn(
+                "flex items-center gap-2 border px-4 py-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black",
+                provider === p.id
+                  ? "border-black bg-black text-white"
+                  : "border-[--color-border] bg-white text-black hover:border-black/60",
+              )}
+              aria-pressed={provider === p.id}
+            >
+              <span className="text-[12px] font-bold">{t(p.titleKey)}</span>
+            </button>
+          ))}
         </div>
         <button
           type="button"
@@ -751,6 +741,12 @@ export function CartPage() {
     useState<PaymentProvider>("FREEDOM_PAY");
   const [paymentBusy, setPaymentBusy] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
+
+  // ── Coupon ────────────────────────────────────────────────────────────────────
+  const [couponInput, setCouponInput] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<CouponValidateResponse | null>(null);
+  const [couponError, setCouponError] = useState<string | null>(null);
+  const [couponBusy, setCouponBusy] = useState(false);
 
   // ── Recovery: pending payment from localStorage / navigation state ────────────
   const [pendingRecord, setPendingRecord] = useState<PendingPaymentRecord | null>(null);
@@ -1049,6 +1045,8 @@ export function CartPage() {
       setCountryIso2("KZ");
       setDeliveryType("PICKUP");
       setComment("");
+      setAppliedCoupon(null);
+      setCouponInput("");
     },
     onError: (err: unknown) => {
       setFormError(
@@ -1097,6 +1095,7 @@ export function CartPage() {
       comment: comment.trim() || null,
       countryIso2: countryIso2ForOrder,
       pvzCode,
+      couponCode: appliedCoupon?.code ?? null,
       items: lines.map((l) =>
         isDesignLine(l)
           ? {
@@ -1119,6 +1118,25 @@ export function CartPage() {
     orderMutation.mutate(payload);
   }
 
+  async function handleApplyCoupon() {
+    const code = couponInput.trim();
+    if (!code) return;
+    setCouponError(null);
+    setCouponBusy(true);
+    try {
+      const result = await validateCoupon(code, subtotal);
+      setAppliedCoupon(result);
+    } catch (err) {
+      setCouponError(
+        err instanceof ApiError
+          ? err.message
+          : t("cart.coupon.invalid", "Промокод недействителен или не применим"),
+      );
+    } finally {
+      setCouponBusy(false);
+    }
+  }
+
   async function handleInitPayment(override?: {
     orderId: number;
     provider: PaymentProvider;
@@ -1134,39 +1152,21 @@ export function CartPage() {
       const returnUrl = `${window.location.origin}/payment-return`;
       const cancelUrl = `${window.location.origin}/payment/cancelled`;
 
-      let paymentUrl: string;
-
-      if (prov === "PAYPAL") {
-        const payment = await createPayPalOrder({
-          orderId: oid,
-          returnUrl,
-          cancelUrl,
-        });
-        if (!payment.paymentUrl)
-          throw new Error(t("cart.errors.paypalError"));
-        paymentUrl = payment.paymentUrl;
-        // Persist after we have the cancelToken from the server response
-        saveLastPayment({
-          orderId: oid,
-          totalPrice: override?.amount ?? completedOrder?.totalPrice ?? 0,
-          provider: prov,
-          cancelToken: payment.cancelToken ?? undefined,
-        });
-      } else {
-        const payment = await initPayment({
-          orderId: oid,
-          provider: prov,
-          returnUrl,
-        });
-        if (!payment.paymentUrl)
-          throw new Error(t("cart.errors.paymentUrlError"));
-        paymentUrl = payment.paymentUrl;
-        saveLastPayment({
-          orderId: oid,
-          totalPrice: override?.amount ?? completedOrder?.totalPrice ?? 0,
-          provider: prov,
-        });
-      }
+      const payment = await initPayment({
+        orderId: oid,
+        provider: prov,
+        returnUrl,
+        cancelUrl,
+      });
+      if (!payment.paymentUrl)
+        throw new Error(t("cart.errors.paymentUrlError"));
+      const paymentUrl = payment.paymentUrl;
+      saveLastPayment({
+        orderId: oid,
+        totalPrice: override?.amount ?? completedOrder?.totalPrice ?? 0,
+        provider: prov,
+        cancelToken: payment.cancelToken ?? undefined,
+      });
 
       window.location.href = paymentUrl;
     } catch (err: unknown) {
@@ -2076,13 +2076,49 @@ export function CartPage() {
                 ))}
               </ul>
 
+              {/* Coupon input */}
+              <div className="mt-3 border border-[--color-border] bg-white px-4 py-4">
+                {appliedCoupon ? (
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <p className="text-[0.6rem] font-semibold uppercase tracking-[0.1em] text-emerald-600">{t("cart.coupon.applied", "Промокод применён")}</p>
+                      <p className="mt-0.5 font-mono text-sm font-semibold text-black">{appliedCoupon.code} — -{formatMoney(appliedCoupon.discountAmount)} ₸</p>
+                    </div>
+                    <button type="button" onClick={() => { setAppliedCoupon(null); setCouponInput(""); }}
+                      className="shrink-0 text-[0.65rem] uppercase tracking-[0.1em] text-[--color-muted] transition hover:text-[--color-danger]">
+                      {t("cart.coupon.remove", "Убрать")}
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <input
+                      className="min-w-0 flex-1 border-b border-[--color-border] bg-transparent py-2 font-mono text-sm uppercase placeholder:text-[--color-muted] outline-none focus:border-black transition"
+                      placeholder={t("cart.coupon.placeholder", "ПРОМОКОД")}
+                      value={couponInput}
+                      onChange={e => setCouponInput(e.target.value.toUpperCase())}
+                      onKeyDown={e => { if (e.key === "Enter") void handleApplyCoupon(); }}
+                    />
+                    <button type="button" onClick={() => void handleApplyCoupon()} disabled={couponBusy || !couponInput.trim()}
+                      className="shrink-0 bg-black px-4 py-2 text-[11px] font-bold uppercase tracking-[0.12em] text-white transition hover:bg-zinc-800 disabled:opacity-40">
+                      {couponBusy ? "..." : t("cart.coupon.apply", "Применить")}
+                    </button>
+                  </div>
+                )}
+                {couponError && <p className="mt-2 text-xs text-[--color-danger]">{couponError}</p>}
+              </div>
+
               <div className="mt-4 flex flex-wrap items-center justify-between gap-4 border border-[--color-border] bg-[--color-surface] px-5 py-5">
                 <div>
                   <p className="m-0 text-[0.6rem] uppercase tracking-[0.16em] text-[--color-muted]">
                     {t("cart.items", { count: totalQty })}
                   </p>
+                  {appliedCoupon && (
+                    <p className="m-0 mt-0.5 text-xs text-emerald-600">
+                      {t("cart.coupon.discount", "Скидка")}: -{formatMoney(appliedCoupon.discountAmount)} ₸
+                    </p>
+                  )}
                   <p className="mt-1 text-2xl font-semibold text-black">
-                    {formatMoney(subtotal)} ₸
+                    {formatMoney(appliedCoupon ? Math.max(0, subtotal - appliedCoupon.discountAmount) : subtotal)} ₸
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">

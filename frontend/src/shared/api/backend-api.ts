@@ -1,4 +1,4 @@
-import { apiFetch, getApiBaseUrl, ApiError } from "@/shared/api/http";
+﻿import { apiFetch, getApiBaseUrl, ApiError } from "@/shared/api/http";
 import type {
   AdminUserResponse,
   AuthMeResponse,
@@ -10,11 +10,15 @@ import type {
   CdekShipmentResponse,
   CdekTariffRequest,
   CdekTariffResponse,
+  CouponRequest,
+  CouponResponse,
+  CouponValidateResponse,
   CreateOrderRequest,
   CreateProductRequest,
   CustomerRequest,
   CustomerResponse,
   DeliveryMethodResponse,
+  DesignResponse,
   ExchangeRateResponse,
   LoginRequest,
   MediaUploadResponse,
@@ -24,12 +28,12 @@ import type {
   PaymentWebhookRequest,
   PaymentProvider,
   PaymentStatus,
-  PayPalCreateOrderRequest,
   Product,
   RefreshTokenRequest,
   RegisterRequest,
   SetExchangeRateRequest,
   UpdateOrderStatusRequest,
+  WishlistItemResponse,
 } from "@/shared/api/types";
 import type {
   CatalogGroupSummary,
@@ -38,6 +42,8 @@ import type {
   DesignDetail,
   DesignSummary,
 } from "@/shared/types/catalog";
+import type { DashboardStatsResponse } from "@/shared/types/dashboard";
+import type { ShopReviewResponse, ShopReviewRequest } from "@/shared/types/reviews";
 
 /**
  * Живая карта маршрутов бэкенда (Spring Security).
@@ -378,20 +384,46 @@ export async function initPayment(
   });
 }
 
-/** Создаёт PayPal-ордер и возвращает ссылку на одобрение покупателем. */
-export async function createPayPalOrder(body: PayPalCreateOrderRequest): Promise<PaymentResponse> {
-  return apiFetch<PaymentResponse>("/payments/paypal/create-order", {
+/**
+ * Подтверждает (captures) платёж через единый endpoint.
+ * Используется для двухэтапных провайдеров — в первую очередь PayPal.
+ */
+export async function capturePayment(
+  provider: PaymentProvider,
+  providerPaymentId: string,
+): Promise<PaymentResponse> {
+  return apiFetch<PaymentResponse>(
+    `/payments/capture/${encodeURIComponent(providerPaymentId)}?provider=${encodeURIComponent(provider)}`,
+    { method: "POST" },
+  );
+}
+
+/**
+ * Верифицирует возврат VTB KZ (?orderId=...) и подтверждает заказ через getOrderStatusExtended.
+ * Передаёт весь Map query-параметров на бэкенд.
+ */
+export async function verifyVtbReturn(
+  params: Record<string, string>,
+): Promise<PaymentResponse> {
+  return apiFetch<PaymentResponse>("/payments/vtb-kz/verify-return", {
     method: "POST",
-    body: JSON.stringify(body),
+    body: JSON.stringify(params),
   });
 }
 
-/** Подтверждает (captures) ранее одобренный PayPal-ордер по его ID (token из URL возврата). */
-export async function capturePayPalOrder(paypalOrderId: string): Promise<PaymentResponse> {
-  return apiFetch<PaymentResponse>(
-    `/payments/paypal/capture/${encodeURIComponent(paypalOrderId)}`,
-    { method: "POST" },
-  );
+
+/**
+ * Верифицирует pg_sig из success-redirect FreedomPay и подтверждает заказ.
+ * Принимает все query-параметры из URL /payment-return?pg_payment_id=...
+ * Не использует check_payment.php — только локальная проверка MD5 подписи.
+ */
+export async function verifyFreedomPayRedirect(
+  redirectParams: Record<string, string>,
+): Promise<PaymentResponse> {
+  return apiFetch<PaymentResponse>("/payments/freedom-pay/verify-redirect", {
+    method: "POST",
+    body: JSON.stringify(redirectParams),
+  });
 }
 
 /** Вебхук-пайплайн (для локального/интеграционного теста без провайдера). */
@@ -557,4 +589,185 @@ export async function refreshExchangeRate(token: string): Promise<ExchangeRateRe
 /** Список всех зарегистрированных пользователей (только ADMIN). */
 export async function getAdminUsers(token: string): Promise<AdminUserResponse[]> {
   return apiFetch<AdminUserResponse[]>("/admin/users", { token });
+}
+
+// ── Pagination ────────────────────────────────────────────────────────────────
+
+export interface PageResponse<T> {
+  content: T[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrevious: boolean;
+}
+
+/** Paginated admin user search. */
+export async function searchAdminUsers(
+  token: string,
+  opts: { q?: string; page?: number; size?: number } = {},
+): Promise<PageResponse<AdminUserResponse>> {
+  const p = new URLSearchParams();
+  if (opts.q) p.set("search", opts.q);
+  p.set("page", String(opts.page ?? 0));
+  p.set("size", String(opts.size ?? 50));
+  return apiFetch<PageResponse<AdminUserResponse>>(`/admin/users?${p}`, { token });
+}
+
+/** Paginated admin customer search. */
+export async function searchAdminCustomers(
+  token: string,
+  opts: { q?: string; page?: number; size?: number } = {},
+): Promise<PageResponse<CustomerResponse>> {
+  const p = new URLSearchParams();
+  if (opts.q) p.set("q", opts.q);
+  p.set("page", String(opts.page ?? 0));
+  p.set("size", String(opts.size ?? 50));
+  return apiFetch<PageResponse<CustomerResponse>>(`/customer/search?${p}`, { token });
+}
+
+/** Paginated admin order search. */
+export async function searchAdminOrders(
+  token: string,
+  opts: { q?: string; page?: number; size?: number } = {},
+): Promise<PageResponse<OrderResponse>> {
+  const p = new URLSearchParams();
+  if (opts.q) p.set("q", opts.q);
+  p.set("page", String(opts.page ?? 0));
+  p.set("size", String(opts.size ?? 50));
+  return apiFetch<PageResponse<OrderResponse>>(`/order/search?${p}`, { token });
+}
+
+/** Paginated admin payment search. */
+export async function searchAdminPayments(
+  token: string,
+  opts: { q?: string; provider?: PaymentProvider; status?: PaymentStatus; page?: number; size?: number } = {},
+): Promise<PageResponse<PaymentResponse>> {
+  const p = new URLSearchParams();
+  if (opts.q) p.set("q", opts.q);
+  if (opts.provider) p.set("provider", opts.provider);
+  if (opts.status) p.set("status", opts.status);
+  p.set("page", String(opts.page ?? 0));
+  p.set("size", String(opts.size ?? 50));
+  return apiFetch<PageResponse<PaymentResponse>>(`/admin/payments/search?${p}`, { token });
+}
+
+// ─── Shop Reviews ─────────────────────────────────────────────────────────────
+
+/** Published reviews for public storefront (carousel / reviews page). */
+export async function getPublishedReviews(limit = 20): Promise<ShopReviewResponse[]> {
+  return apiFetch<ShopReviewResponse[]>(`/shop-reviews?limit=${limit}`);
+}
+
+/** Admin: paginated + searchable review list. */
+export async function adminListReviews(
+  token: string,
+  opts: { q?: string; page?: number; size?: number } = {},
+): Promise<PageResponse<ShopReviewResponse>> {
+  const p = new URLSearchParams();
+  if (opts.q) p.set("q", opts.q);
+  p.set("page", String(opts.page ?? 0));
+  p.set("size", String(opts.size ?? 50));
+  return apiFetch<PageResponse<ShopReviewResponse>>(`/admin/shop-reviews?${p}`, { token });
+}
+
+export async function adminCreateReview(
+  token: string,
+  req: ShopReviewRequest,
+): Promise<ShopReviewResponse> {
+  return apiFetch<ShopReviewResponse>(`/admin/shop-reviews`, { token, method: "POST", body: JSON.stringify(req) });
+}
+
+export async function adminUpdateReview(
+  token: string,
+  id: number,
+  req: ShopReviewRequest,
+): Promise<ShopReviewResponse> {
+  return apiFetch<ShopReviewResponse>(`/admin/shop-reviews/${id}`, { token, method: "PUT", body: JSON.stringify(req) });
+}
+
+export async function adminPublishReview(token: string, id: number): Promise<ShopReviewResponse> {
+  return apiFetch<ShopReviewResponse>(`/admin/shop-reviews/${id}/publish`, { token, method: "PATCH" });
+}
+
+export async function adminHideReview(token: string, id: number): Promise<ShopReviewResponse> {
+  return apiFetch<ShopReviewResponse>(`/admin/shop-reviews/${id}/hide`, { token, method: "PATCH" });
+}
+
+export async function adminDeleteReview(token: string, id: number): Promise<void> {
+  return apiFetch<void>(`/admin/shop-reviews/${id}`, { token, method: "DELETE" });
+}
+
+// ─── Wishlist ──────────────────────────────────────────────────────────────────
+
+export async function getWishlist(token: string): Promise<WishlistItemResponse[]> {
+  return apiFetch<WishlistItemResponse[]>(`/me/wishlist`, { token });
+}
+
+export async function addToWishlist(token: string, designId: number): Promise<WishlistItemResponse> {
+  return apiFetch<WishlistItemResponse>(`/me/wishlist/${designId}`, { token, method: "POST" });
+}
+
+export async function removeFromWishlist(token: string, designId: number): Promise<void> {
+  return apiFetch<void>(`/me/wishlist/${designId}`, { token, method: "DELETE" });
+}
+
+export async function checkWishlist(token: string, designId: number): Promise<{ inWishlist: boolean; count: number }> {
+  return apiFetch<{ inWishlist: boolean; count: number }>(`/me/wishlist/check/${designId}`, { token });
+}
+
+export async function getWishlistCount(token: string): Promise<{ count: number }> {
+  return apiFetch<{ count: number }>(`/me/wishlist/count`, { token });
+}
+
+// ─── Coupons (public) ──────────────────────────────────────────────────────────
+
+export async function validateCoupon(code: string, orderTotal: number): Promise<CouponValidateResponse> {
+  return apiFetch<CouponValidateResponse>(`/coupons/validate?code=${encodeURIComponent(code)}&orderTotal=${orderTotal}`);
+}
+
+// ─── Coupons (admin) ──────────────────────────────────────────────────────────
+
+export async function adminListCoupons(
+  token: string,
+  opts: { q?: string; page?: number; size?: number } = {},
+): Promise<PageResponse<CouponResponse>> {
+  const p = new URLSearchParams();
+  if (opts.q) p.set("q", opts.q);
+  p.set("page", String(opts.page ?? 0));
+  p.set("size", String(opts.size ?? 20));
+  return apiFetch<PageResponse<CouponResponse>>(`/admin/coupons?${p}`, { token });
+}
+
+export async function adminCreateCoupon(token: string, req: CouponRequest): Promise<CouponResponse> {
+  return apiFetch<CouponResponse>(`/admin/coupons`, { token, method: "POST", body: JSON.stringify(req) });
+}
+
+export async function adminUpdateCoupon(token: string, id: number, req: CouponRequest): Promise<CouponResponse> {
+  return apiFetch<CouponResponse>(`/admin/coupons/${id}`, { token, method: "PUT", body: JSON.stringify(req) });
+}
+
+export async function adminDeleteCoupon(token: string, id: number): Promise<void> {
+  return apiFetch<void>(`/admin/coupons/${id}`, { token, method: "DELETE" });
+}
+
+// ─── Dashboard (admin) ────────────────────────────────────────────────────────
+
+export async function getDashboardStats(token: string, days = 30): Promise<DashboardStatsResponse> {
+  return apiFetch<DashboardStatsResponse>(`/admin/dashboard/stats?days=${days}`, { token });
+}
+
+// ─── Catalog: popular / new-arrivals / recommendations ───────────────────────
+
+export async function getPopularDesigns(limit = 8): Promise<DesignResponse[]> {
+  return apiFetch<DesignResponse[]>(`/catalog/popular?limit=${limit}`);
+}
+
+export async function getNewArrivals(limit = 8): Promise<DesignResponse[]> {
+  return apiFetch<DesignResponse[]>(`/catalog/new-arrivals?limit=${limit}`);
+}
+
+export async function getRecommendations(designId: number, limit = 6): Promise<DesignResponse[]> {
+  return apiFetch<DesignResponse[]>(`/catalog/recommendations?designId=${designId}&limit=${limit}`);
 }

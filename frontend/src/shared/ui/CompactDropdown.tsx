@@ -89,7 +89,7 @@ export function CompactDropdown({ trigger, options, value, onChange, className, 
           role="listbox"
           onKeyDown={handleListKeyDown}
           className={cn(
-            "absolute top-full z-50 mt-0.5 min-w-[76px] border border-[--color-border] bg-white py-0.5 shadow-sm",
+            "absolute top-full z-50 mt-0.5 min-w-[76px] border border-[--color-border] bg-white text-black py-0.5 shadow-sm",
             align === "right" ? "right-0" : "left-0",
           )}
         >
@@ -102,7 +102,7 @@ export function CompactDropdown({ trigger, options, value, onChange, className, 
               aria-selected={opt.value === value}
               onClick={() => { onChange(opt.value); setOpen(false); setFocusIdx(-1); }}
               className={cn(
-                "w-full px-3 py-2 text-left text-[0.65rem] font-semibold uppercase tracking-[0.08em] transition-colors hover:bg-[--color-surface]",
+                "w-full px-3 py-2 text-left text-[0.65rem] font-semibold uppercase tracking-[0.08em] transition-colors hover:bg-gray-100",
                 opt.value === value ? "text-black" : "text-[--color-muted]",
               )}
             >

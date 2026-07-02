@@ -47,7 +47,7 @@ public class FreedomPayCallbackController {
         }
 
         try {
-            paymentService.handleFreedomPayCallback(params);
+            paymentService.handleCallback(com.nurba.java.enums.PaymentProvider.FREEDOM_PAY, params);
             return ResponseEntity.ok(xmlOk());
         } catch (BusinessRuleException e) {
             log.warn("[FreedomPay] Callback rejected: {}", e.getMessage());

@@ -4,6 +4,7 @@ import { AuthProvider } from "@/app/auth-context";
 import { CartDrawerProvider } from "@/app/cart-drawer-context";
 import { CartProvider } from "@/app/cart-provider";
 import { CurrencyProvider } from "@/app/currency-context";
+import { WishlistProvider } from "@/app/wishlist-context";
 
 export function Providers({ children }: { children: ReactNode }) {
   const [queryClient] = useState(
@@ -21,11 +22,13 @@ export function Providers({ children }: { children: ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <CurrencyProvider>
-          <CartDrawerProvider>
-            <CartProvider>{children}</CartProvider>
-          </CartDrawerProvider>
-        </CurrencyProvider>
+        <WishlistProvider>
+          <CurrencyProvider>
+            <CartDrawerProvider>
+              <CartProvider>{children}</CartProvider>
+            </CartDrawerProvider>
+          </CurrencyProvider>
+        </WishlistProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

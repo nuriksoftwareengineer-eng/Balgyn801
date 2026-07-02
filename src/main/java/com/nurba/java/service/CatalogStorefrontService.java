@@ -32,6 +32,16 @@ public interface CatalogStorefrontService {
     /**
      * Full design page: design info + active garments, each garment carrying
      * its prices (all currencies), available colors and available sizes.
+     * Also increments the view count.
      */
     DesignDetailResponse getDesignBySlug(String slug);
+
+    /** Popular designs sorted by view count, limited to {@code limit}. */
+    List<DesignResponse> getPopular(int limit);
+
+    /** New arrivals: designs with isNewArrival=true or published in last 30 days. */
+    List<DesignResponse> getNewArrivals(int limit);
+
+    /** Recommendations: same collection as the given design, fallback to popular. */
+    List<DesignResponse> getRecommendations(Long designId, int limit);
 }

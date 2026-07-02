@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { CONTACT_EMAIL } from "@/shared/constants/store-content";
 import { InfoPage, InfoSection } from "@/shared/ui/info-page";
 
@@ -6,89 +7,64 @@ const linkClass =
   "font-medium text-black underline underline-offset-2 transition-colors hover:text-zinc-600";
 
 export function TermsPage() {
+  const { t } = useTranslation();
   return (
-    <InfoPage
-      title="Пользовательское соглашение"
-      lead="Публичная оферта интернет-магазина BALGYN. Оформляя заказ на сайте, вы подтверждаете, что ознакомились с условиями ниже и принимаете их."
-    >
-      <InfoSection heading="1. Общие положения">
-        <p>
-          BALGYN — интернет-магазин одежды с машинной вышивкой. Продуктом
-          является дизайн вышивки: при заказе вы выбираете дизайн, тип изделия
-          (худи, футболка, свитшот), цвет и размер.
-        </p>
-        <p>
-          Настоящее соглашение является публичной офертой. Акцептом оферты
-          считается оформление заказа через корзину сайта.
-        </p>
+    <InfoPage title={t("termsPage.title")} lead={t("termsPage.lead")}>
+      <InfoSection heading={t("termsPage.s1.heading")}>
+        <p>{t("termsPage.s1.p1")}</p>
+        <p>{t("termsPage.s1.p2")}</p>
       </InfoSection>
 
-      <InfoSection heading="2. Оформление заказа">
-        <p>
-          Для оформления заказа достаточно указать имя и контактный телефон —
-          регистрация не обязательна. После оформления мы связываемся с вами по
-          указанному номеру или в Telegram для подтверждения деталей.
-        </p>
-        <p>
-          Заказ считается принятым в работу после подтверждения оплаты. До
-          момента оплаты заказ имеет статус «Ожидает оплаты» и может быть
-          автоматически отменён по истечении платёжного окна.
-        </p>
+      <InfoSection heading={t("termsPage.s2.heading")}>
+        <p>{t("termsPage.s2.p1")}</p>
+        <p>{t("termsPage.s2.p2")}</p>
       </InfoSection>
 
-      <InfoSection heading="3. Изготовление и сроки">
-        <p>
-          Каждое изделие вышивается под заказ. Срок изготовления зависит от
-          сложности дизайна и загрузки производства и сообщается при
-          подтверждении заказа. Перед отправкой мы присылаем фото готового
-          изделия.
-        </p>
+      <InfoSection heading={t("termsPage.s3.heading")}>
+        <p>{t("termsPage.s3.p1")}</p>
       </InfoSection>
 
-      <InfoSection heading="4. Оплата и доставка">
+      <InfoSection heading={t("termsPage.s4.heading")}>
         <p>
-          Доступные способы оплаты и доставки, а также их стоимость описаны на
-          странице{" "}
+          {t("termsPage.s4.before")}
           <Link to="/delivery" className={linkClass}>
-            «Доставка и оплата»
+            {t("termsPage.s4.deliveryLink")}
           </Link>
-          . Цены на сайте указаны в тенге (₸).
+          {t("termsPage.s4.after")}
         </p>
       </InfoSection>
 
-      <InfoSection heading="5. Возврат">
+      <InfoSection heading={t("termsPage.s5.heading")}>
         <p>
-          Условия возврата и обмена описаны на странице{" "}
+          {t("termsPage.s5.before")}
           <Link to="/returns" className={linkClass}>
-            «Возврат и обмен»
+            {t("termsPage.s5.returnsLink")}
           </Link>
-          . Изделия, изготовленные по индивидуальному заказу (раздел «Свой
-          дизайн»), возврату не подлежат, за исключением случаев
-          производственного брака.
+          {t("termsPage.s5.after")}
         </p>
       </InfoSection>
 
-      <InfoSection heading="6. Персональные данные">
+      <InfoSection heading={t("termsPage.s6.heading")}>
         <p>
-          Обработка персональных данных выполняется в соответствии с{" "}
+          {t("termsPage.s6.before")}
           <Link to="/privacy" className={linkClass}>
-            Политикой конфиденциальности
+            {t("termsPage.s6.privacyLink")}
           </Link>
-          .
+          {t("termsPage.s6.after")}
         </p>
       </InfoSection>
 
-      <InfoSection heading="7. Контакты">
+      <InfoSection heading={t("termsPage.s7.heading")}>
         <p>
-          По всем вопросам, связанным с настоящим соглашением, пишите на{" "}
+          {t("termsPage.s7.before")}
           <a href={`mailto:${CONTACT_EMAIL}`} className={linkClass}>
             {CONTACT_EMAIL}
-          </a>{" "}
-          или через страницу{" "}
+          </a>
+          {t("termsPage.s7.middle")}
           <Link to="/contacts" className={linkClass}>
-            «Контакты»
+            {t("termsPage.s7.contactsLinkText")}
           </Link>
-          .
+          {t("termsPage.s7.after")}
         </p>
       </InfoSection>
     </InfoPage>
