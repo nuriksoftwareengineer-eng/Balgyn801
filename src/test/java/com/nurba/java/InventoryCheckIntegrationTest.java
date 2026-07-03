@@ -6,10 +6,10 @@ import com.nurba.java.domain.Color;
 import com.nurba.java.domain.Design;
 import com.nurba.java.domain.DesignGarment;
 import com.nurba.java.domain.DesignGarmentPrice;
+import com.nurba.java.domain.GarmentProfile;
 import com.nurba.java.domain.Inventory;
 import com.nurba.java.domain.Size;
 import com.nurba.java.enums.Currency;
-import com.nurba.java.enums.GarmentType;
 import com.nurba.java.repositories.CatalogGroupRepository;
 import com.nurba.java.repositories.CollectionRepository;
 import com.nurba.java.repositories.ColorRepository;
@@ -17,6 +17,7 @@ import com.nurba.java.repositories.CustomerRepository;
 import com.nurba.java.repositories.DesignGarmentPriceRepository;
 import com.nurba.java.repositories.DesignGarmentRepository;
 import com.nurba.java.repositories.DesignRepository;
+import com.nurba.java.repositories.GarmentProfileRepository;
 import com.nurba.java.repositories.InventoryRepository;
 import com.nurba.java.repositories.OrderHistoryRepository;
 import com.nurba.java.repositories.OrderItemRepository;
@@ -62,7 +63,10 @@ class InventoryCheckIntegrationTest {
     @Autowired private OrderRepository orderRepository;
     @Autowired private CustomerRepository customerRepository;
 
+    @Autowired private GarmentProfileRepository garmentProfileRepository;
+
     // IDs shared across helpers in each test
+    private GarmentProfile garmentProfile;
     private Long garmentId;
     private Long colorId;
     private Long sizeId;
@@ -90,6 +94,7 @@ class InventoryCheckIntegrationTest {
         catalogGroupRepository.deleteAll();
         colorRepository.deleteAll();
         sizeRepository.deleteAll();
+        garmentProfileRepository.deleteAll();
     }
 
     private void buildFixture() {
@@ -116,6 +121,15 @@ class InventoryCheckIntegrationTest {
         design.setCreatedAt(LocalDateTime.now());
         design = designRepository.save(design);
 
+        GarmentProfile gp = new GarmentProfile();
+        gp.setName("Test Profile");
+        gp.setWeightKg(new BigDecimal("0.500"));
+        gp.setLengthCm(35);
+        gp.setWidthCm(28);
+        gp.setHeightCm(8);
+        gp.setSortOrder(0);
+        garmentProfile = garmentProfileRepository.save(gp);
+
         Color color = new Color();
         color.setName("Black");
         color.setHexCode("#000000");
@@ -129,7 +143,7 @@ class InventoryCheckIntegrationTest {
 
         DesignGarment garment = new DesignGarment();
         garment.setDesign(design);
-        garment.setGarmentType(GarmentType.HOODIE);
+        garment.setGarmentProfile(garmentProfile);
         garment.setActive(true);
         garment.getColors().add(color);
         garment.getSizes().add(size);

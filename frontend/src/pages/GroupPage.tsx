@@ -1,11 +1,12 @@
 import { Link, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useCatalogGroup } from "@/shared/api/catalog-api";
+import { localizeName } from "@/shared/types/catalog";
 import { useSeoMeta } from "@/shared/hooks/useSeoMeta";
 import { Container } from "@/shared/ui/container";
 
 export function GroupPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   // groupSlug is set on deep routes (/catalog/:groupSlug/...); param on /catalog/:param
   const { groupSlug: routeGroupSlug, param } = useParams<{ groupSlug?: string; param?: string }>();
   const groupSlug = routeGroupSlug ?? param;
@@ -66,10 +67,10 @@ export function GroupPage() {
             <span>/</span>
             <Link to="/catalog" className="transition hover:text-white/70">{t("nav.catalog")}</Link>
             <span>/</span>
-            <span className="text-white/70">{group.name}</span>
+            <span className="text-white/70">{localizeName(group, i18n.language)}</span>
           </nav>
           <h1 className="text-5xl font-semibold uppercase tracking-[0.04em] text-white md:text-7xl">
-            {group.name}
+            {localizeName(group, i18n.language)}
           </h1>
         </Container>
       </div>
@@ -92,7 +93,7 @@ export function GroupPage() {
                   </div>
                   <div className="flex items-center justify-between px-4 py-3.5">
                     <p className="text-sm font-semibold uppercase tracking-[0.06em] text-black">
-                      {col.name}
+                      {localizeName(col, i18n.language)}
                     </p>
                     <span className="text-[0.6rem] font-medium uppercase tracking-[0.14em] text-[--color-muted] transition group-hover:text-black">
                       →

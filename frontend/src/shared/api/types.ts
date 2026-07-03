@@ -112,6 +112,8 @@ export type OrderItemResponse = {
   // Design-based (null for product-based orders)
   designGarmentId?: number | null;
   garmentType?: string | null;
+  garmentTypeRu?: string | null;
+  garmentTypeKk?: string | null;
   designName?: string | null;
   designSlug?: string | null;
   groupSlug?: string | null;
@@ -280,6 +282,7 @@ export type OrderResponse = {
   comment?: string | null;
   items?: OrderItemResponse[];
   address?: DeliveryAddressResponse | null;
+  cdekShipment?: CdekShipmentResponse | null;
   couponCode?: string | null;
   discountAmount?: number | null;
   createdAt: string;

@@ -5,6 +5,8 @@ import com.nurba.java.service.ParcelTrackingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,10 +19,20 @@ public class ParcelTrackingController {
 
     private final ParcelTrackingService service;
 
-    /** Public: user fetches tracking for their own order (orderId validated by JWT elsewhere if needed). */
+    /**
+     * Public tracking lookup. Access requires proof of ownership: either the authenticated owner of
+     * the order, or a matching {@code phone} (the number the order was placed with). Returns an empty
+     * list otherwise — never reveals whether the order exists (prevents IDOR enumeration by orderId).
+     */
     @GetMapping("/orders/{orderId}/tracking")
-    public List<ParcelTracking> getTracking(@PathVariable Long orderId) {
-        return service.getByOrderId(orderId);
+    public List<ParcelTracking> getTracking(
+            @PathVariable Long orderId,
+            @RequestParam(value = "phone", required = false) String phone,
+            Authentication authentication) {
+        String email = (authentication != null && authentication.isAuthenticated()
+                && !(authentication instanceof AnonymousAuthenticationToken))
+                ? authentication.getName() : null;
+        return service.getForRequester(orderId, phone, email);
     }
 
     /** Admin: register/update tracking for an order. */

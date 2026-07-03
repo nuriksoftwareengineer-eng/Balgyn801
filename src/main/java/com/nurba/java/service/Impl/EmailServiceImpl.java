@@ -67,7 +67,7 @@ public class EmailServiceImpl implements EmailService {
     @Async
     public void sendOrderShippedEmail(String to, Order order, String trackingNumber) {
         if (!enabled) return;
-        String extra = trackingNumber != null ? "Трек-номер: <b>" + trackingNumber + "</b><br/>" : "";
+        String extra = trackingNumber != null ? "Трек-номер: <b>" + esc(trackingNumber) + "</b><br/>" : "";
         String html = buildOrderHtml("Заказ отправлен", order,
                 "Ваш заказ #" + order.getId() + " отправлен!<br/>" + extra);
         send(to, "Заказ #" + order.getId() + " отправлен – BALGYN", html);

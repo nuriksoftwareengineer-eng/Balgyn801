@@ -54,10 +54,11 @@ public class JwtService {
                 .compact();
     }
 
-    public String generateRefreshToken(AppUser user) {
+    public String generateRefreshToken(AppUser user, String jti) {
         Instant now = Instant.now();
         Instant exp = now.plusMillis(refreshExpirationMs);
         return Jwts.builder()
+                .id(jti)                       // standard "jti" claim — ties the token to its server-side record
                 .subject(user.getEmail())
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(exp))
@@ -65,6 +66,15 @@ public class JwtService {
                 .claim("ver", user.getTokenVersion())
                 .signWith(signingKey)
                 .compact();
+    }
+
+    /** Returns the jti (token id) of a refresh token, or null if absent/unparseable. */
+    public String extractJti(String token) {
+        try {
+            return parseClaims(token).getId();
+        } catch (RuntimeException ex) {
+            return null;
+        }
     }
 
     /** Returns the token_version embedded in the refresh token, or -1 if absent (legacy token). */

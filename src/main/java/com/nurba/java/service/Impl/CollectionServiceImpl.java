@@ -2,8 +2,10 @@ package com.nurba.java.service.Impl;
 
 import com.nurba.java.domain.CatalogGroup;
 import com.nurba.java.domain.Collection;
+import com.nurba.java.domain.Design;
 import com.nurba.java.dto.request.CreateCollectionRequest;
 import com.nurba.java.dto.responce.CollectionResponse;
+import com.nurba.java.enums.DesignStatus;
 import com.nurba.java.exception.BusinessRuleException;
 import com.nurba.java.exception.NotFoundException;
 import com.nurba.java.mapper.CollectionMapper;
@@ -78,10 +80,27 @@ public class CollectionServiceImpl implements CollectionService {
     @Transactional
     public void delete(Long id) {
         findOrThrow(id);
-        if (designRepository.existsByCollection_Id(id)) {
+        List<Design> designs = designRepository.findByCollection_Id(id);
+
+        // Block on non-archived designs — user must archive or delete them first.
+        List<String> blocking = designs.stream()
+                .filter(d -> d.getStatus() != DesignStatus.ARCHIVED)
+                .map(Design::getName)
+                .toList();
+        if (!blocking.isEmpty()) {
             throw new BusinessRuleException(
-                    "Нельзя удалить коллекцию: в ней есть дизайны. Сначала удалите дизайны.");
+                    "Нельзя удалить коллекцию: сначала архивируйте или удалите дизайны: "
+                    + String.join(", ", blocking));
         }
+
+        // Archived designs tied to orders cannot be physically deleted.
+        // Detach them from this collection so it can be removed.
+        if (!designs.isEmpty()) {
+            designs.forEach(d -> d.setCollection(null));
+            designRepository.saveAll(designs);
+            designRepository.flush();
+        }
+
         repository.deleteById(id);
     }
 

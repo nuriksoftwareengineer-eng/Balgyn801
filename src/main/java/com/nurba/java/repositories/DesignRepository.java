@@ -15,6 +15,8 @@ import java.util.Optional;
 public interface DesignRepository extends JpaRepository<Design, Long> {
     boolean existsBySlug(String slug);
     boolean existsByCollection_Id(Long collectionId);
+    long countByCollection_Id(Long collectionId);
+    List<Design> findByCollection_Id(Long collectionId);
     Optional<Design> findBySlug(String slug);
 
     // Storefront — PUBLISHED only, with collection + catalogGroup eagerly loaded (prevents N+1)

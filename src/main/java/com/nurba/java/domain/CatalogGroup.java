@@ -42,6 +42,12 @@ public class CatalogGroup {
 
     private LocalDateTime createdAt;
 
+    @Column(name = "name_kk", length = 200)
+    private String nameKk;
+
+    @Column(name = "name_en", length = 200)
+    private String nameEn;
+
     @OneToMany(mappedBy = "catalogGroup", fetch = FetchType.LAZY)
     private List<Collection> collections = new ArrayList<>();
 }

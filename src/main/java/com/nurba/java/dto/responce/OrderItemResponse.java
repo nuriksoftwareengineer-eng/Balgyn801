@@ -18,6 +18,8 @@ public class OrderItemResponse {
     // ── Design-based fields (null for product-based orders) ────────────────
     private Long   designGarmentId;
     private String garmentType;
+    private String garmentTypeRu;
+    private String garmentTypeKk;
     private String designName;
     private String designSlug;
     private String groupSlug;

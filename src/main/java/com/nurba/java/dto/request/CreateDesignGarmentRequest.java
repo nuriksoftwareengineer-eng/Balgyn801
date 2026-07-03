@@ -1,6 +1,5 @@
 package com.nurba.java.dto.request;
 
-import com.nurba.java.enums.GarmentType;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
@@ -13,8 +12,8 @@ public class CreateDesignGarmentRequest {
     @NotNull
     private Long designId;
 
-    @NotNull
-    private GarmentType garmentType;
+    @NotNull(message = "Укажите тип одежды (garmentProfileId)")
+    private Long garmentProfileId;
 
     private List<Long> colorIds = new ArrayList<>();
 

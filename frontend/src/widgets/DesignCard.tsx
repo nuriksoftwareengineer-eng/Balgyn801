@@ -1,5 +1,7 @@
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import type { DesignSummary } from "@/shared/types/catalog";
+import { localizeName } from "@/shared/types/catalog";
 import { useWishlist } from "@/app/wishlist-context";
 
 interface DesignCardProps {
@@ -37,7 +39,9 @@ function HeartButton({ designId }: { designId: number }) {
 }
 
 export function DesignCard({ design, groupSlug, collectionSlug, isNewArrival }: DesignCardProps) {
+  const { i18n } = useTranslation();
   const href = `/catalog/${groupSlug}/${collectionSlug}/${design.slug}`;
+  const localName = localizeName(design, i18n.language);
 
   return (
     <Link to={href} className="group block">
@@ -46,12 +50,12 @@ export function DesignCard({ design, groupSlug, collectionSlug, isNewArrival }: 
         {design.mainImageUrl ? (
           <img
             src={design.mainImageUrl}
-            alt={design.name}
+            alt={localName}
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
             loading="lazy"
           />
         ) : (
-          <DesignPlaceholder name={design.name} />
+          <DesignPlaceholder name={localName} />
         )}
         {isNewArrival && (
           <span className="absolute left-2 top-2 rounded bg-black px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-wider text-white">
@@ -64,7 +68,7 @@ export function DesignCard({ design, groupSlug, collectionSlug, isNewArrival }: 
       {/* Info */}
       <div className="mt-2.5 px-0.5">
         <p className="truncate text-[0.8rem] font-semibold uppercase tracking-[0.04em] text-black group-hover:text-zinc-600 transition-colors">
-          {design.name}
+          {localName}
         </p>
         {design.description ? (
           <p className="mt-0.5 line-clamp-1 text-[0.65rem] text-[--color-muted]">

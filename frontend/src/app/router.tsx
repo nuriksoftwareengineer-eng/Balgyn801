@@ -179,6 +179,11 @@ const AdminCouponsPage = lazy(() =>
     default: m.AdminCouponsPage,
   })),
 );
+const AdminGarmentProfilesPage = lazy(() =>
+  import("@/admin/AdminGarmentProfilesPage").then((m) => ({
+    default: m.AdminGarmentProfilesPage,
+  })),
+);
 
 const router = createBrowserRouter([
   {
@@ -538,6 +543,14 @@ const router = createBrowserRouter([
             element: (
               <Suspense fallback={<PageLoadFallback />}>
                 <AdminCouponsPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "garment-profiles",
+            element: (
+              <Suspense fallback={<PageLoadFallback />}>
+                <AdminGarmentProfilesPage />
               </Suspense>
             ),
           },

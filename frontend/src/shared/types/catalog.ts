@@ -3,6 +3,8 @@
 export interface CatalogGroupSummary {
   id: number;
   name: string;
+  nameKk?: string | null;
+  nameEn?: string | null;
   slug: string;
   sortOrder: number;
   active: boolean;
@@ -13,9 +15,13 @@ export interface CatalogGroupSummary {
 export interface CollectionSummary {
   id: number;
   name: string;
+  nameKk?: string | null;
+  nameEn?: string | null;
   slug: string;
   groupId: number;
   groupName: string;
+  groupNameKk?: string | null;
+  groupNameEn?: string | null;
   sortOrder: number;
   active: boolean;
 }
@@ -23,13 +29,19 @@ export interface CollectionSummary {
 export interface DesignSummary {
   id: number;
   name: string;
+  nameKk?: string | null;
+  nameEn?: string | null;
   slug: string;
   description: string | null;
   mainImageUrl: string | null;
   collectionId: number;
   collectionName: string;
+  collectionNameKk?: string | null;
+  collectionNameEn?: string | null;
   collectionSlug: string;
   groupName: string;
+  groupNameKk?: string | null;
+  groupNameEn?: string | null;
   groupSlug: string;
   active: boolean;
 }
@@ -58,7 +70,9 @@ export interface GarmentDetail {
   id: number;
   designId: number;
   designName: string;
-  garmentType: string;
+  garmentType: string;       // English profile name (fallback)
+  garmentTypeRu?: string | null;
+  garmentTypeKk?: string | null;
   active: boolean;
   prices: GarmentPrice[];
   colors: ColorInfo[];
@@ -105,19 +119,32 @@ export function dedupeSizes(sizes: SizeInfo[]): SizeInfo[] {
   });
 }
 
+// ── Localized name helper ─────────────────────────────────────────────────────
+
+/** Pick the right language name, falling back to `name` (the primary/Russian field for catalog
+ *  entities, English for GarmentProfile). */
+export function localizeName(
+  item: { name: string; nameRu?: string | null; nameKk?: string | null; nameEn?: string | null },
+  lang: string,
+): string {
+  const l = lang.split("-")[0];
+  if (l === "kk") return item.nameKk || item.nameRu || item.name;
+  if (l === "en") return item.nameEn || item.name;
+  return item.nameRu || item.name;
+}
+
 // ── Garment display labels ────────────────────────────────────────────────────
 
-export const GARMENT_LABELS: Record<string, string> = {
-  T_SHIRT: "Футболка",
-  OVERSIZE_TSHIRT: "Оверсайз",
-  LONGSLEEVE: "Лонгслив",
-  SWEATSHIRT: "Свитшот",
-  HOODIE: "Худи",
-  ZIP_HOODIE: "Худи на молнии",
-};
-
-export function garmentLabel(garmentType: string): string {
-  return GARMENT_LABELS[garmentType] ?? garmentType;
+/** Returns a localized garment type label from a GarmentDetail object.
+ *  Falls back to the English profile name if no translation is available. */
+export function garmentLabel(
+  garment: { garmentType: string; garmentTypeRu?: string | null; garmentTypeKk?: string | null },
+  lang: string,
+): string {
+  const l = lang.split("-")[0];
+  if (l === "kk") return garment.garmentTypeKk || garment.garmentTypeRu || garment.garmentType;
+  if (l === "en") return garment.garmentType;
+  return garment.garmentTypeRu || garment.garmentType;
 }
 
 // ── Price helpers ─────────────────────────────────────────────────────────────

@@ -73,9 +73,11 @@ public class MockCdekProvider implements DeliveryProvider {
     }
 
     private static String mockRawCreate(String uuid, String track, ShipmentRequest r) {
+        int itemCount = r.items() != null ? r.items().size() : 0;
         return "{\"mock\":true,\"op\":\"create\",\"entity\":{\"uuid\":\"" + uuid
                 + "\",\"cdek_number\":\"" + track + "\"},\"order_id\":" + r.orderId()
                 + ",\"pvz\":\"" + (r.pvzCode() == null ? "" : r.pvzCode())
-                + "\",\"weight_grams\":" + r.weightGrams() + "}";
+                + "\",\"weight_grams\":" + r.weightGrams()
+                + ",\"item_count\":" + itemCount + "}";
     }
 }

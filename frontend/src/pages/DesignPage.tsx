@@ -8,6 +8,7 @@ import {
   dedupeColors,
   dedupeSizes,
   garmentLabel,
+  localizeName,
   kztPrice,
 } from "@/shared/types/catalog";
 import { useSeoMeta } from "@/shared/hooks/useSeoMeta";
@@ -133,7 +134,7 @@ function Lightbox({ images, index, onClose, onNav }: LightboxProps) {
 }
 
 export function DesignPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { groupSlug, collectionSlug, designSlug } = useParams<{
     groupSlug: string;
     collectionSlug: string;
@@ -259,7 +260,7 @@ export function DesignPage() {
       collectionSlug: collectionSlug ?? design.collectionSlug,
       title: design.name,
       garmentType: selectedGarment.garmentType,
-      garmentLabel: garmentLabel(selectedGarment.garmentType),
+      garmentLabel: garmentLabel(selectedGarment, i18n.language),
       price: displayPrice,
       imageUrl: design.mainImageUrl,
       colorId: selectedColor.id,
@@ -330,17 +331,17 @@ export function DesignPage() {
             <Link to="/catalog" className="transition hover:text-white/70">{t("nav.catalog")}</Link>
             <span>/</span>
             <Link to={`/catalog/${groupSlug}`} className="transition hover:text-white/70">
-              {design.groupName}
+              {localizeName({ name: design.groupName, nameKk: design.groupNameKk, nameEn: design.groupNameEn }, i18n.language)}
             </Link>
             <span>/</span>
             <Link to={`/catalog/${groupSlug}/${collectionSlug}`} className="transition hover:text-white/70">
-              {design.collectionName}
+              {localizeName({ name: design.collectionName, nameKk: design.collectionNameKk, nameEn: design.collectionNameEn }, i18n.language)}
             </Link>
             <span>/</span>
-            <span className="text-white/70">{design.name}</span>
+            <span className="text-white/70">{localizeName(design, i18n.language)}</span>
           </nav>
           <h1 className="text-4xl font-extrabold uppercase tracking-[-0.02em] text-white md:text-6xl">
-            {design.name}
+            {localizeName(design, i18n.language)}
           </h1>
         </Container>
       </div>
@@ -470,7 +471,7 @@ export function DesignPage() {
                                   : "border-transparent text-[--color-muted] hover:text-black",
                               )}
                             >
-                              {garmentLabel(c.garmentType)}
+                              {garmentLabel({ garmentType: c.garmentType }, i18n.language)}
                             </button>
                           );
                         })}
@@ -480,7 +481,7 @@ export function DesignPage() {
                       <div className="bg-[--color-surface] p-4">
                         <img
                           src={displayedChart.imageUrl}
-                          alt={displayedChart.title ?? garmentLabel(displayedChart.garmentType)}
+                          alt={displayedChart.title ?? garmentLabel({ garmentType: displayedChart.garmentType }, i18n.language)}
                           className="max-h-96 w-full object-contain"
                         />
                       </div>
@@ -516,7 +517,7 @@ export function DesignPage() {
                               : "border-[--color-border] bg-white text-black hover:border-zinc-400",
                           )}
                         >
-                          {garmentLabel(g.garmentType)}
+                          {garmentLabel(g, i18n.language)}
                           {price != null ? (
                             <span className={cn(
                               "ml-2 text-xs",

@@ -15,5 +15,7 @@ public class CatalogGroupDetailResponse {
     private Integer sortOrder;
     private String coverImageUrl;
     private String bannerImageUrl;
+    private String nameKk;
+    private String nameEn;
     private List<CollectionResponse> collections;
 }

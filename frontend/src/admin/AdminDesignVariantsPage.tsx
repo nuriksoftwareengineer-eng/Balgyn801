@@ -3,14 +3,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
 import { useAuth } from "@/app/auth-context";
 import {
-  GARMENT_TYPES,
-  GARMENT_TYPE_LABELS,
   createColor,
   createGarment,
   createSize,
   deleteGarment,
   listColors,
   listDesigns,
+  listGarmentProfiles,
   listGarments,
   listInventory,
   listSizes,
@@ -44,17 +43,23 @@ export function AdminDesignVariantsPage() {
     enabled: !!token && Number.isFinite(designId),
   });
 
-  const [newType, setNewType] = useState<string>("");
+  const { data: profiles = [] } = useQuery({
+    queryKey: ["admin", "garment-profiles"],
+    queryFn: () => listGarmentProfiles(token!),
+    enabled: !!token,
+  });
+
+  const [newProfileId, setNewProfileId] = useState<number | "">("");
   const [error, setError] = useState<string | null>(null);
 
-  const usedTypes = new Set(garments.map((g) => g.garmentType));
-  const availableTypes = GARMENT_TYPES.filter((t) => !usedTypes.has(t));
+  const usedProfileIds = new Set(garments.map((g) => g.garmentProfileId));
+  const availableProfiles = profiles.filter((p) => !usedProfileIds.has(p.id));
 
   const addMut = useMutation({
-    mutationFn: () => createGarment({ designId, garmentType: newType }, token!),
+    mutationFn: () => createGarment({ designId, garmentProfileId: newProfileId as number }, token!),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin", "garments", designId] });
-      setNewType("");
+      setNewProfileId("");
       setError(null);
     },
     onError: (e) => setError(e instanceof ApiError ? e.message : "Не удалось создать вариант"),
@@ -91,18 +96,18 @@ export function AdminDesignVariantsPage() {
         <label className="flex flex-col gap-1.5">
           <span className="text-xs text-zinc-400">Новый вариант</span>
           <select
-            value={newType}
-            onChange={(e) => setNewType(e.target.value)}
-            disabled={availableTypes.length === 0}
+            value={newProfileId}
+            onChange={(e) => setNewProfileId(e.target.value ? Number(e.target.value) : "")}
+            disabled={availableProfiles.length === 0}
             className={inputClass}
           >
-            <option value="">{availableTypes.length ? "— тип изделия —" : "все типы добавлены"}</option>
-            {availableTypes.map((t) => (
-              <option key={t} value={t}>{GARMENT_TYPE_LABELS[t]}</option>
+            <option value="">{availableProfiles.length ? "— тип изделия —" : "все типы добавлены"}</option>
+            {availableProfiles.map((p) => (
+              <option key={p.id} value={p.id}>{p.name}</option>
             ))}
           </select>
         </label>
-        <Button type="button" disabled={!newType || addMut.isPending} onClick={() => addMut.mutate()}>
+        <Button type="button" disabled={!newProfileId || addMut.isPending} onClick={() => addMut.mutate()}>
           {addMut.isPending ? "Создаём…" : "Добавить вариант"}
         </Button>
         {error && <p className="w-full text-xs text-red-400">{error}</p>}
@@ -273,7 +278,7 @@ function GarmentCard({ garment, designId }: { garment: AdminGarment; designId: n
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <span className="rounded bg-white/10 px-2.5 py-1 text-sm font-semibold text-zinc-100">
-            {GARMENT_TYPE_LABELS[garment.garmentType] ?? garment.garmentType}
+            {garment.garmentType}
           </span>
           <button
             type="button"

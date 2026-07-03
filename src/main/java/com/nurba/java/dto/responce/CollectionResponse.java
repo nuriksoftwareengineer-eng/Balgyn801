@@ -7,7 +7,11 @@ public class CollectionResponse {
     private Long id;
     private Long groupId;
     private String groupName;
+    private String groupNameKk;
+    private String groupNameEn;
     private String name;
+    private String nameKk;
+    private String nameEn;
     private String slug;
     private String description;
     private String coverImageUrl;

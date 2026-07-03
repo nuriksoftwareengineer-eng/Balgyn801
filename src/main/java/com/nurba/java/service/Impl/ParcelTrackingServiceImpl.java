@@ -59,6 +59,43 @@ public class ParcelTrackingServiceImpl implements ParcelTrackingService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public List<ParcelTracking> getForRequester(Long orderId, String phone, String requesterEmail) {
+        Order order = orderRepository.findById(orderId).orElse(null);
+        if (order == null) {
+            return List.of();   // non-enumerable: do not reveal whether the order exists
+        }
+        boolean owner = requesterEmail != null
+                && order.getAppUser() != null
+                && requesterEmail.equalsIgnoreCase(order.getAppUser().getEmail());
+        boolean phoneOk = order.getCustomer() != null
+                && phoneMatches(order.getCustomer().getPhone(), phone);
+        if (!owner && !phoneOk) {
+            log.warn("[Tracking] Access denied for orderId={} (no ownership / phone mismatch)", orderId);
+            return List.of();
+        }
+        return repository.findByOrder_Id(orderId);
+    }
+
+    /** Compares the last 10 significant digits; requires ≥7 provided digits to resist guessing. */
+    private static boolean phoneMatches(String stored, String provided) {
+        String a = digitsOnly(stored);
+        String b = digitsOnly(provided);
+        if (a.length() < 7 || b.length() < 7) {
+            return false;
+        }
+        return tail(a).equals(tail(b));
+    }
+
+    private static String digitsOnly(String s) {
+        return s == null ? "" : s.replaceAll("\\D", "");
+    }
+
+    private static String tail(String s) {
+        return s.length() <= 10 ? s : s.substring(s.length() - 10);
+    }
+
+    @Override
     @Transactional
     public ParcelTracking refresh(Long trackingId) {
         ParcelTracking tracking = repository.findById(trackingId)

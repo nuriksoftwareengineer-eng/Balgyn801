@@ -41,6 +41,7 @@ import com.nurba.java.repositories.OrderItemRepository;
 import com.nurba.java.repositories.OrderRepository;
 import com.nurba.java.repositories.ProductRepository;
 import com.nurba.java.repositories.SizeRepository;
+import com.nurba.java.service.CdekShipmentService;
 import com.nurba.java.service.EmailService;
 import com.nurba.java.service.GarmentWeightService;
 import com.nurba.java.service.OrderService;
@@ -51,6 +52,8 @@ import com.nurba.java.service.Impl.OrderExpiryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -101,6 +104,7 @@ public class OrderServiceImpl implements OrderService {
     private final CouponService couponService;
     private final EmailService emailService;
     private final TelegramNotificationService telegramNotificationService;
+    private final CdekShipmentService cdekShipmentService;
 
 
     @Override
@@ -218,7 +222,13 @@ public class OrderServiceImpl implements OrderService {
         if (updatedOrder.getAppUser() != null) {
             emailService.sendOrderCreatedEmail(updatedOrder.getAppUser().getEmail(), updatedOrder);
         }
-        telegramNotificationService.notifyNewOrder(updatedOrder);
+        final long notifyOrderId = updatedOrder.getId();
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                telegramNotificationService.notifyNewOrderById(notifyOrderId);
+            }
+        });
 
         Order withRelations = orderRepository.findById(updatedOrder.getId())
                 .orElseThrow(() -> new NotFoundException("Заказ не найден после создания"));
@@ -418,7 +428,11 @@ public class OrderServiceImpl implements OrderService {
                 .orElseThrow(() -> new NotFoundException("Пользователь не найден"));
         return orderRepository.findByAppUser_IdOrderByCreatedAtDesc(user.getId())
                 .stream()
-                .map(orderMapper::toResponse)
+                .map(o -> {
+                    OrderResponse r = orderMapper.toResponse(o);
+                    r.setCdekShipment(cdekShipmentService.getByOrder(o.getId()));
+                    return r;
+                })
                 .toList();
     }
 

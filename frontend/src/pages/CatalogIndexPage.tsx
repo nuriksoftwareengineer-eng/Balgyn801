@@ -1,11 +1,12 @@
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useCatalogGroups } from "@/shared/api/catalog-api";
+import { localizeName } from "@/shared/types/catalog";
 import { useSeoMeta } from "@/shared/hooks/useSeoMeta";
 import { Container } from "@/shared/ui/container";
 
 export function CatalogIndexPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { data: groups, isLoading, error } = useCatalogGroups();
 
   useSeoMeta({
@@ -70,7 +71,7 @@ export function CatalogIndexPage() {
                   </div>
                   <div className="flex items-center justify-between px-4 py-3.5">
                     <p className="text-sm font-semibold uppercase tracking-[0.06em] text-black">
-                      {group.name}
+                      {localizeName(group, i18n.language)}
                     </p>
                     <span className="text-[0.6rem] font-medium uppercase tracking-[0.14em] text-[--color-muted] transition group-hover:text-black">
                       →

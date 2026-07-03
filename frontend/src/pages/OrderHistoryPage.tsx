@@ -121,7 +121,10 @@ export function OrderHistoryPage() {
           collectionSlug: item.collectionSlug,
           title: item.designName ?? "",
           garmentType: item.garmentType ?? "",
-          garmentLabel: garmentLabel(item.garmentType ?? ""),
+          garmentLabel: garmentLabel(
+            { garmentType: item.garmentType ?? "", garmentTypeRu: item.garmentTypeRu, garmentTypeKk: item.garmentTypeKk },
+            i18n.language,
+          ),
           price: item.unitPrice,
           imageUrl: item.mainImageUrl,
           colorId: item.colorId,
@@ -255,6 +258,72 @@ export function OrderHistoryPage() {
                       </li>
                     ))}
                   </ul>
+                )}
+
+                {/* ── CDEK tracking ── */}
+                {order.cdekShipment && order.cdekShipment.cdekOrderUuid && (
+                  <div className="border-t border-[--color-border] px-5 py-3 md:px-6">
+                    <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.1em] text-[--color-muted]">
+                      {t("orders.cdek.title")}
+                    </p>
+                    <div className="flex flex-wrap gap-x-6 gap-y-1">
+                      {order.cdekShipment.trackingNumber && (
+                        <span className="text-[12px] text-black">
+                          <span className="text-[--color-muted]">{t("orders.cdek.tracking")}: </span>
+                          <a
+                            href={`https://www.cdek.ru/ru/tracking/?order_id=${order.cdekShipment.trackingNumber}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-mono font-semibold underline underline-offset-2 hover:text-zinc-600"
+                          >
+                            {order.cdekShipment.trackingNumber}
+                          </a>
+                        </span>
+                      )}
+                      {order.cdekShipment.status && (
+                        <span className="text-[12px] text-black">
+                          <span className="text-[--color-muted]">{t("orders.cdek.status")}: </span>
+                          {t(`orders.cdek.status_${order.cdekShipment.status}`, order.cdekShipment.status)}
+                        </span>
+                      )}
+                      {order.cdekShipment.estimatedDeliveryDate && (
+                        <span className="text-[12px] text-black">
+                          <span className="text-[--color-muted]">{t("orders.cdek.eta")}: </span>
+                          {order.cdekShipment.estimatedDeliveryDate}
+                        </span>
+                      )}
+                      {order.cdekShipment.deliveryPointAddress && (
+                        <span className="text-[12px] text-black">
+                          <span className="text-[--color-muted]">{t("orders.cdek.point")}: </span>
+                          {order.cdekShipment.deliveryPointAddress}
+                        </span>
+                      )}
+                    </div>
+                    {(order.cdekShipment.invoiceUrl || order.cdekShipment.barcodeUrl) && (
+                      <div className="mt-2 flex gap-4">
+                        {order.cdekShipment.invoiceUrl && (
+                          <a
+                            href={order.cdekShipment.invoiceUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[11px] font-semibold uppercase tracking-[0.1em] text-black underline underline-offset-2 hover:text-zinc-600"
+                          >
+                            {t("orders.cdek.invoice")}
+                          </a>
+                        )}
+                        {order.cdekShipment.barcodeUrl && (
+                          <a
+                            href={order.cdekShipment.barcodeUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[11px] font-semibold uppercase tracking-[0.1em] text-black underline underline-offset-2 hover:text-zinc-600"
+                          >
+                            {t("orders.cdek.barcode")}
+                          </a>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 )}
 
                 {/* ── Footer ── */}

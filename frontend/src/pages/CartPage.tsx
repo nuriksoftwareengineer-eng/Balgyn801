@@ -1161,6 +1161,9 @@ export function CartPage() {
       if (!payment.paymentUrl)
         throw new Error(t("cart.errors.paymentUrlError"));
       const paymentUrl = payment.paymentUrl;
+      // Defense-in-depth: only follow absolute http(s) gateway URLs — never javascript:/data:.
+      if (!/^https?:\/\//i.test(paymentUrl))
+        throw new Error(t("cart.errors.paymentUrlError"));
       saveLastPayment({
         orderId: oid,
         totalPrice: override?.amount ?? completedOrder?.totalPrice ?? 0,

@@ -12,14 +12,20 @@ import java.util.List;
 public class DesignDetailResponse {
     private Long id;
     private String name;
+    private String nameKk;
+    private String nameEn;
     private String slug;
     private String description;
     private String mainImageUrl;
     private List<String> gallery;
     private Long collectionId;
     private String collectionName;
+    private String collectionNameKk;
+    private String collectionNameEn;
     private String collectionSlug;
     private String groupName;
+    private String groupNameKk;
+    private String groupNameEn;
     private String groupSlug;
 
     /** Active garment variants; each carries its own prices / colors / sizes. */

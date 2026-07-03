@@ -12,8 +12,10 @@ public abstract class OrderItemMapper {
 
     @Mapping(source = "product.id",                          target = "productId")
     @Mapping(source = "product.title",                        target = "productTitle")
-    @Mapping(source = "designGarment.id",                     target = "designGarmentId")
-    @Mapping(source = "designGarment.garmentType",            target = "garmentType")
+    @Mapping(source = "designGarment.id",                      target = "designGarmentId")
+    @Mapping(source = "designGarment.garmentProfile.name",     target = "garmentType")
+    @Mapping(source = "designGarment.garmentProfile.nameRu",   target = "garmentTypeRu")
+    @Mapping(source = "designGarment.garmentProfile.nameKk",   target = "garmentTypeKk")
     @Mapping(source = "designGarment.design.name",            target = "designName")
     @Mapping(source = "designGarment.design.slug",            target = "designSlug")
     @Mapping(source = "designGarment.design.collection.catalogGroup.slug", target = "groupSlug")

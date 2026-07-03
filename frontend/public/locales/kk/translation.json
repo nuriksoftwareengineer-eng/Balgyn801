@@ -129,7 +129,23 @@
       "PAYPAL": "PayPal"
     },
     "payNow": "Төлеу",
-    "repeatOrder": "Тапсырысты қайталау"
+    "repeatOrder": "Тапсырысты қайталау",
+    "cdek": {
+      "title": "СДЭК жөнелтімі",
+      "tracking": "Трек-нөмір",
+      "status": "Күйі",
+      "status_CREATED": "Жасалды",
+      "status_ACCEPTED": "Қабылданды",
+      "status_IN_TRANSIT": "Жолда",
+      "status_ARRIVED": "ПВЗ-ға жетті",
+      "status_DELIVERED": "Жеткізілді",
+      "status_RETURNED": "Қайтарылды",
+      "status_CANCELLED": "Болдырылмады",
+      "eta": "Күтілетін мерзім",
+      "point": "Берілу нүктесі",
+      "invoice": "Шот-фактура",
+      "barcode": "Штрих-код"
+    }
   },
   "recovery": {
     "title": "Аяқталмаған тапсырыс",

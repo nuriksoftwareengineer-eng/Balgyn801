@@ -12,10 +12,16 @@ public class DesignResponse {
     private Long id;
     private Long collectionId;
     private String collectionName;
+    private String collectionNameKk;
+    private String collectionNameEn;
     private String collectionSlug;
     private String groupName;
+    private String groupNameKk;
+    private String groupNameEn;
     private String groupSlug;
     private String name;
+    private String nameKk;
+    private String nameEn;
     private String slug;
     private String description;
     private String mainImageUrl;

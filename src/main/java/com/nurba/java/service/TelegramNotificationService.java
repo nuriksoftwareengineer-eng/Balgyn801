@@ -4,6 +4,7 @@ import com.nurba.java.domain.Order;
 
 public interface TelegramNotificationService {
     void notifyNewOrder(Order order);
+    void notifyNewOrderById(Long orderId);
     void notifyPaymentSuccess(Order order);
     void notifyPaymentFailed(Order order);
     void notifyOrderShipped(Order order);

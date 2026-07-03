@@ -35,6 +35,9 @@ export function AdminLayout() {
           <NavLink to="/admin/designs" className={navClass}>
             Дизайны
           </NavLink>
+          <NavLink to="/admin/garment-profiles" className={navClass}>
+            Типы одежды
+          </NavLink>
           <NavLink to="/admin/customers" className={navClass}>
             Клиенты
           </NavLink>

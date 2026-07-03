@@ -8,16 +8,17 @@ import com.nurba.java.domain.Color;
 import com.nurba.java.domain.Design;
 import com.nurba.java.domain.DesignGarment;
 import com.nurba.java.domain.DesignGarmentPrice;
+import com.nurba.java.domain.GarmentProfile;
 import com.nurba.java.domain.Size;
 import com.nurba.java.enums.Currency;
 import com.nurba.java.enums.DesignStatus;
-import com.nurba.java.enums.GarmentType;
 import com.nurba.java.repositories.CatalogGroupRepository;
 import com.nurba.java.repositories.CollectionRepository;
 import com.nurba.java.repositories.ColorRepository;
 import com.nurba.java.repositories.DesignGarmentPriceRepository;
 import com.nurba.java.repositories.DesignGarmentRepository;
 import com.nurba.java.repositories.DesignRepository;
+import com.nurba.java.repositories.GarmentProfileRepository;
 import com.nurba.java.repositories.SizeRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -72,11 +73,13 @@ class DesignPublicationIntegrationTest {
     @Autowired private DesignGarmentPriceRepository priceRepository;
     @Autowired private ColorRepository colorRepository;
     @Autowired private SizeRepository sizeRepository;
+    @Autowired private GarmentProfileRepository garmentProfileRepository;
 
     // IDs set up per-test
     private Long collectionId;
     private Long colorId;
     private Long sizeId;
+    private GarmentProfile garmentProfile;
 
     @BeforeEach
     void setUp() {
@@ -102,6 +105,7 @@ class DesignPublicationIntegrationTest {
         groupRepository.deleteAll();
         colorRepository.deleteAll();
         sizeRepository.deleteAll();
+        garmentProfileRepository.deleteAll();
     }
 
     // ── Fixtures ──────────────────────────────────────────────────────────────
@@ -134,6 +138,15 @@ class DesignPublicationIntegrationTest {
         size.setLabel("L");
         size = sizeRepository.save(size);
         sizeId = size.getId();
+
+        GarmentProfile gp = new GarmentProfile();
+        gp.setName("Test Profile");
+        gp.setWeightKg(new java.math.BigDecimal("0.500"));
+        gp.setLengthCm(35);
+        gp.setWidthCm(28);
+        gp.setHeightCm(8);
+        gp.setSortOrder(0);
+        garmentProfile = garmentProfileRepository.save(gp);
     }
 
     /** Creates a bare DRAFT design (no image, no garments). */
@@ -155,7 +168,7 @@ class DesignPublicationIntegrationTest {
 
         DesignGarment g = new DesignGarment();
         g.setDesign(design);
-        g.setGarmentType(GarmentType.HOODIE);
+        g.setGarmentProfile(garmentProfile);
         g.setActive(true);
         g.getColors().add(color);
         g.getSizes().add(size);
@@ -215,7 +228,7 @@ class DesignPublicationIntegrationTest {
         Size size = sizeRepository.findById(sizeId).orElseThrow();
         DesignGarment g = new DesignGarment();
         g.setDesign(design);
-        g.setGarmentType(GarmentType.T_SHIRT);
+        g.setGarmentProfile(garmentProfile);
         g.setActive(true);
         g.getColors().add(color);
         g.getSizes().add(size);
@@ -246,7 +259,7 @@ class DesignPublicationIntegrationTest {
         Size size = sizeRepository.findById(sizeId).orElseThrow();
         DesignGarment g = new DesignGarment();
         g.setDesign(design);
-        g.setGarmentType(GarmentType.HOODIE);
+        g.setGarmentProfile(garmentProfile);
         g.setActive(true);
         g.getSizes().add(size);
         // No colors added
@@ -278,7 +291,7 @@ class DesignPublicationIntegrationTest {
         Size size = sizeRepository.findById(sizeId).orElseThrow();
         DesignGarment g = new DesignGarment();
         g.setDesign(design);
-        g.setGarmentType(GarmentType.HOODIE);
+        g.setGarmentProfile(garmentProfile);
         g.setActive(false);   // inactive — must be invisible to publication check
         g.getColors().add(color);
         g.getSizes().add(size);
@@ -456,21 +469,21 @@ class DesignPublicationIntegrationTest {
         Color color = colorRepository.findById(colorId).orElseThrow();
         Size size = sizeRepository.findById(sizeId).orElseThrow();
 
-        // First HOODIE — OK
+        // First garment with garmentProfile — OK
         DesignGarment first = new DesignGarment();
         first.setDesign(design);
-        first.setGarmentType(GarmentType.HOODIE);
+        first.setGarmentProfile(garmentProfile);
         first.setActive(true);
         first.getColors().add(color);
         first.getSizes().add(size);
         garmentRepository.save(first);
 
-        // Second HOODIE for the same design — must violate the UNIQUE constraint
+        // Second garment with the same garmentProfile for the same design — must violate the UNIQUE constraint
         Design finalDesign = design;
         org.assertj.core.api.Assertions.assertThatThrownBy(() -> {
             DesignGarment second = new DesignGarment();
             second.setDesign(finalDesign);
-            second.setGarmentType(GarmentType.HOODIE);
+            second.setGarmentProfile(garmentProfile);
             second.setActive(true);
             garmentRepository.saveAndFlush(second);
         }).isInstanceOf(org.springframework.dao.DataIntegrityViolationException.class);

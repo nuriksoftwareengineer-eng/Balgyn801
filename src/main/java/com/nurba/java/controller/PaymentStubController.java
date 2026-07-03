@@ -13,12 +13,15 @@ import com.nurba.java.enums.PaymentStatus;
 import com.nurba.java.repositories.OrderRepository;
 import com.nurba.java.repositories.PaymentRepository;
 import com.nurba.java.repositories.ProcessedWebhookEventRepository;
+import com.nurba.java.service.CdekShipmentAutoService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -52,6 +55,7 @@ public class PaymentStubController {
     private final OrderRepository orderRepository;
     private final PaymentRepository paymentRepository;
     private final ProcessedWebhookEventRepository processedEventRepository;
+    private final CdekShipmentAutoService cdekShipmentAutoService;
 
     /**
      * Simulates PayPal approval-page redirect.
@@ -129,6 +133,14 @@ public class PaymentStubController {
                 log.info("[PAYMENT-STUB] Order #{} confirmed via FreedomPay stub", orderId);
             }
 
+            final long confirmedOrderId = orderId;
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    cdekShipmentAutoService.triggerIfCdek(confirmedOrderId);
+                }
+            });
+
             ProcessedWebhookEvent pwe = new ProcessedWebhookEvent();
             pwe.setProvider(PaymentProvider.FREEDOM_PAY);
             pwe.setEventId(providerPaymentId);
@@ -197,6 +209,14 @@ public class PaymentStubController {
                 orderRepository.save(order);
                 log.info("[PAYMENT-STUB] Order #{} confirmed via VTB stub", orderId);
             }
+
+            final long confirmedOrderId = orderId;
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    cdekShipmentAutoService.triggerIfCdek(confirmedOrderId);
+                }
+            });
 
             ProcessedWebhookEvent pwe = new ProcessedWebhookEvent();
             pwe.setProvider(PaymentProvider.VTB_KZ);

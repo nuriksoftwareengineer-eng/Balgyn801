@@ -129,7 +129,23 @@
       "PAYPAL": "PayPal"
     },
     "payNow": "Pay now",
-    "repeatOrder": "Repeat order"
+    "repeatOrder": "Repeat order",
+    "cdek": {
+      "title": "CDEK Shipment",
+      "tracking": "Tracking number",
+      "status": "Status",
+      "status_CREATED": "Created",
+      "status_ACCEPTED": "Accepted",
+      "status_IN_TRANSIT": "In transit",
+      "status_ARRIVED": "Arrived at pickup point",
+      "status_DELIVERED": "Delivered",
+      "status_RETURNED": "Returned",
+      "status_CANCELLED": "Cancelled",
+      "eta": "Estimated delivery",
+      "point": "Pickup point",
+      "invoice": "Invoice",
+      "barcode": "Barcode"
+    }
   },
   "recovery": {
     "title": "Pending order",

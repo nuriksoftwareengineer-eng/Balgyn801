@@ -1,5 +1,6 @@
 package com.nurba.java.service.Impl;
 
+import com.nurba.java.domain.DeliveryAddress;
 import com.nurba.java.domain.Order;
 import com.nurba.java.enums.DeliveryType;
 import com.nurba.java.repositories.OrderRepository;
@@ -75,11 +76,38 @@ public class TelegramNotificationServiceImpl implements TelegramNotificationServ
             sb.append("\n");
         }
         sb.append("🚚 ").append(delivery).append("\n");
+        DeliveryAddress addr = o.getDeliveryAddress();
+        if (addr != null) {
+            StringBuilder addrLine = new StringBuilder("📍 ");
+            if (addr.getCity() != null && !addr.getCity().isBlank()) addrLine.append(addr.getCity());
+            if (addr.getStreet() != null && !addr.getStreet().isBlank()) addrLine.append(", ").append(addr.getStreet());
+            if (addr.getApartment() != null && !addr.getApartment().isBlank()) addrLine.append(", кв. ").append(addr.getApartment());
+            if (addr.getPvzCode() != null && !addr.getPvzCode().isBlank()) addrLine.append(" (ПВЗ: ").append(addr.getPvzCode()).append(")");
+            sb.append(addrLine).append("\n");
+            if (addr.getRecipientName() != null && !addr.getRecipientName().isBlank()
+                    && !addr.getRecipientName().equals(customerName)) {
+                sb.append("👤 Получатель: ").append(addr.getRecipientName()).append("\n");
+            }
+            if (addr.getRecipientPhone() != null && !addr.getRecipientPhone().isBlank()) {
+                sb.append("📱 ").append(addr.getRecipientPhone()).append("\n");
+            }
+        }
         sb.append("⏳ Ожидает оплаты\n");
         sb.append("📅 ").append(dateTime).append("\n\n");
         sb.append("<a href=\"").append(adminLink).append("\">Открыть в админке →</a>");
 
         send(sb.toString());
+    }
+
+    // Called after the creating transaction commits — guarantees order items are visible
+    @Override
+    @Async
+    @Transactional(readOnly = true)
+    public void notifyNewOrderById(Long orderId) {
+        if (!enabled) return;
+        Order o = orderRepository.findById(orderId).orElse(null);
+        if (o == null) return;
+        notifyNewOrder(o);
     }
 
     // ─── Payment events ─────────────────────────────────────────────────────────

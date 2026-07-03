@@ -129,7 +129,23 @@
       "PAYPAL": "PayPal"
     },
     "payNow": "Оплатить",
-    "repeatOrder": "Повторить заказ"
+    "repeatOrder": "Повторить заказ",
+    "cdek": {
+      "title": "Отправление СДЭК",
+      "tracking": "Трек-номер",
+      "status": "Статус",
+      "status_CREATED": "Создано",
+      "status_ACCEPTED": "Принято",
+      "status_IN_TRANSIT": "В пути",
+      "status_ARRIVED": "Прибыло в ПВЗ",
+      "status_DELIVERED": "Доставлено",
+      "status_RETURNED": "Возврат",
+      "status_CANCELLED": "Отменено",
+      "eta": "Ожидаемая дата",
+      "point": "Пункт выдачи",
+      "invoice": "Квитанция",
+      "barcode": "Штрихкод"
+    }
   },
   "recovery": {
     "title": "Незавершённый заказ",

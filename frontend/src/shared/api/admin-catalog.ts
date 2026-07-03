@@ -179,17 +179,55 @@ export function restoreDesign(id: number, token: string): Promise<AdminDesign> {
   });
 }
 
+// ─── GarmentProfile ───────────────────────────────────────────────────────────
+
+export interface GarmentProfile {
+  id: number;
+  name: string;
+  nameRu?: string | null;
+  nameKk?: string | null;
+  nameEn?: string | null;
+  weightKg: number;
+  lengthCm: number;
+  widthCm: number;
+  heightCm: number;
+  sortOrder: number;
+}
+
+export interface GarmentProfileRequest {
+  name: string;
+  nameRu?: string;
+  nameKk?: string;
+  nameEn?: string;
+  weightKg: number;
+  lengthCm: number;
+  widthCm: number;
+  heightCm: number;
+  sortOrder?: number;
+}
+
+export function listGarmentProfiles(token: string): Promise<GarmentProfile[]> {
+  return apiFetch<GarmentProfile[]>("/admin/catalog/garment-profiles", { token });
+}
+export function createGarmentProfile(body: GarmentProfileRequest, token: string): Promise<GarmentProfile> {
+  return apiFetch<GarmentProfile>("/admin/catalog/garment-profiles", {
+    method: "POST",
+    body: JSON.stringify(body),
+    token,
+  });
+}
+export function updateGarmentProfile(id: number, body: GarmentProfileRequest, token: string): Promise<GarmentProfile> {
+  return apiFetch<GarmentProfile>(`/admin/catalog/garment-profiles/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(body),
+    token,
+  });
+}
+export function deleteGarmentProfile(id: number, token: string): Promise<void> {
+  return apiFetch<void>(`/admin/catalog/garment-profiles/${id}`, { method: "DELETE", token });
+}
+
 // ─── Variants (DesignGarment) ─────────────────────────────────────────────────
-
-/** Типы изделий для нового варианта (этап 3). */
-export const GARMENT_TYPES = ["HOODIE", "SWEATSHIRT", "T_SHIRT"] as const;
-export type GarmentType = (typeof GARMENT_TYPES)[number];
-
-export const GARMENT_TYPE_LABELS: Record<string, string> = {
-  HOODIE: "Худи",
-  SWEATSHIRT: "Свитшот",
-  T_SHIRT: "Футболка",
-};
 
 export interface AdminColor {
   id: number;
@@ -215,7 +253,8 @@ export interface AdminGarment {
   id: number;
   designId: number;
   designName: string;
-  garmentType: string;
+  garmentProfileId: number;
+  garmentType: string; // profile name — for display
   active: boolean;
   prices: AdminPrice[];
   colors: AdminColor[];
@@ -234,7 +273,7 @@ export interface AdminInventory {
 
 export interface CreateGarmentRequest {
   designId: number;
-  garmentType: string;
+  garmentProfileId: number;
   colorIds?: number[];
   sizeIds?: number[];
 }

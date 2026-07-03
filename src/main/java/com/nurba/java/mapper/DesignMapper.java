@@ -21,11 +21,15 @@ public interface DesignMapper {
     @Mapping(target = "viewCount", ignore = true)
     Design toEntity(CreateDesignRequest request);
 
-    @Mapping(source = "collection.id", target = "collectionId")
-    @Mapping(source = "collection.name", target = "collectionName")
-    @Mapping(source = "collection.slug", target = "collectionSlug")
-    @Mapping(source = "collection.catalogGroup.name", target = "groupName")
-    @Mapping(source = "collection.catalogGroup.slug", target = "groupSlug")
+    @Mapping(source = "collection.id",                  target = "collectionId")
+    @Mapping(source = "collection.name",                target = "collectionName")
+    @Mapping(source = "collection.nameKk",              target = "collectionNameKk")
+    @Mapping(source = "collection.nameEn",              target = "collectionNameEn")
+    @Mapping(source = "collection.slug",                target = "collectionSlug")
+    @Mapping(source = "collection.catalogGroup.name",   target = "groupName")
+    @Mapping(source = "collection.catalogGroup.nameKk", target = "groupNameKk")
+    @Mapping(source = "collection.catalogGroup.nameEn", target = "groupNameEn")
+    @Mapping(source = "collection.catalogGroup.slug",   target = "groupSlug")
     @Mapping(target = "activeGarmentCount", ignore = true)
     DesignResponse toResponse(Design entity);
 }

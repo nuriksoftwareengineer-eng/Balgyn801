@@ -11,4 +11,6 @@ public class CatalogGroupResponse {
     private Boolean active;
     private String coverImageUrl;
     private String bannerImageUrl;
+    private String nameKk;
+    private String nameEn;
 }

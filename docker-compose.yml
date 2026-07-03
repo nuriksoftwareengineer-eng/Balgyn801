@@ -14,6 +14,10 @@ services:
       # Локальный stub оплаты: разрешить неподписанные webhooks (в проде false + реальные секреты).
       - PAYMENT_WEBHOOK_ALLOW_UNSIGNED=${PAYMENT_WEBHOOK_ALLOW_UNSIGNED:-false}
       - SWAGGER_ENABLED=${SWAGGER_ENABLED:-true}
+      # Rate-limit client-IP resolution. Set true when reaching the app through the frontend
+      # nginx /api proxy (else all API traffic appears from the proxy IP and shares one bucket).
+      # Only enable behind a trusted proxy — a direct client could otherwise spoof X-Forwarded-For.
+      - TRUST_PROXY=${TRUST_PROXY:-false}
       # Профиль Spring. Выставь prod чтобы выключить Swagger и включить COOKIE_SECURE/TRUST_PROXY.
       # - SPRING_PROFILES_ACTIVE=prod
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/balgynbol-spring
@@ -24,7 +28,7 @@ services:
       - CDEK_BASE_URL=${CDEK_BASE_URL:-https://api.cdek.ru/v2}
       - CDEK_CLIENT_ID=${CDEK_CLIENT_ID:-q06wCcLfs7sMvj2OIPmIB8d8UckXFLD8}
       - CDEK_CLIENT_SECRET=${CDEK_CLIENT_SECRET:-A2oK3jwmP4sgvXzI2JMssmAbLIpXs7mY}
-      - CDEK_SENDER_CITY=${CDEK_SENDER_CITY:-270}
+      - CDEK_SENDER_CITY=${CDEK_SENDER_CITY:-4756}
       - CDEK_DEFAULT_TARIFF=${CDEK_DEFAULT_TARIFF:-136}
       # Режим провайдера доставки: auto|mock|real. auto = real при заданных ключах, иначе mock.
       - CDEK_PROVIDER=${CDEK_PROVIDER:-auto}

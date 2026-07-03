@@ -21,9 +21,12 @@ import com.nurba.java.service.PaymentService;
 import com.nurba.java.service.TelegramNotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import com.nurba.java.service.CdekShipmentAutoService;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -44,6 +47,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final PaymentGatewayRegistry gatewayRegistry;
     private final EmailService emailService;
     private final TelegramNotificationService telegramNotificationService;
+    private final CdekShipmentAutoService cdekShipmentAutoService;
 
     // ─── Init ─────────────────────────────────────────────────────────────────
 
@@ -179,6 +183,13 @@ public class PaymentServiceImpl implements PaymentService {
                     emailService.sendPaymentSuccessEmail(order.getAppUser().getEmail(), order);
                 }
                 telegramNotificationService.notifyPaymentSuccess(order);
+                final long confirmedOrderId = order.getId();
+                TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                    @Override
+                    public void afterCommit() {
+                        cdekShipmentAutoService.triggerIfCdek(confirmedOrderId);
+                    }
+                });
             }
         } else if (result.status() == PaymentStatus.FAILED
                 || result.status() == PaymentStatus.CANCELLED) {

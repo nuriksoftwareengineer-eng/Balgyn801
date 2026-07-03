@@ -1,12 +1,13 @@
 import { Link, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useCatalogCollection } from "@/shared/api/catalog-api";
+import { localizeName } from "@/shared/types/catalog";
 import { useSeoMeta } from "@/shared/hooks/useSeoMeta";
 import { DesignGrid } from "@/widgets/DesignGrid";
 import { Container } from "@/shared/ui/container";
 
 export function CollectionPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { groupSlug, collectionSlug } = useParams<{
     groupSlug: string;
     collectionSlug: string;
@@ -73,13 +74,13 @@ export function CollectionPage() {
             <Link to="/catalog" className="transition hover:text-white/70">{t("nav.catalog")}</Link>
             <span>/</span>
             <Link to={`/catalog/${groupSlug}`} className="transition hover:text-white/70">
-              {collection.groupName}
+              {localizeName({ name: collection.groupName, nameKk: collection.groupNameKk, nameEn: collection.groupNameEn }, i18n.language)}
             </Link>
             <span>/</span>
-            <span className="text-white/70">{collection.name}</span>
+            <span className="text-white/70">{localizeName(collection, i18n.language)}</span>
           </nav>
           <h1 className="text-5xl font-semibold uppercase tracking-[0.04em] text-white md:text-7xl">
-            {collection.name}
+            {localizeName(collection, i18n.language)}
           </h1>
         </Container>
       </div>

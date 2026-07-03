@@ -12,8 +12,16 @@ public interface ParcelTrackingService {
      */
     ParcelTracking register(Long orderId, String carrier, String trackingNumber);
 
-    /** Returns all tracking entries for an order. */
+    /** Returns all tracking entries for an order. Internal/admin use — no access control. */
     List<ParcelTracking> getByOrderId(Long orderId);
+
+    /**
+     * Ownership-guarded lookup for the PUBLIC endpoint. Returns tracking only when the requester
+     * proves access: either they are the authenticated owner of the order, or they supply the phone
+     * number the order was placed with. Returns an empty list otherwise — never reveals whether the
+     * order exists, preventing IDOR enumeration by sequential orderId.
+     */
+    List<ParcelTracking> getForRequester(Long orderId, String phone, String requesterEmail);
 
     /**
      * Fetch fresh data from the provider and persist.
