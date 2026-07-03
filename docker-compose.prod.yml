@@ -5,7 +5,7 @@
 #
 # Key differences from docker-compose.yml (dev):
 #   - Spring prod profile: COOKIE_SECURE=true, TRUST_PROXY=true, Swagger off
-#   - nginx reverse proxy on :80 (single public port)
+#   - Caddy reverse proxy on :80/:443 with automatic HTTPS (Let's Encrypt) — no manual certbot step
 #   - MinIO console NOT exposed publicly
 #   - SWAGGER_ENABLED=false by default
 
@@ -30,6 +30,7 @@ services:
       - CDEK_WEBHOOK_TOKEN=${CDEK_WEBHOOK_TOKEN:?Set CDEK_WEBHOOK_TOKEN in .env.prod}
       - CDEK_SENDER_CITY=${CDEK_SENDER_CITY:-270}
       - CDEK_DEFAULT_TARIFF=${CDEK_DEFAULT_TARIFF:-136}
+      - CDEK_PROVIDER=mock
       - APP_SEED_CATALOG=false
       - FRONTEND_BASE_URL=${FRONTEND_BASE_URL:?Set FRONTEND_BASE_URL (e.g. https://balgyn.kz)}
       - FREEDOMPAY_MERCHANT_ID=${FREEDOMPAY_MERCHANT_ID:?Set FREEDOMPAY_MERCHANT_ID}
@@ -102,39 +103,22 @@ services:
         max-size: "10m"
         max-file: "3"
 
-  certbot:
-    image: certbot/certbot:v3.3.0
-    restart: no
-    volumes:
-      - letsencrypt:/etc/letsencrypt
-      - certbot_webroot:/var/www/certbot
-    # Run once to obtain or renew certificate:
-    #   docker compose -f docker-compose.prod.yml run --rm certbot certonly \
-    #     --webroot -w /var/www/certbot -d ${DOMAIN} --email ${CERTBOT_EMAIL} --agree-tos --no-eff-email
-    # Then reload nginx:
-    #   docker compose -f docker-compose.prod.yml exec nginx nginx -s reload
-    entrypoint: /bin/sh -c "trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done"
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "5m"
-        max-file: "2"
-
-  nginx:
-    image: nginx:1.27-alpine
+  caddy:
+    image: caddy:2-alpine
     restart: unless-stopped
     ports:
       - "80:80"
       - "443:443"
     environment:
-      - DOMAIN=${DOMAIN:?Set DOMAIN (e.g. balgyn.kz)}
+      - DOMAIN=${DOMAIN:?Set DOMAIN (e.g. balgynbol.kz)}
+      - CERTBOT_EMAIL=${CERTBOT_EMAIL:?Set CERTBOT_EMAIL}
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/templates/default.conf.template:ro
-      - letsencrypt:/etc/letsencrypt:ro
-      - certbot_webroot:/var/www/certbot
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
     depends_on:
-      - frontend
-      - app
+      app:
+        condition: service_healthy
     logging:
       driver: "json-file"
       options:
@@ -193,6 +177,6 @@ services:
 volumes:
   minio_data:
   postgres_data:
-  letsencrypt:
-  certbot_webroot:
   db_backups:
+  caddy_data:
+  caddy_config:
