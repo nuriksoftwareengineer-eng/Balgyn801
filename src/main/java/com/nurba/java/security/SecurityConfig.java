@@ -128,6 +128,16 @@ public class SecurityConfig {
 
                             .requestMatchers(HttpMethod.GET, "/api/v1/exchange-rates").permitAll()
 
+                            .requestMatchers(HttpMethod.GET, "/api/v1/site-settings").permitAll()
+
+                            .requestMatchers(HttpMethod.GET, "/api/v1/shop-reviews").permitAll()
+
+                            // Public coupon validation
+                            .requestMatchers(HttpMethod.GET, "/api/v1/coupons/validate").permitAll()
+
+                            // Parcel tracking — public read (order ownership validated at service layer)
+                            .requestMatchers(HttpMethod.GET, "/api/v1/orders/*/tracking").permitAll()
+
                             .requestMatchers(HttpMethod.GET, "/api/v1/product/**").permitAll()
 
                             .requestMatchers(HttpMethod.POST, "/api/v1/order").permitAll()
@@ -140,11 +150,15 @@ public class SecurityConfig {
                             .requestMatchers(HttpMethod.POST, "/api/v1/delivery/cdek/calculate-order").permitAll()
                             .requestMatchers(HttpMethod.POST, "/api/v1/delivery/cdek/webhook").permitAll()
                             .requestMatchers(HttpMethod.POST, "/api/v1/payments/init").permitAll()
+                            .requestMatchers(HttpMethod.POST, "/api/v1/payments/capture/**").permitAll()
                             .requestMatchers(HttpMethod.POST, "/api/v1/payments/callback/**").permitAll()
-                            .requestMatchers(HttpMethod.POST, "/api/v1/payments/paypal/create-order").permitAll()
-                            .requestMatchers(HttpMethod.POST, "/api/v1/payments/paypal/capture/**").permitAll()
                             .requestMatchers(HttpMethod.POST, "/api/v1/payments/paypal/cancel/**").permitAll()
                             .requestMatchers(HttpMethod.POST, "/api/v1/payments/paypal/webhook").permitAll()
+                            .requestMatchers(HttpMethod.POST, "/api/v1/payments/freedom-pay/verify-redirect").permitAll()
+
+                            // VTB KZ callback (GET — confirmed from official plugin source)
+                            .requestMatchers(HttpMethod.GET, "/api/v1/payments/callback/vtb-kz").permitAll()
+                            .requestMatchers(HttpMethod.POST, "/api/v1/payments/vtb-kz/verify-return").permitAll()
 
                             // Local dev stub endpoints (only active when payment credentials are blank)
                             .requestMatchers(HttpMethod.GET, "/api/v1/payments/stub/**").permitAll()

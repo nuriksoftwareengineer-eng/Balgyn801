@@ -25,9 +25,11 @@ import com.nurba.java.repositories.DesignRepository;
 import com.nurba.java.repositories.InventoryRepository;
 import com.nurba.java.service.CatalogStorefrontService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -71,8 +73,12 @@ public class CatalogStorefrontServiceImpl implements CatalogStorefrontService {
         CatalogGroupDetailResponse response = new CatalogGroupDetailResponse();
         response.setId(group.getId());
         response.setName(group.getName());
+        response.setNameKk(group.getNameKk());
+        response.setNameEn(group.getNameEn());
         response.setSlug(group.getSlug());
         response.setSortOrder(group.getSortOrder());
+        response.setCoverImageUrl(group.getCoverImageUrl());
+        response.setBannerImageUrl(group.getBannerImageUrl());
         response.setCollections(collections);
         return response;
     }
@@ -82,8 +88,6 @@ public class CatalogStorefrontServiceImpl implements CatalogStorefrontService {
         Collection collection = collectionRepository.findBySlugAndActiveTrue(slug)
                 .orElseThrow(() -> new NotFoundException("Collection not found: " + slug));
 
-        // EntityGraph on findByCollection_IdAndStatusOrderByCreatedAtDesc eagerly loads
-        // collection.catalogGroup — eliminates N+1 for groupName/groupSlug mapping (F-07)
         List<DesignResponse> designs =
                 designRepository.findByCollection_IdAndStatusOrderByCreatedAtDesc(
                         collection.getId(), DesignStatus.PUBLISHED)
@@ -95,7 +99,11 @@ public class CatalogStorefrontServiceImpl implements CatalogStorefrontService {
         response.setId(collection.getId());
         response.setGroupId(collection.getCatalogGroup().getId());
         response.setGroupName(collection.getCatalogGroup().getName());
+        response.setGroupNameKk(collection.getCatalogGroup().getNameKk());
+        response.setGroupNameEn(collection.getCatalogGroup().getNameEn());
         response.setName(collection.getName());
+        response.setNameKk(collection.getNameKk());
+        response.setNameEn(collection.getNameEn());
         response.setSlug(collection.getSlug());
         response.setDescription(collection.getDescription());
         response.setCoverImageUrl(collection.getCoverImageUrl());
@@ -113,14 +121,16 @@ public class CatalogStorefrontServiceImpl implements CatalogStorefrontService {
     }
 
     @Override
+    @Transactional
     public DesignDetailResponse getDesignBySlug(String slug) {
         Design design = designRepository.findBySlugAndStatus(slug, DesignStatus.PUBLISHED)
                 .orElseThrow(() -> new NotFoundException("Design not found: " + slug));
 
+        designRepository.incrementViewCount(design.getId());
+
         List<DesignGarment> garments =
                 garmentRepository.findByDesign_IdAndActiveTrue(design.getId());
 
-        // Bulk-fetch all inventory rows for all garments in one query (avoids N+1).
         List<Long> garmentIds = garments.stream().map(DesignGarment::getId).toList();
         Map<Long, List<Inventory>> inventoryByGarmentId = inventoryRepository
                 .findByDesignGarment_IdIn(garmentIds)
@@ -145,16 +155,63 @@ public class CatalogStorefrontServiceImpl implements CatalogStorefrontService {
         DesignDetailResponse response = new DesignDetailResponse();
         response.setId(design.getId());
         response.setName(design.getName());
+        response.setNameKk(design.getNameKk());
+        response.setNameEn(design.getNameEn());
         response.setSlug(design.getSlug());
         response.setDescription(design.getDescription());
         response.setMainImageUrl(design.getMainImageUrl());
         response.setGallery(design.getGallery());
         response.setCollectionId(design.getCollection().getId());
         response.setCollectionName(design.getCollection().getName());
+        response.setCollectionNameKk(design.getCollection().getNameKk());
+        response.setCollectionNameEn(design.getCollection().getNameEn());
         response.setCollectionSlug(design.getCollection().getSlug());
         response.setGroupName(design.getCollection().getCatalogGroup().getName());
+        response.setGroupNameKk(design.getCollection().getCatalogGroup().getNameKk());
+        response.setGroupNameEn(design.getCollection().getCatalogGroup().getNameEn());
         response.setGroupSlug(design.getCollection().getCatalogGroup().getSlug());
         response.setGarments(garmentResponses);
         return response;
+    }
+
+    @Override
+    public List<DesignResponse> getPopular(int limit) {
+        return designRepository.findTopByViewCount(PageRequest.of(0, limit))
+                .stream()
+                .map(designMapper::toResponse)
+                .toList();
+    }
+
+    @Override
+    public List<DesignResponse> getNewArrivals(int limit) {
+        LocalDateTime since = LocalDateTime.now().minusDays(30);
+        return designRepository.findNewArrivals(since, PageRequest.of(0, limit))
+                .stream()
+                .map(designMapper::toResponse)
+                .toList();
+    }
+
+    @Override
+    public List<DesignResponse> getRecommendations(Long designId, int limit) {
+        Design design = designRepository.findById(designId).orElse(null);
+        if (design == null) return List.of();
+        List<DesignResponse> recs = designRepository
+                .findRecommendations(design.getCollection().getId(), designId, PageRequest.of(0, limit))
+                .stream()
+                .map(designMapper::toResponse)
+                .toList();
+        if (recs.size() < limit) {
+            // fallback: fill with popular
+            List<DesignResponse> popular = getPopular(limit * 2);
+            for (DesignResponse p : popular) {
+                if (recs.size() >= limit) break;
+                if (p.getId().equals(designId)) continue;
+                if (recs.stream().noneMatch(r -> r.getId().equals(p.getId()))) {
+                    recs = new java.util.ArrayList<>(recs);
+                    recs.add(p);
+                }
+            }
+        }
+        return recs;
     }
 }

@@ -1,6 +1,7 @@
 package com.nurba.java;
 
 import com.nurba.java.domain.DesignGarment;
+import com.nurba.java.domain.GarmentProfile;
 import com.nurba.java.domain.OrderItem;
 import com.nurba.java.dto.request.UpdateGarmentWeightRequest;
 import com.nurba.java.dto.responce.GarmentWeightResponse;
@@ -65,11 +66,8 @@ class GarmentWeightServiceIntegrationTest {
 
     @Test
     void calculateOrderWeight_sumsDesignItemsOnly() {
-        service.upsert(GarmentType.HOODIE, new UpdateGarmentWeightRequest(new BigDecimal("1.000")));
-        service.upsert(GarmentType.T_SHIRT, new UpdateGarmentWeightRequest(new BigDecimal("0.400")));
-
-        OrderItem hoodie = designItem(GarmentType.HOODIE, 2);    // 2 × 1.000 = 2.000
-        OrderItem tshirt = designItem(GarmentType.T_SHIRT, 3);   // 3 × 0.400 = 1.200
+        OrderItem hoodie = designItem(new BigDecimal("1.000"), 2);    // 2 × 1.000 = 2.000
+        OrderItem tshirt = designItem(new BigDecimal("0.400"), 3);   // 3 × 0.400 = 1.200
         OrderItem legacyProduct = new OrderItem();               // no garment → no weight
         legacyProduct.setQuantity(5);
 
@@ -77,9 +75,16 @@ class GarmentWeightServiceIntegrationTest {
         assertThat(total).isEqualByComparingTo("3.200");
     }
 
-    private OrderItem designItem(GarmentType type, int qty) {
+    private OrderItem designItem(BigDecimal weightKg, int qty) {
+        GarmentProfile profile = new GarmentProfile();
+        profile.setName("test");
+        profile.setWeightKg(weightKg);
+        profile.setLengthCm(30);
+        profile.setWidthCm(25);
+        profile.setHeightCm(5);
+        profile.setSortOrder(0);
         DesignGarment garment = new DesignGarment();
-        garment.setGarmentType(type);
+        garment.setGarmentProfile(profile);
         OrderItem item = new OrderItem();
         item.setDesignGarment(garment);
         item.setQuantity(qty);

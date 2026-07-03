@@ -11,6 +11,7 @@
 | CDEK доставка | mock | Расчёт доставки по мок-данным (sandbox API) |
 | FreedomPay | **stub** | Оплата подтверждается мгновенно локально |
 | PayPal | **stub** | Оплата подтверждается мгновенно локально |
+| VTB Kazakhstan | **stub** | Оплата подтверждается мгновенно локально |
 | Каталог | seeded | 5 групп, 14 коллекций, 16 дизайнов автоматически |
 | Администратор | default | admin@balgyn.local / admin12345 |
 
@@ -39,25 +40,24 @@
 7. Бэкенд подтверждает: статус `SUCCEEDED`, заказ `CONFIRMED`
 8. В логах: `[PAYMENT-STUB] PayPal captureOrder stub — returning COMPLETED`
 
+### Как работает VTB Kazakhstan stub
+
+1. Покупатель нажимает "Оплатить через VTB Kazakhstan"
+2. Фронтенд вызывает `POST /api/v1/payments/init` с `provider: "VTB_KZ"`
+3. Бэкенд возвращает `paymentUrl = http://localhost:8080/api/v1/payments/stub/vtb/{orderId}?mdOrder=stub-{UUID}`
+4. Браузер переходит по этому URL
+5. Бэкенд мгновенно подтверждает заказ → редиректит на `/payment/success?orderId={id}`
+6. В логах: `[PAYMENT-STUB] Order #N confirmed via VTB stub`
+
 ### Как активируется stub-режим
 
 Stub активен автоматически когда переменные окружения пусты или не заданы:
 - FreedomPay: `FREEDOMPAY_MERCHANT_ID` пусто ИЛИ `FREEDOMPAY_SECRET_KEY` пусто
 - PayPal: `PAYPAL_CLIENT_ID` пусто ИЛИ `PAYPAL_CLIENT_SECRET` пусто
+- VTB Kazakhstan: `VTB_USERNAME` пусто ИЛИ `VTB_PASSWORD` пусто
 
 В docker-compose все эти переменные имеют пустые дефолты (`:-`), поэтому без `.env` файла stub включается автоматически.
 
-### Stub endpoints
-
-```
-GET /api/v1/payments/stub/paypal/approve?paypalOrderId={id}&returnUrl={url}
-    → 302 {returnUrl}?token={id}&PayerID=STUB_PAYER
-
-GET /api/v1/payments/stub/freedom-pay/approve?orderId={id}
-    → подтверждает заказ → 302 {successUrl}?orderId={id}
-```
-
-Stub endpoints возвращают 404, если соответствующий провайдер НЕ в stub-режиме (реальные ключи заданы).
 
 ## Dev defaults (без .env)
 
@@ -72,6 +72,21 @@ Stub endpoints возвращают 404, если соответствующий
 | `PAYPAL_CLIENT_ID` | `` (stub mode) |
 
 > **Production**: все эти значения ДОЛЖНЫ быть заменены через `.env` или CI/CD secrets.
+
+## Stub endpoints
+
+```
+GET /api/v1/payments/stub/paypal/approve?paypalOrderId={id}&returnUrl={url}
+    → 302 {returnUrl}?token={id}&PayerID=STUB_PAYER
+
+GET /api/v1/payments/stub/freedom-pay/approve?orderId={id}
+    → подтверждает заказ → 302 {successUrl}?orderId={id}
+
+GET /api/v1/payments/stub/vtb/{orderId}?mdOrder={stub-uuid}
+    → подтверждает заказ → 302 /payment/success?orderId={id}
+```
+
+Stub endpoints возвращают 404, если соответствующий провайдер НЕ в stub-режиме (реальные ключи заданы).
 
 ## Включение реальных платежей
 
@@ -89,6 +104,15 @@ PAYPAL_CLIENT_ID=ваш_client_id
 PAYPAL_CLIENT_SECRET=ваш_client_secret
 PAYPAL_WEBHOOK_ID=ваш_webhook_id
 PAYPAL_MODE=sandbox
+```
+
+### VTB Kazakhstan (sandbox)
+```bash
+VTB_USERNAME=ваш_login-api
+VTB_PASSWORD=ваш_пароль
+VTB_CALLBACK_URL=https://your-ngrok-url/api/v1/payments/callback/vtb-kz
+VTB_RETURN_URL=https://your-frontend-url/payment-return
+VTB_SANDBOX=true
 ```
 
 ## Проверка stub-режима при старте

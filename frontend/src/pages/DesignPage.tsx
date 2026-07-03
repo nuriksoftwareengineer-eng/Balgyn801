@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -8,6 +8,7 @@ import {
   dedupeColors,
   dedupeSizes,
   garmentLabel,
+  localizeName,
   kztPrice,
 } from "@/shared/types/catalog";
 import { useSeoMeta } from "@/shared/hooks/useSeoMeta";
@@ -15,9 +16,125 @@ import { useCart } from "@/app/use-cart";
 import { formatMoney } from "@/shared/lib/format-money";
 import { cn } from "@/shared/lib/cn";
 import { Container } from "@/shared/ui/container";
+import { RecommendedSection } from "@/widgets/catalog/RecommendedSection";
+
+// ── Lightbox ──────────────────────────────────────────────────────────────────
+interface LightboxProps {
+  images: string[];
+  index: number;
+  onClose: () => void;
+  onNav: (i: number) => void;
+}
+
+function Lightbox({ images, index, onClose, onNav }: LightboxProps) {
+  const [zoomed, setZoomed] = useState(false);
+
+  const prev = useCallback(() => onNav((index - 1 + images.length) % images.length), [index, images.length, onNav]);
+  const next = useCallback(() => onNav((index + 1) % images.length), [index, images.length, onNav]);
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+      if (e.key === "ArrowLeft") prev();
+      if (e.key === "ArrowRight") next();
+    }
+    document.addEventListener("keydown", onKey);
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = "";
+    };
+  }, [onClose, prev, next]);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/95"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      {/* Close */}
+      <button
+        type="button"
+        onClick={onClose}
+        aria-label="Закрыть"
+        className="absolute right-4 top-4 z-10 rounded p-2 text-white/60 transition hover:text-white"
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden="true">
+          <path d="M18 6L6 18M6 6l12 12" />
+        </svg>
+      </button>
+
+      {/* Prev */}
+      {images.length > 1 && (
+        <button
+          type="button"
+          onClick={prev}
+          aria-label="Предыдущее"
+          className="absolute left-4 top-1/2 -translate-y-1/2 z-10 rounded p-2 text-white/60 transition hover:text-white"
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden="true">
+            <path d="M15 18l-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+      )}
+
+      {/* Image */}
+      <div
+        className="relative flex h-full max-h-[90dvh] w-full max-w-4xl items-center justify-center px-16"
+        onClick={() => setZoomed((z) => !z)}
+      >
+        <img
+          src={images[index]}
+          alt={`Фото ${index + 1}`}
+          draggable={false}
+          className={cn(
+            "max-h-full max-w-full object-contain transition-transform duration-300",
+            zoomed ? "scale-[1.8] cursor-zoom-out" : "cursor-zoom-in",
+          )}
+        />
+      </div>
+
+      {/* Next */}
+      {images.length > 1 && (
+        <button
+          type="button"
+          onClick={next}
+          aria-label="Следующее"
+          className="absolute right-4 top-1/2 -translate-y-1/2 z-10 rounded p-2 text-white/60 transition hover:text-white"
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden="true">
+            <path d="M9 18l6-6-6-6" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+      )}
+
+      {/* Counter */}
+      {images.length > 1 && (
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2">
+          {images.map((_, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onNav(i); }}
+              className={cn(
+                "h-1.5 rounded-full transition-all",
+                i === index ? "w-6 bg-white" : "w-1.5 bg-white/40",
+              )}
+              aria-label={`Фото ${i + 1}`}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Zoom hint */}
+      <p className="absolute bottom-10 right-4 text-[10px] text-white/30">
+        {zoomed ? "Нажмите для уменьшения" : "Нажмите для увеличения"}
+      </p>
+    </div>
+  );
+}
 
 export function DesignPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { groupSlug, collectionSlug, designSlug } = useParams<{
     groupSlug: string;
     collectionSlug: string;
@@ -35,6 +152,8 @@ export function DesignPage() {
   const [added, setAdded] = useState(false);
   const [chartOpen, setChartOpen] = useState(false);
   const [activeChartType, setActiveChartType] = useState<string | null>(null);
+  const [galleryIndex, setGalleryIndex] = useState(0);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
 
   const { data: sizeCharts = [] } = useQuery({
     queryKey: ["size-charts"],
@@ -141,7 +260,7 @@ export function DesignPage() {
       collectionSlug: collectionSlug ?? design.collectionSlug,
       title: design.name,
       garmentType: selectedGarment.garmentType,
-      garmentLabel: garmentLabel(selectedGarment.garmentType),
+      garmentLabel: garmentLabel(selectedGarment, i18n.language),
       price: displayPrice,
       imageUrl: design.mainImageUrl,
       colorId: selectedColor.id,
@@ -212,17 +331,17 @@ export function DesignPage() {
             <Link to="/catalog" className="transition hover:text-white/70">{t("nav.catalog")}</Link>
             <span>/</span>
             <Link to={`/catalog/${groupSlug}`} className="transition hover:text-white/70">
-              {design.groupName}
+              {localizeName({ name: design.groupName, nameKk: design.groupNameKk, nameEn: design.groupNameEn }, i18n.language)}
             </Link>
             <span>/</span>
             <Link to={`/catalog/${groupSlug}/${collectionSlug}`} className="transition hover:text-white/70">
-              {design.collectionName}
+              {localizeName({ name: design.collectionName, nameKk: design.collectionNameKk, nameEn: design.collectionNameEn }, i18n.language)}
             </Link>
             <span>/</span>
-            <span className="text-white/70">{design.name}</span>
+            <span className="text-white/70">{localizeName(design, i18n.language)}</span>
           </nav>
           <h1 className="text-4xl font-extrabold uppercase tracking-[-0.02em] text-white md:text-6xl">
-            {design.name}
+            {localizeName(design, i18n.language)}
           </h1>
         </Container>
       </div>
@@ -231,36 +350,78 @@ export function DesignPage() {
       <Container className="py-8 md:py-10">
         <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:gap-10">
           {/* Image + Gallery */}
-          <div className="w-full lg:w-[380px] lg:shrink-0">
-            <div className="aspect-square w-full overflow-hidden bg-zinc-900">
-              {design.mainImageUrl ? (
-                <img
-                  src={design.mainImageUrl}
-                  alt={design.name}
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center">
-                  <span className="text-7xl font-extrabold text-white/10">
-                    {design.name.charAt(0).toUpperCase()}
-                  </span>
-                </div>
-              )}
-            </div>
-            {design.gallery && design.gallery.length > 0 && (
-              <div className="mt-2 grid grid-cols-4 gap-1">
-                {design.gallery.map((url, i) => (
-                  <div key={i} className="aspect-square overflow-hidden bg-zinc-900">
+          {(() => {
+            const allImages = [
+              ...(design.mainImageUrl ? [design.mainImageUrl] : []),
+              ...(design.gallery ?? []),
+            ];
+            const activeImg = allImages[galleryIndex];
+            return (
+              <div className="w-full lg:w-[380px] lg:shrink-0">
+                {/* Main image */}
+                <div
+                  className="group relative aspect-square w-full cursor-zoom-in overflow-hidden bg-zinc-900"
+                  onClick={() => { if (allImages.length) setLightboxOpen(true); }}
+                >
+                  {activeImg ? (
                     <img
-                      src={url}
-                      alt={`${design.name} ${i + 1}`}
-                      className="h-full w-full object-cover"
+                      src={activeImg}
+                      alt={design.name}
+                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
                     />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center">
+                      <span className="text-7xl font-extrabold text-white/10">
+                        {design.name.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                  )}
+                  {/* Expand hint */}
+                  {allImages.length > 0 && (
+                    <div className="absolute right-3 top-3 rounded bg-black/60 px-2 py-1 text-[10px] text-white/70 opacity-0 transition-opacity group-hover:opacity-100">
+                      🔍 {allImages.length > 1 ? `1/${allImages.length}` : "Увеличить"}
+                    </div>
+                  )}
+                </div>
+
+                {/* Thumbnail rail */}
+                {allImages.length > 1 && (
+                  <div className="mt-2 flex gap-1 overflow-x-auto pb-1">
+                    {allImages.map((url, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => setGalleryIndex(i)}
+                        aria-label={`Фото ${i + 1}`}
+                        className={cn(
+                          "aspect-square h-16 shrink-0 overflow-hidden bg-zinc-900 transition",
+                          galleryIndex === i
+                            ? "ring-2 ring-black ring-offset-1"
+                            : "opacity-60 hover:opacity-90",
+                        )}
+                      >
+                        <img
+                          src={url}
+                          alt={`${design.name} ${i + 1}`}
+                          className="h-full w-full object-cover"
+                        />
+                      </button>
+                    ))}
                   </div>
-                ))}
+                )}
+
+                {/* Lightbox */}
+                {lightboxOpen && allImages.length > 0 && (
+                  <Lightbox
+                    images={allImages}
+                    index={galleryIndex}
+                    onClose={() => setLightboxOpen(false)}
+                    onNav={setGalleryIndex}
+                  />
+                )}
               </div>
-            )}
-          </div>
+            );
+          })()}
 
           {/* Selectors */}
           <div className="flex-1 min-w-0">
@@ -310,7 +471,7 @@ export function DesignPage() {
                                   : "border-transparent text-[--color-muted] hover:text-black",
                               )}
                             >
-                              {garmentLabel(c.garmentType)}
+                              {garmentLabel({ garmentType: c.garmentType }, i18n.language)}
                             </button>
                           );
                         })}
@@ -320,7 +481,7 @@ export function DesignPage() {
                       <div className="bg-[--color-surface] p-4">
                         <img
                           src={displayedChart.imageUrl}
-                          alt={displayedChart.title ?? garmentLabel(displayedChart.garmentType)}
+                          alt={displayedChart.title ?? garmentLabel({ garmentType: displayedChart.garmentType }, i18n.language)}
                           className="max-h-96 w-full object-contain"
                         />
                       </div>
@@ -356,7 +517,7 @@ export function DesignPage() {
                               : "border-[--color-border] bg-white text-black hover:border-zinc-400",
                           )}
                         >
-                          {garmentLabel(g.garmentType)}
+                          {garmentLabel(g, i18n.language)}
                           {price != null ? (
                             <span className={cn(
                               "ml-2 text-xs",
@@ -458,6 +619,7 @@ export function DesignPage() {
         </div>
       </Container>
 
+      {design && <RecommendedSection designId={design.id} />}
     </>
   );
 }

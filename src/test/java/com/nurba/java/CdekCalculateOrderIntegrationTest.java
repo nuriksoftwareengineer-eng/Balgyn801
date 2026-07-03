@@ -5,14 +5,15 @@ import com.nurba.java.domain.Collection;
 import com.nurba.java.domain.Design;
 import com.nurba.java.domain.DesignGarment;
 import com.nurba.java.domain.DesignGarmentPrice;
+import com.nurba.java.domain.GarmentProfile;
 import com.nurba.java.domain.Product;
 import com.nurba.java.enums.Currency;
-import com.nurba.java.enums.GarmentType;
 import com.nurba.java.repositories.CatalogGroupRepository;
 import com.nurba.java.repositories.CollectionRepository;
 import com.nurba.java.repositories.DesignGarmentPriceRepository;
 import com.nurba.java.repositories.DesignGarmentRepository;
 import com.nurba.java.repositories.DesignRepository;
+import com.nurba.java.repositories.GarmentProfileRepository;
 import com.nurba.java.repositories.ProductRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -58,11 +59,12 @@ class CdekCalculateOrderIntegrationTest {
     @Autowired private DesignRepository designRepository;
     @Autowired private DesignGarmentRepository designGarmentRepository;
     @Autowired private DesignGarmentPriceRepository designGarmentPriceRepository;
+    @Autowired private GarmentProfileRepository garmentProfileRepository;
 
     // ── Fixture IDs ──────────────────────────────────────────────────────────
     private Long productId;          // legacy product, price 5 000 KZT
-    private Long hoodieGarmentId;    // HOODIE (1.000 kg default), price 12 000 KZT
-    private Long noKztGarmentId;     // T_SHIRT, NO KZT price row (triggers 400)
+    private Long hoodieGarmentId;    // garment (0.800 kg), price 12 000 KZT
+    private Long noKztGarmentId;     // garment, NO KZT price row (triggers 400)
 
     // ─────────────────────────────────────────────────────────────────────────
 
@@ -85,6 +87,7 @@ class CdekCalculateOrderIntegrationTest {
         collectionRepository.deleteAll();
         catalogGroupRepository.deleteAll();
         productRepository.deleteAll();
+        garmentProfileRepository.deleteAll();
     }
 
     private void buildFixture() {
@@ -119,10 +122,29 @@ class CdekCalculateOrderIntegrationTest {
         design.setCreatedAt(LocalDateTime.now());
         design = designRepository.save(design);
 
-        // ── HOODIE garment with KZT price ─────────────────────────────────────
+        // ── GarmentProfile with weight 0.800 kg = 800 g ──────────────────────
+        GarmentProfile gp = new GarmentProfile();
+        gp.setName("Test Hoodie Profile");
+        gp.setWeightKg(new BigDecimal("0.800"));
+        gp.setLengthCm(35);
+        gp.setWidthCm(28);
+        gp.setHeightCm(8);
+        gp.setSortOrder(0);
+        gp = garmentProfileRepository.save(gp);
+
+        GarmentProfile gp2 = new GarmentProfile();
+        gp2.setName("Test Shirt Profile");
+        gp2.setWeightKg(new BigDecimal("0.400"));
+        gp2.setLengthCm(30);
+        gp2.setWidthCm(25);
+        gp2.setHeightCm(5);
+        gp2.setSortOrder(1);
+        gp2 = garmentProfileRepository.save(gp2);
+
+        // ── garment with KZT price ────────────────────────────────────────────
         DesignGarment hoodie = new DesignGarment();
         hoodie.setDesign(design);
-        hoodie.setGarmentType(GarmentType.HOODIE);   // default weight: 1.000 kg = 1000 g
+        hoodie.setGarmentProfile(gp);   // weight: 0.800 kg = 800 g
         hoodie.setActive(true);
         hoodie = designGarmentRepository.save(hoodie);
         hoodieGarmentId = hoodie.getId();
@@ -133,10 +155,10 @@ class CdekCalculateOrderIntegrationTest {
         hoodieKztPrice.setAmount(new BigDecimal("12000.00"));
         designGarmentPriceRepository.save(hoodieKztPrice);
 
-        // ── T_SHIRT garment with NO KZT price (for error-case test) ──────────
+        // ── garment with NO KZT price (for error-case test) ──────────────────
         DesignGarment noKztGarment = new DesignGarment();
         noKztGarment.setDesign(design);
-        noKztGarment.setGarmentType(GarmentType.T_SHIRT);
+        noKztGarment.setGarmentProfile(gp2);
         noKztGarment.setActive(true);
         noKztGarment = designGarmentRepository.save(noKztGarment);
         noKztGarmentId = noKztGarment.getId();
@@ -174,8 +196,8 @@ class CdekCalculateOrderIntegrationTest {
     /**
      * Design-garment path: pricing from designGarmentPriceRepository (KZT),
      * weight from GarmentWeightService.weightForType(HOODIE) — same source as order creation.
-     * HOODIE default = 1.000 kg = 1000 g
-     * stub fee = 1500 + 400 × 1.00 = 1 900.00 KZT
+     * HOODIE default = 0.800 kg = 800 g
+     * stub fee = 1500 + 400 × 0.80 = 1 820.00 KZT
      */
     @Test
     void designGarment_returnsGarmentPriceAndActualWeight() throws Exception {
@@ -191,17 +213,17 @@ class CdekCalculateOrderIntegrationTest {
                         .content(body))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.itemsTotal").value(12000.00))
-                .andExpect(jsonPath("$.estimatedWeightGrams").value(1000))
-                .andExpect(jsonPath("$.deliveryPrice").value(1900.00))
-                .andExpect(jsonPath("$.orderTotal").value(13900.00))
+                .andExpect(jsonPath("$.estimatedWeightGrams").value(800))
+                .andExpect(jsonPath("$.deliveryPrice").value(1820.00))
+                .andExpect(jsonPath("$.orderTotal").value(13820.00))
                 .andExpect(jsonPath("$.sourcedFromStub").value(true));
     }
 
     /**
      * Mixed cart: one legacy product (qty=1) and one HOODIE (qty=1).
      * product weight: estimateWeightGrams(1) = max(100, 250+150) = 400 g
-     * hoodie weight: 1 000 g
-     * total weight: 1 400 g → stub fee = 1500 + 400 × 1.40 = 2 060.00 KZT
+     * hoodie weight: 800 g
+     * total weight: 1 200 g → stub fee = 1500 + 400 × 1.20 = 1 980.00 KZT
      * itemsTotal: 5 000 + 12 000 = 17 000.00 KZT
      */
     @Test
@@ -221,9 +243,9 @@ class CdekCalculateOrderIntegrationTest {
                         .content(body))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.itemsTotal").value(17000.00))
-                .andExpect(jsonPath("$.estimatedWeightGrams").value(1400))
-                .andExpect(jsonPath("$.deliveryPrice").value(2060.00))
-                .andExpect(jsonPath("$.orderTotal").value(19060.00))
+                .andExpect(jsonPath("$.estimatedWeightGrams").value(1200))
+                .andExpect(jsonPath("$.deliveryPrice").value(1980.00))
+                .andExpect(jsonPath("$.orderTotal").value(18980.00))
                 .andExpect(jsonPath("$.sourcedFromStub").value(true));
     }
 

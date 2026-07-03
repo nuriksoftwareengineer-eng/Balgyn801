@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { CONTACT_EMAIL } from "@/shared/constants/store-content";
 import { InfoPage, InfoSection } from "@/shared/ui/info-page";
 
@@ -5,68 +6,45 @@ const linkClass =
   "font-medium text-black underline underline-offset-2 transition-colors hover:text-zinc-600";
 
 export function PrivacyPage() {
+  const { t } = useTranslation();
   return (
-    <InfoPage
-      title="Политика конфиденциальности"
-      lead="Какие данные мы собираем, зачем они нужны и что мы с ними делаем. Коротко: только то, что необходимо для выполнения вашего заказа."
-    >
-      <InfoSection heading="1. Какие данные мы собираем">
+    <InfoPage title={t("privacyPage.title")} lead={t("privacyPage.lead")}>
+      <InfoSection heading={t("privacyPage.s1.heading")}>
         <ul className="list-disc space-y-1.5 pl-5">
-          <li>имя и контактный телефон — при оформлении заказа;</li>
-          <li>ник в Telegram — если вы его указали;</li>
-          <li>
-            адрес доставки (город, улица, индекс, получатель) — для заказов с
-            доставкой;
-          </li>
-          <li>email и пароль — только при добровольной регистрации аккаунта;</li>
-          <li>состав заказа и историю заказов вашего аккаунта.</li>
+          <li>{t("privacyPage.s1.li1")}</li>
+          <li>{t("privacyPage.s1.li2")}</li>
+          <li>{t("privacyPage.s1.li3")}</li>
+          <li>{t("privacyPage.s1.li4")}</li>
+          <li>{t("privacyPage.s1.li5")}</li>
         </ul>
       </InfoSection>
 
-      <InfoSection heading="2. Зачем мы их используем">
+      <InfoSection heading={t("privacyPage.s2.heading")}>
         <ul className="list-disc space-y-1.5 pl-5">
-          <li>подтверждение и выполнение заказа, связь по статусу;</li>
-          <li>передача отправления службе доставки;</li>
-          <li>проведение оплаты через платёжного провайдера;</li>
-          <li>показ истории заказов в личном кабинете.</li>
+          <li>{t("privacyPage.s2.li1")}</li>
+          <li>{t("privacyPage.s2.li2")}</li>
+          <li>{t("privacyPage.s2.li3")}</li>
+          <li>{t("privacyPage.s2.li4")}</li>
         </ul>
-        <p>
-          Мы не используем ваши данные для рассылок без отдельного согласия и
-          не продаём их третьим лицам.
-        </p>
+        <p>{t("privacyPage.s2.noSpam")}</p>
       </InfoSection>
 
-      <InfoSection heading="3. Кому данные передаются">
-        <p>
-          Только в объёме, необходимом для выполнения заказа: службам доставки
-          (СДЭК, Казпочта) — имя, телефон и адрес получателя; платёжным
-          провайдерам (Freedom Pay, PayPal) — сумма и идентификатор заказа.
-          Платёжные данные карт мы не получаем и не храним.
-        </p>
+      <InfoSection heading={t("privacyPage.s3.heading")}>
+        <p>{t("privacyPage.s3.p1")}</p>
       </InfoSection>
 
-      <InfoSection heading="4. Хранение и защита">
-        <p>
-          Данные хранятся на защищённом сервере. Пароли хранятся только в виде
-          необратимого хеша. Доступ к данным заказов имеет только администрация
-          магазина.
-        </p>
-        <p>
-          Корзина до оформления заказа хранится локально в вашем браузере и
-          очищается при выходе из аккаунта.
-        </p>
+      <InfoSection heading={t("privacyPage.s4.heading")}>
+        <p>{t("privacyPage.s4.p1")}</p>
+        <p>{t("privacyPage.s4.p2")}</p>
       </InfoSection>
 
-      <InfoSection heading="5. Ваши права">
+      <InfoSection heading={t("privacyPage.s5.heading")}>
         <p>
-          Вы можете запросить просмотр, исправление или удаление своих данных —
-          напишите нам на{" "}
+          {t("privacyPage.s5.before")}
           <a href={`mailto:${CONTACT_EMAIL}`} className={linkClass}>
             {CONTACT_EMAIL}
           </a>
-          . Удаление данных аккаунта не затрагивает данные уже выполненных
-          заказов, которые мы обязаны хранить по законодательству Республики
-          Казахстан.
+          {t("privacyPage.s5.after")}
         </p>
       </InfoSection>
     </InfoPage>

@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 
 interface SizeChartModalProps {
   imageUrl: string;
@@ -7,15 +8,14 @@ interface SizeChartModalProps {
 }
 
 export function SizeChartModal({ imageUrl, title, onClose }: SizeChartModalProps) {
+  const { t } = useTranslation();
   const overlayRef = useRef<HTMLDivElement>(null);
 
-  // Close on Escape key
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") onClose();
     }
     document.addEventListener("keydown", onKey);
-    // Prevent body scroll while modal is open
     document.body.style.overflow = "hidden";
     return () => {
       document.removeEventListener("keydown", onKey);
@@ -23,10 +23,11 @@ export function SizeChartModal({ imageUrl, title, onClose }: SizeChartModalProps
     };
   }, [onClose]);
 
-  // Close on backdrop click
   function handleOverlayClick(e: React.MouseEvent) {
     if (e.target === overlayRef.current) onClose();
   }
+
+  const label = title ?? t("design.sizeChart");
 
   return (
     <div
@@ -35,18 +36,18 @@ export function SizeChartModal({ imageUrl, title, onClose }: SizeChartModalProps
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
-      aria-label={title ?? "Размерная сетка"}
+      aria-label={label}
     >
       <div className="relative max-h-[90dvh] w-full max-w-2xl overflow-auto bg-white shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-[--color-border] px-5 py-4">
           <p className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-black">
-            {title ?? "Размерная сетка"}
+            {label}
           </p>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Закрыть"
+            aria-label={t("cart.close")}
             className="text-[--color-muted] transition hover:text-black"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden="true">

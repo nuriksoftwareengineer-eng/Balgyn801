@@ -37,4 +37,16 @@ public interface CatalogStorefrontApi {
     @Operation(summary = "Full design page: garments, prices (all currencies), colors, sizes")
     @GetMapping("/designs/{slug}")
     DesignDetailResponse getDesignBySlug(@PathVariable String slug);
+
+    @Operation(summary = "Popular designs sorted by view count")
+    @GetMapping("/popular")
+    List<DesignResponse> getPopular(@RequestParam(defaultValue = "8") int limit);
+
+    @Operation(summary = "New arrivals: isNewArrival=true or published in last 30 days")
+    @GetMapping("/new-arrivals")
+    List<DesignResponse> getNewArrivals(@RequestParam(defaultValue = "8") int limit);
+
+    @Operation(summary = "Recommendations: same collection + popular fallback")
+    @GetMapping("/recommendations")
+    List<DesignResponse> getRecommendations(@RequestParam Long designId, @RequestParam(defaultValue = "6") int limit);
 }

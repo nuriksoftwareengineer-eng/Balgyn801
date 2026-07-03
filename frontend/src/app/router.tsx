@@ -160,11 +160,35 @@ const AdminUsersPage = lazy(() =>
     default: m.AdminUsersPage,
   })),
 );
+const AdminSiteSettingsPage = lazy(() =>
+  import("@/admin/AdminSiteSettingsPage").then((m) => ({
+    default: m.AdminSiteSettingsPage,
+  })),
+);
+const ReviewsPage = lazy(() =>
+  import("@/pages/ReviewsPage").then((m) => ({ default: m.ReviewsPage })),
+);
+const AdminReviewsPage = lazy(() =>
+  import("@/admin/AdminReviewsPage").then((m) => ({ default: m.AdminReviewsPage })),
+);
+const WishlistPage = lazy(() =>
+  import("@/pages/WishlistPage").then((m) => ({ default: m.WishlistPage })),
+);
+const AdminCouponsPage = lazy(() =>
+  import("@/admin/AdminCouponsPage").then((m) => ({
+    default: m.AdminCouponsPage,
+  })),
+);
+const AdminGarmentProfilesPage = lazy(() =>
+  import("@/admin/AdminGarmentProfilesPage").then((m) => ({
+    default: m.AdminGarmentProfilesPage,
+  })),
+);
 
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <MainLayout />,
+    element: <ErrorBoundary><MainLayout /></ErrorBoundary>,
     children: [
       {
         index: true,
@@ -271,6 +295,14 @@ const router = createBrowserRouter([
         ),
       },
       {
+        path: "reviews",
+        element: (
+          <Suspense fallback={<PageLoadFallback />}>
+            <ReviewsPage />
+          </Suspense>
+        ),
+      },
+      {
         path: "track-order",
         element: (
           <Suspense fallback={<PageLoadFallback />}>
@@ -319,6 +351,14 @@ const router = createBrowserRouter([
         ),
       },
       {
+        path: "wishlist",
+        element: (
+          <Suspense fallback={<PageLoadFallback />}>
+            <WishlistPage />
+          </Suspense>
+        ),
+      },
+      {
         path: "*",
         element: (
           <Suspense fallback={<PageLoadFallback />}>
@@ -351,7 +391,7 @@ const router = createBrowserRouter([
     ],
   },
   {
-    element: <AuthShellLayout />,
+    element: <ErrorBoundary><AuthShellLayout /></ErrorBoundary>,
     children: [
       {
         path: "login",
@@ -376,7 +416,7 @@ const router = createBrowserRouter([
     element: <RequireAdmin />,
     children: [
       {
-        element: <AdminLayout />,
+        element: <ErrorBoundary><AdminLayout /></ErrorBoundary>,
         children: [
           {
             index: true,
@@ -479,6 +519,38 @@ const router = createBrowserRouter([
             element: (
               <Suspense fallback={<PageLoadFallback />}>
                 <AdminUsersPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "site-settings",
+            element: (
+              <Suspense fallback={<PageLoadFallback />}>
+                <AdminSiteSettingsPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "reviews",
+            element: (
+              <Suspense fallback={<PageLoadFallback />}>
+                <AdminReviewsPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "coupons",
+            element: (
+              <Suspense fallback={<PageLoadFallback />}>
+                <AdminCouponsPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: "garment-profiles",
+            element: (
+              <Suspense fallback={<PageLoadFallback />}>
+                <AdminGarmentProfilesPage />
               </Suspense>
             ),
           },

@@ -10,11 +10,16 @@ import com.nurba.java.dto.responce.AuthResponse;
 import com.nurba.java.enums.Role;
 import com.nurba.java.exception.BusinessRuleException;
 import com.nurba.java.exception.NotFoundException;
+import com.nurba.java.domain.RefreshTokenRecord;
 import com.nurba.java.repositories.AppUserRepository;
+import com.nurba.java.repositories.RefreshTokenRepository;
 import com.nurba.java.security.JwtProperties;
 import com.nurba.java.security.JwtService;
 import com.nurba.java.service.AuthService;
+import com.nurba.java.service.EmailService;
+import com.nurba.java.service.TelegramNotificationService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.AuthenticationException;
@@ -26,17 +31,23 @@ import java.time.Instant;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
 
     private final AppUserRepository appUserRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
+    private final SessionRevoker sessionRevoker;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final JwtProperties jwtProperties;
     private final AuthenticationManager authenticationManager;
+    private final EmailService emailService;
+    private final TelegramNotificationService telegramNotificationService;
 
     @Override
     @Transactional
@@ -55,11 +66,14 @@ public class AuthServiceImpl implements AuthService {
 
         appUserRepository.save(user);
 
-        return buildAuthResponse(user);
+        emailService.sendRegistrationEmail(user.getEmail(), user.getEmail());
+        telegramNotificationService.notifyNewUser(user.getEmail());
+
+        return issueTokens(user);
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public AuthResponse login(LoginRequest request) {
         String email = request.getEmail().trim().toLowerCase();
         try {
@@ -72,7 +86,7 @@ public class AuthServiceImpl implements AuthService {
         AppUser user = appUserRepository.findByEmailIgnoreCase(email)
                 .orElseThrow(() -> new NotFoundException("Пользователь не найден"));
 
-        return buildAuthResponse(user);
+        return issueTokens(user);
     }
 
     @Override
@@ -97,12 +111,33 @@ public class AuthServiceImpl implements AuthService {
         AppUser user = appUserRepository.findByEmailIgnoreCase(email)
                 .orElseThrow(() -> new NotFoundException("Пользователь не найден"));
 
-        int tokenVer = jwtService.extractRefreshVersion(rawToken);
-        if (tokenVer != -1 && tokenVer != user.getTokenVersion()) {
-            throw new BusinessRuleException("Refresh-токен отозван. Пожалуйста, войдите снова.");
+        // The refresh token must carry a jti backed by a server-side record. Tokens issued before
+        // rotation existed have no jti/record and are rejected — the user simply re-logs in once.
+        String jti = jwtService.extractJti(rawToken);
+        RefreshTokenRecord record = (jti == null || jti.isBlank())
+                ? null
+                : refreshTokenRepository.findByJti(jti).orElse(null);
+
+        if (record == null || !record.getUserId().equals(user.getId())) {
+            throw new BusinessRuleException("Refresh-токен недействителен. Пожалуйста, войдите снова.");
+        }
+        if (record.isRevoked()) {
+            // Reuse detection: a rotated/revoked token was replayed (possible theft) — revoke the
+            // whole session family, then reject. The revoke runs in a NEW transaction so it commits
+            // even though the BusinessRuleException below rolls this request's transaction back.
+            sessionRevoker.revokeAllSessions(user.getId());
+            log.warn("[Auth] Refresh-token reuse detected for user id={} — all sessions revoked", user.getId());
+            throw new BusinessRuleException(
+                    "Обнаружено повторное использование токена. Все сессии завершены — войдите снова.");
+        }
+        if (record.getExpiresAt().isBefore(Instant.now())) {
+            throw new BusinessRuleException("Срок действия refresh-токена истёк");
         }
 
-        return buildAuthResponse(user);
+        // Rotate: revoke the presented token, issue a fresh access+refresh pair.
+        record.setRevoked(true);
+        refreshTokenRepository.save(record);
+        return issueTokens(user);
     }
 
     @Override
@@ -112,13 +147,23 @@ public class AuthServiceImpl implements AuthService {
         appUserRepository.findByEmailIgnoreCase(email.trim().toLowerCase()).ifPresent(user -> {
             user.setTokenVersion(user.getTokenVersion() + 1);
             appUserRepository.save(user);
+            refreshTokenRepository.revokeAllForUser(user.getId());
         });
     }
 
-    private AuthResponse buildAuthResponse(AppUser user) {
+    /** Issues an access+refresh pair and records the refresh jti server-side (enables rotation). */
+    private AuthResponse issueTokens(AppUser user) {
+        String jti = UUID.randomUUID().toString();
+        refreshTokenRepository.save(RefreshTokenRecord.builder()
+                .jti(jti)
+                .userId(user.getId())
+                .expiresAt(Instant.now().plusMillis(jwtProperties.refreshExpirationMs()))
+                .revoked(false)
+                .createdAt(Instant.now())
+                .build());
         return AuthResponse.builder()
                 .accessToken(jwtService.generateAccessToken(user))
-                .refreshToken(jwtService.generateRefreshToken(user))
+                .refreshToken(jwtService.generateRefreshToken(user, jti))
                 .tokenType("Bearer")
                 .expiresInMs(jwtProperties.expirationMs())
                 .refreshExpiresInMs(jwtProperties.refreshExpirationMs())

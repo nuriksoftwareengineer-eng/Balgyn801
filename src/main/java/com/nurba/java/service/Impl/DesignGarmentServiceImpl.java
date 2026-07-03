@@ -4,6 +4,7 @@ import com.nurba.java.component.DesignReadinessService;
 import com.nurba.java.domain.Color;
 import com.nurba.java.domain.Design;
 import com.nurba.java.domain.DesignGarment;
+import com.nurba.java.domain.GarmentProfile;
 import com.nurba.java.domain.Size;
 import com.nurba.java.dto.request.CreateDesignGarmentRequest;
 import com.nurba.java.dto.request.UpdateDesignGarmentRequest;
@@ -13,6 +14,7 @@ import com.nurba.java.mapper.DesignGarmentMapper;
 import com.nurba.java.repositories.ColorRepository;
 import com.nurba.java.repositories.DesignGarmentRepository;
 import com.nurba.java.repositories.DesignRepository;
+import com.nurba.java.repositories.GarmentProfileRepository;
 import com.nurba.java.repositories.SizeRepository;
 import com.nurba.java.service.DesignGarmentService;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +33,7 @@ public class DesignGarmentServiceImpl implements DesignGarmentService {
     private final DesignRepository designRepository;
     private final ColorRepository colorRepository;
     private final SizeRepository sizeRepository;
+    private final GarmentProfileRepository garmentProfileRepository;
     private final DesignGarmentMapper mapper;
     private final DesignReadinessService readinessService;
 
@@ -52,11 +55,16 @@ public class DesignGarmentServiceImpl implements DesignGarmentService {
         Design design = designRepository.findById(request.getDesignId())
                 .orElseThrow(() -> new NotFoundException("Design not found: " + request.getDesignId()));
 
+        GarmentProfile profile = garmentProfileRepository.findById(request.getGarmentProfileId())
+                .orElseThrow(() -> new NotFoundException(
+                        "Тип одежды не найден: id=" + request.getGarmentProfileId()));
+
         Set<Color> colors = resolveColors(request.getColorIds());
         Set<Size> sizes = resolveSizes(request.getSizeIds());
 
         DesignGarment entity = mapper.toEntity(request);
         entity.setDesign(design);
+        entity.setGarmentProfile(profile);
         entity.setColors(colors);
         entity.setSizes(sizes);
 

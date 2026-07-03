@@ -10,6 +10,7 @@ public interface CollectionRepository extends JpaRepository<Collection, Long> {
     List<Collection> findByCatalogGroup_Id(Long groupId);
     Optional<Collection> findBySlug(String slug);
     boolean existsBySlug(String slug);
+    boolean existsByCatalogGroup_Id(Long groupId);
 
     // Storefront — active only
     List<Collection> findByCatalogGroup_IdAndActiveTrueOrderBySortOrderAsc(Long groupId);

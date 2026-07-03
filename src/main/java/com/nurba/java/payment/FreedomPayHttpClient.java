@@ -52,6 +52,8 @@ public class FreedomPayHttpClient {
             return stub(orderId);
         }
         Map<String, String> params = buildInitParams(orderId, amount, description);
+        log.info("[FreedomPay] initPayment: orderId={} amount={} resultUrl={} successUrl={} testingMode={}",
+                orderId, amount, props.getResultUrl(), props.getSuccessUrl(), props.isTestingMode());
         params.put("pg_sig", FreedomPaySignature.sign("init_payment.php", params, props.getSecretKey()));
         try {
             String xml = postForm(props.getApiUrl() + "/init_payment.php", params);
@@ -61,6 +63,31 @@ public class FreedomPayHttpClient {
             log.error("[FreedomPay] init_payment.php call failed for orderId={}: {}", orderId, e.getMessage(), e);
             return new FreedomPayInitResult(null, null, false,
                     "Freedom Pay connection error: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Checks payment status via Freedom Pay's {@code check_payment.php}.
+     * Used when the server-side callback at {@code pg_result_url} does not arrive (e.g. ngrok
+     * tunnel is down) and the user has already returned to the frontend via {@code pg_success_url}.
+     */
+    public FreedomPayCheckResult checkPayment(String providerPaymentId) {
+        if (props.isStubMode()) {
+            log.info("[FreedomPay-STUB] checkPayment returning SUCCEEDED for pg_payment_id={}", providerPaymentId);
+            return new FreedomPayCheckResult(com.nurba.java.enums.PaymentStatus.SUCCEEDED, null);
+        }
+        Map<String, String> params = new LinkedHashMap<>();
+        params.put("pg_merchant_id", props.getMerchantId());
+        params.put("pg_payment_id", providerPaymentId);
+        params.put("pg_salt", UUID.randomUUID().toString().replace("-", "").substring(0, 16));
+        params.put("pg_sig", FreedomPaySignature.sign("check_payment.php", params, props.getSecretKey()));
+        try {
+            String xml = postForm(props.getApiUrl() + "/check_payment.php", params);
+            log.info("[FreedomPay] check_payment.php response for pg_payment_id={}: {}", providerPaymentId, xml);
+            return parseCheckPaymentResponse(xml);
+        } catch (Exception e) {
+            log.error("[FreedomPay] check_payment.php failed for pg_payment_id={}: {}", providerPaymentId, e.getMessage(), e);
+            return new FreedomPayCheckResult(null, "check_payment.php error: " + e.getMessage());
         }
     }
 
@@ -112,7 +139,11 @@ public class FreedomPayHttpClient {
         HttpResponse<String> response = httpClient.send(request,
                 HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
         if (response.statusCode() != 200) {
-            throw new IllegalStateException("Freedom Pay returned HTTP " + response.statusCode());
+            log.error("[FreedomPay] HTTP {} from {}: body={}",
+                    response.statusCode(), url, response.body());
+            throw new IllegalStateException(
+                    "Freedom Pay returned HTTP " + response.statusCode()
+                    + ": " + response.body());
         }
         return response.body();
     }
@@ -170,6 +201,54 @@ public class FreedomPayHttpClient {
             log.error("[FreedomPay] Failed to parse/verify init_payment.php response", e);
             return new FreedomPayInitResult(null, null, false,
                     "Failed to parse Freedom Pay response");
+        }
+    }
+
+    private FreedomPayCheckResult parseCheckPaymentResponse(String xml) {
+        try {
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+            factory.setXIncludeAware(false);
+            factory.setExpandEntityReferences(false);
+            DocumentBuilder builder = factory.newDocumentBuilder();
+            Document doc = builder.parse(new InputSource(new StringReader(xml)));
+            Map<String, String> fields = extractResponseFields(doc);
+
+            String pgStatus = fields.get("pg_status");
+            if (!"ok".equalsIgnoreCase(pgStatus)) {
+                String err = fields.getOrDefault("pg_error_description",
+                        "FreedomPay check_payment.php status=" + pgStatus);
+                log.warn("[FreedomPay] check_payment.php non-ok status: {}", err);
+                return new FreedomPayCheckResult(null, err);
+            }
+
+            // Try pg_result (1=success / 0=failure) — same convention as callbacks
+            String pgResult = fields.get("pg_result");
+            if ("1".equals(pgResult)) {
+                return new FreedomPayCheckResult(com.nurba.java.enums.PaymentStatus.SUCCEEDED, null);
+            } else if ("0".equals(pgResult)) {
+                return new FreedomPayCheckResult(com.nurba.java.enums.PaymentStatus.FAILED, null);
+            }
+
+            // Fallback: pg_payment_status text field used by some FreedomPay API versions
+            String paymentStatus = fields.get("pg_payment_status");
+            if (paymentStatus != null) {
+                return switch (paymentStatus.toLowerCase()) {
+                    case "success", "captured" ->
+                            new FreedomPayCheckResult(com.nurba.java.enums.PaymentStatus.SUCCEEDED, null);
+                    case "failed", "rejected", "revoked", "canceled", "cancelled", "error" ->
+                            new FreedomPayCheckResult(com.nurba.java.enums.PaymentStatus.FAILED, null);
+                    default ->
+                            new FreedomPayCheckResult(com.nurba.java.enums.PaymentStatus.PENDING, null);
+                };
+            }
+
+            log.warn("[FreedomPay] check_payment.php: no pg_result or pg_payment_status in response");
+            return new FreedomPayCheckResult(com.nurba.java.enums.PaymentStatus.PENDING, null);
+
+        } catch (Exception e) {
+            log.error("[FreedomPay] Failed to parse check_payment.php response", e);
+            return new FreedomPayCheckResult(null, "Failed to parse FreedomPay check response");
         }
     }
 

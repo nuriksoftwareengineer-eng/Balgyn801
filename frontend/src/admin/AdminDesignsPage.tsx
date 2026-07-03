@@ -10,6 +10,7 @@ import {
   listDesigns,
   listGroups,
   publishDesign,
+  restoreDesign,
   updateDesign,
   type AdminDesign,
   type DesignStatus,
@@ -87,6 +88,7 @@ export function AdminDesignsPage() {
   const [description, setDescription] = useState("");
   const [mainImageUrl, setMainImageUrl] = useState("");
   const [gallery, setGallery] = useState<string[]>([]);
+  const [isNewArrival, setIsNewArrival] = useState(false);
   const [mainBusy, setMainBusy] = useState(false);
   const [galleryBusy, setGalleryBusy] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -111,6 +113,7 @@ export function AdminDesignsPage() {
     setDescription("");
     setMainImageUrl("");
     setGallery([]);
+    setIsNewArrival(false);
     setFormError(null);
   }
 
@@ -125,6 +128,7 @@ export function AdminDesignsPage() {
     setDescription(d.description ?? "");
     setMainImageUrl(d.mainImageUrl ?? "");
     setGallery(d.gallery ?? []);
+    setIsNewArrival(d.isNewArrival ?? false);
     setFormError(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -173,6 +177,7 @@ export function AdminDesignsPage() {
         description: description.trim() || null,
         mainImageUrl: mainImageUrl || null,
         gallery,
+        isNewArrival,
       };
       if (!body.name) throw new Error("Укажите название");
       if (!body.slug) throw new Error("Укажите slug");
@@ -225,6 +230,15 @@ export function AdminDesignsPage() {
       qc.invalidateQueries({ queryKey: ["admin", "designs"] });
     },
     onError: (e) => setFormError(e instanceof ApiError ? e.message : "Не удалось архивировать"),
+  });
+
+  const restoreMut = useMutation({
+    mutationFn: (id: number) => restoreDesign(id, token!),
+    onSuccess: () => {
+      setFormError(null);
+      qc.invalidateQueries({ queryKey: ["admin", "designs"] });
+    },
+    onError: (e) => setFormError(e instanceof ApiError ? e.message : "Не удалось восстановить"),
   });
 
   return (
@@ -361,6 +375,17 @@ export function AdminDesignsPage() {
           )}
         </div>
 
+        {/* New arrival flag */}
+        <label className="mt-4 flex cursor-pointer items-center gap-2 text-sm text-zinc-300">
+          <input
+            type="checkbox"
+            checked={isNewArrival}
+            onChange={e => setIsNewArrival(e.target.checked)}
+            className="h-4 w-4"
+          />
+          Отметить как «Новинка» (показывать в секции новинок)
+        </label>
+
         {formError && <p className="mt-4 text-xs text-red-400">{formError}</p>}
 
         <div className="mt-5 flex gap-3">
@@ -439,8 +464,8 @@ export function AdminDesignsPage() {
                       {d.status === "ARCHIVED" && (
                         <button
                           type="button"
-                          onClick={() => publishMut.mutate(d.id)}
-                          disabled={publishMut.isPending}
+                          onClick={() => restoreMut.mutate(d.id)}
+                          disabled={restoreMut.isPending}
                           className="text-xs font-semibold text-emerald-400 hover:text-emerald-300 disabled:opacity-50"
                         >
                           Восстановить
@@ -448,7 +473,7 @@ export function AdminDesignsPage() {
                       )}
 
                       {/* Archive */}
-                      {d.status === "PUBLISHED" && (
+                      {d.status !== "ARCHIVED" && (
                         <button
                           type="button"
                           onClick={() => {

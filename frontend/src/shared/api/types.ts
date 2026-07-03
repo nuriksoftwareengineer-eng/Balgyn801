@@ -61,13 +61,8 @@ export type RefreshTokenRequest = {
   refreshToken: string;
 };
 
-export type PaymentProvider = "FREEDOM_PAY" | "PAYPAL";
+export type PaymentProvider = "FREEDOM_PAY" | "PAYPAL" | "VTB_KZ";
 
-export type PayPalCreateOrderRequest = {
-  orderId: number;
-  returnUrl?: string | null;
-  cancelUrl?: string | null;
-};
 export type PaymentStatus =
   | "PENDING"
   | "SUCCEEDED"
@@ -111,11 +106,29 @@ export type OrderStatus =
 
 export type OrderItemResponse = {
   id: number;
-  productTitle: string;
+  // Product-based (null for design-based orders)
+  productId?: number | null;
+  productTitle?: string | null;
+  // Design-based (null for product-based orders)
+  designGarmentId?: number | null;
+  garmentType?: string | null;
+  garmentTypeRu?: string | null;
+  garmentTypeKk?: string | null;
+  designName?: string | null;
+  designSlug?: string | null;
+  groupSlug?: string | null;
+  collectionSlug?: string | null;
+  colorId?: number | null;
+  colorHex?: string | null;
+  sizeId?: number | null;
+  // Repeat-order convenience: design's main image (design-based) or product image (legacy)
+  mainImageUrl?: string | null;
+  // Shared
   quantity: number;
   unitPrice: number;
   sizeLabel?: string | null;
   colorName?: string | null;
+  currency?: string | null;
 };
 
 export type DeliveryAddressRequest = {
@@ -234,6 +247,8 @@ export type CreateOrderRequest = {
   countryIso2?: string | null;
   /** Код ПВЗ СДЭК. Обязателен для CDEK-заказов. */
   pvzCode?: string | null;
+  /** Промокод — применяется сервером при создании заказа. */
+  couponCode?: string | null;
 };
 
 /** Ответ `GET /customer`, `POST /customer`, `PUT /customer` (ADMIN). */
@@ -267,7 +282,73 @@ export type OrderResponse = {
   comment?: string | null;
   items?: OrderItemResponse[];
   address?: DeliveryAddressResponse | null;
+  cdekShipment?: CdekShipmentResponse | null;
+  couponCode?: string | null;
+  discountAmount?: number | null;
   createdAt: string;
+};
+
+export type WishlistItemResponse = {
+  id: number;
+  designId: number;
+  designName: string;
+  designSlug: string;
+  mainImageUrl?: string | null;
+  collectionName: string;
+  groupSlug: string;
+  addedAt: string;
+};
+
+export type DiscountType = "PERCENTAGE" | "FIXED";
+
+export type CouponResponse = {
+  id: number;
+  code: string;
+  discountType: DiscountType;
+  discountValue: number;
+  minOrderAmount: number;
+  maxUses?: number | null;
+  usedCount: number;
+  active: boolean;
+  expiresAt?: string | null;
+  createdAt: string;
+};
+
+export type CouponValidateResponse = {
+  code: string;
+  discountType: DiscountType;
+  discountValue: number;
+  discountAmount: number;
+  finalTotal: number;
+};
+
+export type CouponRequest = {
+  code: string;
+  discountType: DiscountType;
+  discountValue: number;
+  minOrderAmount?: number;
+  maxUses?: number | null;
+  active: boolean;
+  expiresAt?: string | null;
+};
+
+export type DesignResponse = {
+  id: number;
+  collectionId: number;
+  collectionName: string;
+  collectionSlug: string;
+  groupName: string;
+  groupSlug: string;
+  name: string;
+  slug: string;
+  description?: string | null;
+  mainImageUrl?: string | null;
+  gallery?: string[];
+  status: string;
+  sortOrder?: number | null;
+  publishedAt?: string | null;
+  isNewArrival: boolean;
+  viewCount: number;
 };
 
 export type CdekShipmentStatus =
@@ -301,6 +382,7 @@ export type PaymentInitRequest = {
   orderId: number;
   provider: PaymentProvider;
   returnUrl?: string | null;
+  cancelUrl?: string | null;
 };
 
 export type ExchangeRateResponse = {

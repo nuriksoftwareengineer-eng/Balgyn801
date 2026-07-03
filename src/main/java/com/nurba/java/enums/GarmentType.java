@@ -11,12 +11,12 @@ import java.math.BigDecimal;
  * checkout if a row is missing (e.g. a fresh DB before seeding, or an accidentally deleted row).
  */
 public enum GarmentType {
-    T_SHIRT(new BigDecimal("0.400")),
-    OVERSIZE_TSHIRT(new BigDecimal("0.500")),
-    LONGSLEEVE(new BigDecimal("0.500")),
-    SWEATSHIRT(new BigDecimal("0.800")),
-    HOODIE(new BigDecimal("1.000")),
-    ZIP_HOODIE(new BigDecimal("1.100"));
+    T_SHIRT(new BigDecimal("0.250")),
+    OVERSIZE_TSHIRT(new BigDecimal("0.250")),
+    LONGSLEEVE(new BigDecimal("0.330")),
+    SWEATSHIRT(new BigDecimal("0.700")),
+    HOODIE(new BigDecimal("0.800")),
+    ZIP_HOODIE(new BigDecimal("0.830"));
 
     private final BigDecimal defaultWeightKg;
 

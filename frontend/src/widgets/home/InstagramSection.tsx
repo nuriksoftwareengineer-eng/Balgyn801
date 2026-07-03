@@ -8,7 +8,7 @@ import p5 from "@/assets/figma/photo_5289740941222682485_y.jpg";
 import p6 from "@/assets/figma/photo_5289740941222682486_y.jpg";
 
 const PHOTOS = [p1, p2, p3, p4, p5, p6];
-const IG_URL = "https://instagram.com/balgyn_shop";
+const IG_URL = "https://instagram.com/balgyn.bol";
 
 function IgIcon({ className }: { className?: string }) {
   return (
@@ -34,7 +34,7 @@ export function InstagramSection() {
           className="mb-10 flex flex-col items-start justify-between gap-4 md:flex-row md:items-end"
         >
           <h2 className="text-[40px] font-extrabold uppercase leading-[1.1] tracking-[-0.04em] sm:text-[48px] md:text-[64px]">
-            @balgyn_shop
+            BALGYN BOL
           </h2>
           <a
             href={IG_URL}

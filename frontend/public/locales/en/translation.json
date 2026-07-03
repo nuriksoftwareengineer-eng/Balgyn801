@@ -14,7 +14,8 @@
     "cart": "Cart",
     "contacts": "Contacts",
     "allCollections": "All Collections",
-    "loadingCatalog": "Loading catalog…"
+    "loadingCatalog": "Loading catalog…",
+    "wishlist": "Wishlist"
   },
   "header": {
     "openMenu": "Open menu",
@@ -66,6 +67,11 @@
     "kazakhCards": "Kazakh bank cards",
     "intlCards": "International cards",
     "paypalAccount": "PayPal account",
+    "freedomPayNetworks": "Kaspi · Halyk · Visa · Mastercard",
+    "paypalNetworks": "Visa · Mastercard · Amex · PayPal",
+    "vtbCard": "VTB Kazakhstan",
+    "vtbCardDesc": "Visa, Mastercard, Mir cards",
+    "vtbNetworks": "Mir · Visa · Mastercard · UnionPay",
     "success": {
       "title": "Payment successful",
       "subtitle": "Your payment has been confirmed. Thank you for your purchase!",
@@ -122,7 +128,24 @@
       "FREEDOM_PAY": "Freedom Pay",
       "PAYPAL": "PayPal"
     },
-    "payNow": "Pay now"
+    "payNow": "Pay now",
+    "repeatOrder": "Repeat order",
+    "cdek": {
+      "title": "CDEK Shipment",
+      "tracking": "Tracking number",
+      "status": "Status",
+      "status_CREATED": "Created",
+      "status_ACCEPTED": "Accepted",
+      "status_IN_TRANSIT": "In transit",
+      "status_ARRIVED": "Arrived at pickup point",
+      "status_DELIVERED": "Delivered",
+      "status_RETURNED": "Returned",
+      "status_CANCELLED": "Cancelled",
+      "eta": "Estimated delivery",
+      "point": "Pickup point",
+      "invoice": "Invoice",
+      "barcode": "Barcode"
+    }
   },
   "recovery": {
     "title": "Pending order",
@@ -200,6 +223,15 @@
       "cdekDelivery": "CDEK Delivery",
       "atReceipt": "on receipt",
       "onAgreement": "on agreement"
+    },
+    "coupon": {
+      "placeholder": "PROMO CODE",
+      "apply": "Apply",
+      "applied": "Coupon applied",
+      "remove": "Remove",
+      "discount": "Discount",
+      "invalid": "Coupon is invalid or not applicable",
+      "error": "Error validating coupon"
     },
     "order": {
       "accepted": "Order placed",
@@ -303,7 +335,14 @@
     "selectGarment": "Select garment",
     "selectColor": "Select colour",
     "selectSize": "Select size",
-    "selectAll": "Select garment, colour and size"
+    "selectAll": "Select garment, colour and size",
+    "recommendations": "You might also like"
+  },
+  "wishlist": {
+    "title": "Wishlist",
+    "empty": "Your wishlist is empty",
+    "browse": "Go to catalog",
+    "guestNote": "Sign in to save your wishlist. {{count}} designs saved in this session."
   },
   "errors": {
     "loadFailed": "Load failed",
@@ -335,6 +374,9 @@
       "desc": "Curated by our brand editorial based on reviews and sales over the past month.",
       "empty": "Best sellers coming soon."
     },
+    "newArrivals": "New Arrivals",
+    "popular": "Popular",
+    "viewAll": "View all",
     "instagram": {
       "follow": "Follow",
       "imageAlt": "BALGYN on Instagram"
@@ -374,7 +416,8 @@
       "contacts": "Contacts"
     },
     "social": {
-      "title": "Social"
+      "title": "Social",
+      "telegramChannel": "Telegram Channel"
     },
     "newsletter": {
       "title": "Newsletter",
@@ -440,5 +483,182 @@
     "collectionsEmptySubtitle": "No collections in this group yet. Check other categories.",
     "backToCatalog": "← Back to catalog",
     "back": "← Back"
+  },
+  "termsPage": {
+    "title": "Terms of Service",
+    "lead": "Public offer of the BALGYN online store. By placing an order on the website, you confirm that you have read and accept the terms below.",
+    "s1": {
+      "heading": "1. General Terms",
+      "p1": "BALGYN is an online store for machine-embroidered clothing. The product is the embroidery design: when ordering, you choose a design, garment type (hoodie, t-shirt, sweatshirt), color, and size.",
+      "p2": "This agreement is a public offer. Placing an order through the website cart constitutes acceptance of the offer."
+    },
+    "s2": {
+      "heading": "2. Placing an Order",
+      "p1": "To place an order, simply provide your name and contact phone number — registration is not required. After placing an order, we will contact you at the provided number or via Telegram to confirm the details.",
+      "p2": "The order is considered accepted after payment is confirmed. Before payment, the order has the status \"Awaiting Payment\" and may be automatically cancelled after the payment window expires."
+    },
+    "s3": {
+      "heading": "3. Production & Timing",
+      "p1": "Each item is embroidered to order. Production time depends on the design complexity and workload, and is communicated upon order confirmation. We send a photo of the finished item before shipping."
+    },
+    "s4": {
+      "heading": "4. Payment & Delivery",
+      "before": "Available payment and delivery methods and their costs are described on the ",
+      "deliveryLink": "Delivery & Payment",
+      "after": " page. Prices on the website are in tenge (₸)."
+    },
+    "s5": {
+      "heading": "5. Returns",
+      "before": "Return and exchange conditions are described on the ",
+      "returnsLink": "Returns & Exchanges",
+      "after": " page. Items made to individual order (Custom Design section) are non-refundable except in cases of manufacturing defects."
+    },
+    "s6": {
+      "heading": "6. Personal Data",
+      "before": "Processing of personal data is carried out in accordance with the ",
+      "privacyLink": "Privacy Policy",
+      "after": "."
+    },
+    "s7": {
+      "heading": "7. Contacts",
+      "before": "For all questions related to this agreement, write to ",
+      "contactsLinkText": "Contacts",
+      "middle": " or through the ",
+      "after": " page."
+    }
+  },
+  "returnsPage": {
+    "title": "Returns & Exchanges",
+    "lead": "We check every item before shipping and send a photo. If something went wrong — here's how we handle it.",
+    "s1": {
+      "heading": "Catalog Items",
+      "p1": "A catalog item in good condition can be exchanged or returned within 14 days of receipt, provided it has not been worn, labels are intact, and the item is in its original condition (Article 30 of the RK Law \"On Consumer Protection\").",
+      "p2": "The cost of return shipping for items in good condition is paid by the buyer."
+    },
+    "s2": {
+      "heading": "Custom Orders",
+      "before": "Items made to your design through the ",
+      "customLink": "Custom Design",
+      "after": " section are items with individually defined properties and are non-refundable/non-exchangeable — except in cases of manufacturing defects."
+    },
+    "s3": {
+      "heading": "Defect or Order Error",
+      "p1": "If an item arrived with an embroidery defect, wrong size or color — contact us within 7 days of receipt: send the order number and a photo of the issue. We will replace the item or refund the money — your choice. Return shipping in this case is paid by us."
+    },
+    "s4": {
+      "heading": "How to Return",
+      "step1before": "Contact us: ",
+      "step1telegram": "Telegram",
+      "step1after": ". Provide the order number and reason.",
+      "step2": "We will confirm the return and arrange the return shipping method.",
+      "step3": "Money is returned using the same payment method within 10 business days after receiving the item back."
+    }
+  },
+  "privacyPage": {
+    "title": "Privacy Policy",
+    "lead": "What data we collect, why we need it, and what we do with it. In short: only what is necessary to fulfill your order.",
+    "s1": {
+      "heading": "1. What Data We Collect",
+      "li1": "name and contact phone number — when placing an order;",
+      "li2": "Telegram username — if you provided it;",
+      "li3": "delivery address (city, street, zip code, recipient) — for orders with delivery;",
+      "li4": "email and password — only upon voluntary account registration;",
+      "li5": "order contents and order history for your account."
+    },
+    "s2": {
+      "heading": "2. How We Use It",
+      "li1": "order confirmation and fulfillment, status updates;",
+      "li2": "handing over shipment to the delivery service;",
+      "li3": "processing payment through the payment provider;",
+      "li4": "displaying order history in your account.",
+      "noSpam": "We do not use your data for newsletters without separate consent and do not sell it to third parties."
+    },
+    "s3": {
+      "heading": "3. Who We Share Data With",
+      "p1": "Only to the extent necessary to fulfill the order: delivery services (CDEK, Kazpost) — recipient's name, phone, and address; payment providers (Freedom Pay, PayPal) — order amount and identifier. We do not receive or store payment card details."
+    },
+    "s4": {
+      "heading": "4. Storage & Security",
+      "p1": "Data is stored on a secure server. Passwords are stored only as an irreversible hash. Only store administrators have access to order data.",
+      "p2": "The cart before placing an order is stored locally in your browser and is cleared upon logout."
+    },
+    "s5": {
+      "heading": "5. Your Rights",
+      "before": "You can request to view, correct, or delete your data — write to us at ",
+      "after": ". Deleting account data does not affect data from already completed orders, which we are required to retain under the laws of the Republic of Kazakhstan."
+    }
+  },
+  "deliveryPage": {
+    "title": "Delivery & Payment",
+    "lead": "Available delivery methods depend on the region and are shown when placing an order. Exact cost is calculated automatically at the \"Delivery\" step.",
+    "kazakhstan": {
+      "heading": "Kazakhstan",
+      "pickup": { "title": "Pickup", "desc": "Free. Pickup in Almaty by arrangement — we'll agree on place and time after order placement." },
+      "courier": { "title": "Courier / Taxi", "desc": "Delivery within Almaty. Fixed cost is shown when placing the order." },
+      "kazpost": { "title": "Kazpost", "desc": "Delivery throughout Kazakhstan. Cost depends on parcel weight." },
+      "cdek": { "title": "CDEK", "desc": "To a pickup point in your city. Cost and timing are calculated per CDEK rates at checkout." }
+    },
+    "russia": {
+      "heading": "Russia & CIS",
+      "p1": "Delivery via CDEK to a pickup point. At checkout you choose a city and pickup point — cost and timing are calculated automatically."
+    },
+    "international": {
+      "heading": "Other Countries",
+      "p1": "International postal delivery. Cost depends on country and weight; delivery time — from 14 days. Details will be arranged upon order confirmation."
+    },
+    "payment": {
+      "heading": "Payment",
+      "p1": "After placing an order, payment is available via Freedom Pay (Kazakhstani bank cards) or PayPal (international cards). The order goes into production after payment is confirmed.",
+      "p2": "Prices on the website are in tenge (₸). Card details are processed by the payment provider — we do not receive or store them."
+    },
+    "timing": {
+      "heading": "Timing",
+      "p1": "Items are embroidered to order: production time is communicated upon confirmation and usually takes several business days. We send a photo of the finished item before shipping."
+    }
+  },
+  "contactsPage": {
+    "title": "Contacts",
+    "lead": "We respond as soon as possible within business hours. Fastest via Telegram.",
+    "contactsHeading": "Contact Methods",
+    "pickupHeading": "Pickup",
+    "pickupDesc": "Almaty city, by arrangement: after placing an order, we'll agree on a convenient pickup location and time by phone or Telegram.",
+    "ordersHeading": "Order Inquiries",
+    "ordersDesc": "Please mention your order number — it's shown on the confirmation screen and in your account order history. This helps us respond faster."
+  },
+  "aboutPage": {
+    "breadcrumbHome": "Home",
+    "breadcrumb": "About",
+    "title": "About Us",
+    "subtitle": "BALGYN — clothing with a focus on embroidery and character: hoodies, t-shirts, and custom pieces when details and timing matter.",
+    "ceo": {
+      "role": "CEO",
+      "bio": "I lead brand development and production: from concept and design to final embroidery and shipping. BALGYN's mission is to combine streetwear aesthetics with craft quality — so each piece lasts years, not just a season.",
+      "contact": "For collaboration and custom orders, write us on Telegram or by email — we respond within one business day when possible.",
+      "customBtn": "Custom Design",
+      "telegramBtn": "Telegram"
+    },
+    "howWeWork": {
+      "heading": "How We Work",
+      "li1before": "Orders are placed on the website: you choose items from the ",
+      "li1link": "catalog",
+      "li1after": ", specify delivery method and contacts.",
+      "li2before": "Custom designs — through the ",
+      "li2link": "Custom Design",
+      "li2after": " section or directly via Telegram.",
+      "li3": "Production and shipping — after order confirmation; timing depends on workload and embroidery complexity."
+    },
+    "quality": {
+      "heading": "Quality & Packaging",
+      "p1": "We check the fit, embroidery attachment, and packaging before shipping. If something went wrong in transit — write to us, we'll sort it out."
+    },
+    "contacts": {
+      "heading": "Contacts",
+      "emailLabel": "Email:",
+      "telegramLabel": "Telegram:",
+      "telegramLinkText": "message the store",
+      "allContacts": "All contact methods — on the ",
+      "contactsLink": "Contacts",
+      "allContactsAfter": " page."
+    }
   }
 }

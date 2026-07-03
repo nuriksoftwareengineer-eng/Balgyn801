@@ -30,6 +30,8 @@ import com.nurba.java.repositories.AppUserRepository;
 import com.nurba.java.repositories.ColorRepository;
 import com.nurba.java.repositories.InventoryRepository;
 import com.nurba.java.repositories.OrderHistoryRepository;
+import com.nurba.java.service.CouponService;
+import com.nurba.java.enums.DiscountType;
 import com.nurba.java.repositories.UserAddressRepository;
 import com.nurba.java.repositories.CustomerRepository;
 import com.nurba.java.repositories.DeliveryAddressRepository;
@@ -39,14 +41,19 @@ import com.nurba.java.repositories.OrderItemRepository;
 import com.nurba.java.repositories.OrderRepository;
 import com.nurba.java.repositories.ProductRepository;
 import com.nurba.java.repositories.SizeRepository;
+import com.nurba.java.service.CdekShipmentService;
+import com.nurba.java.service.EmailService;
 import com.nurba.java.service.GarmentWeightService;
 import com.nurba.java.service.OrderService;
+import com.nurba.java.service.TelegramNotificationService;
 import com.nurba.java.service.delivery.DeliveryPricingService;
 import com.nurba.java.service.delivery.DeliveryQuote;
 import com.nurba.java.service.Impl.OrderExpiryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -94,6 +101,10 @@ public class OrderServiceImpl implements OrderService {
     private final OrderHistoryRepository orderHistoryRepository;
 
     private final OrderExpiryService orderExpiryService;
+    private final CouponService couponService;
+    private final EmailService emailService;
+    private final TelegramNotificationService telegramNotificationService;
+    private final CdekShipmentService cdekShipmentService;
 
 
     @Override
@@ -165,6 +176,27 @@ public class OrderServiceImpl implements OrderService {
         }
 
         BigDecimal grandTotal = itemsTotal.add(deliveryFee);
+
+        // Apply coupon if provided
+        if (request.getCouponCode() != null && !request.getCouponCode().isBlank()) {
+            try {
+                com.nurba.java.domain.Coupon coupon = couponService.findValidCoupon(request.getCouponCode(), grandTotal);
+                BigDecimal discount = BigDecimal.ZERO;
+                if (coupon.getDiscountType() == DiscountType.PERCENTAGE) {
+                    discount = grandTotal.multiply(coupon.getDiscountValue())
+                            .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+                } else {
+                    discount = coupon.getDiscountValue().min(grandTotal);
+                }
+                grandTotal = grandTotal.subtract(discount).max(BigDecimal.ZERO);
+                savedOrder.setCouponCode(coupon.getCode());
+                savedOrder.setDiscountAmount(discount);
+                couponService.incrementUsage(coupon.getId());
+            } catch (com.nurba.java.exception.BusinessRuleException e) {
+                throw new com.nurba.java.exception.BusinessRuleException("Промокод недействителен: " + e.getMessage());
+            }
+        }
+
         savedOrder.setDeliveryFee(deliveryFee.signum() > 0 ? deliveryFee : null);
         savedOrder.setTotalPrice(grandTotal);
         savedOrder.setTotalWeightKg(quote.weightKg());
@@ -186,6 +218,17 @@ public class OrderServiceImpl implements OrderService {
         }
 
         recordHistory(updatedOrder, OrderStatus.PENDING_PAYMENT);
+
+        if (updatedOrder.getAppUser() != null) {
+            emailService.sendOrderCreatedEmail(updatedOrder.getAppUser().getEmail(), updatedOrder);
+        }
+        final long notifyOrderId = updatedOrder.getId();
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                telegramNotificationService.notifyNewOrderById(notifyOrderId);
+            }
+        });
 
         Order withRelations = orderRepository.findById(updatedOrder.getId())
                 .orElseThrow(() -> new NotFoundException("Заказ не найден после создания"));
@@ -360,6 +403,19 @@ public class OrderServiceImpl implements OrderService {
         order.setUpdatedAt(LocalDateTime.now());
         orderRepository.save(order);
         recordHistory(order, next);
+
+        if (next == OrderStatus.SHIPPED) {
+            if (order.getAppUser() != null) {
+                emailService.sendOrderShippedEmail(order.getAppUser().getEmail(), order, null);
+            }
+            telegramNotificationService.notifyOrderShipped(order);
+        } else if (next == OrderStatus.DELIVERED) {
+            if (order.getAppUser() != null) {
+                emailService.sendOrderDeliveredEmail(order.getAppUser().getEmail(), order);
+            }
+            telegramNotificationService.notifyOrderDelivered(order);
+        }
+
         Order reloaded = orderRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Заказ не найден после обновления: " + id));
         return orderMapper.toResponse(reloaded);
@@ -372,7 +428,11 @@ public class OrderServiceImpl implements OrderService {
                 .orElseThrow(() -> new NotFoundException("Пользователь не найден"));
         return orderRepository.findByAppUser_IdOrderByCreatedAtDesc(user.getId())
                 .stream()
-                .map(orderMapper::toResponse)
+                .map(o -> {
+                    OrderResponse r = orderMapper.toResponse(o);
+                    r.setCdekShipment(cdekShipmentService.getByOrder(o.getId()));
+                    return r;
+                })
                 .toList();
     }
 

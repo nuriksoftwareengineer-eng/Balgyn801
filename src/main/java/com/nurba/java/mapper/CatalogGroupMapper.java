@@ -12,6 +12,7 @@ public interface CatalogGroupMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "collections", ignore = true)
+    @Mapping(target = "active", ignore = true)
     CatalogGroup toEntity(CreateCatalogGroupRequest request);
 
     CatalogGroupResponse toResponse(CatalogGroup entity);

@@ -24,7 +24,7 @@ public class Design {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "collection_id", nullable = false)
+    @JoinColumn(name = "collection_id", nullable = true)
     private Collection collection;
 
     @Column(nullable = false)
@@ -49,6 +49,18 @@ public class Design {
 
     @Column(name = "sort_order")
     private Integer sortOrder;
+
+    @Column(name = "name_kk", length = 200)
+    private String nameKk;
+
+    @Column(name = "name_en", length = 200)
+    private String nameEn;
+
+    @Column(name = "is_new_arrival", nullable = false)
+    private boolean isNewArrival = false;
+
+    @Column(name = "view_count", nullable = false)
+    private int viewCount = 0;
 
     private LocalDateTime createdAt;
 

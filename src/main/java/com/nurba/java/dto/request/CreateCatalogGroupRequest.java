@@ -13,4 +13,8 @@ public class CreateCatalogGroupRequest {
     private String slug;
 
     private Integer sortOrder = 0;
+
+    private String coverImageUrl;
+
+    private String bannerImageUrl;
 }

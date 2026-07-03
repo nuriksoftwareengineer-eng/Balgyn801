@@ -1,142 +1,143 @@
-import { Link } from "react-router-dom";
-import { useState } from "react";
+﻿import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/app/auth-context";
-import { getOrders, getCustomers, grantAdminRole, revokeAdminRole } from "@/shared/api/backend-api";
-import { listDesigns } from "@/shared/api/admin-catalog";
-import { ApiError } from "@/shared/api/http";
-import { Button } from "@/shared/ui/button";
+import { getDashboardStats } from "@/shared/api/backend-api";
+import {
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  BarChart, Bar, PieChart, Pie, Cell,
+} from "recharts";
+import type { DashboardStatsResponse } from "@/shared/types/dashboard";
 
-function StatCard({ label, value, to }: { label: string; value: number | string; to: string }) {
+const COLORS = ["#18181b", "#52525b", "#a1a1aa", "#d4d4d8", "#e4e4e7", "#f4f4f5"];
+
+function KpiCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
-    <Link
-      to={to}
-      className="group flex flex-col gap-2 rounded-lg border border-white/10 bg-zinc-900/60 p-5 transition hover:bg-zinc-800/60"
-    >
-      <p className="text-xs font-semibold uppercase tracking-[0.1em] text-zinc-500">{label}</p>
-      <p className="text-3xl font-bold text-zinc-100">{value}</p>
-    </Link>
+    <div className="rounded border border-white/10 bg-zinc-800/60 p-4">
+      <p className="text-xs uppercase tracking-wider text-zinc-400">{label}</p>
+      <p className="mt-1 text-2xl font-bold text-white">{value}</p>
+      {sub && <p className="mt-0.5 text-xs text-zinc-500">{sub}</p>}
+    </div>
   );
 }
 
+function fmt(n: number) {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(0)}K`;
+  return String(Math.round(n));
+}
+
+function fmtKzt(n: number) { return `${fmt(n)} ₸`; }
+
+const STATUS_LABELS: Record<string, string> = {
+  NEW: "Новый", CONFIRMED: "Подтверждён", IN_PRODUCTION: "В производстве",
+  READY: "Готов", SHIPPED: "Отправлен", DELIVERED: "Доставлен", CANCELLED: "Отменён",
+};
+
 export function AdminDashboardPage() {
-  const { token, isAdmin } = useAuth();
-  const [adminEmail, setAdminEmail] = useState("");
-  const [adminBusy, setAdminBusy] = useState(false);
-  const [adminMsg, setAdminMsg] = useState<string | null>(null);
-  const [adminErr, setAdminErr] = useState<string | null>(null);
+  const { token } = useAuth();
+  const [days, setDays] = useState(30);
 
-  const ordersQ = useQuery({
-    queryKey: ["admin-orders"],
-    queryFn: () => getOrders(token!),
+  const { data, isLoading } = useQuery<DashboardStatsResponse>({
+    queryKey: ["dashboard-stats", days, token],
+    queryFn: () => getDashboardStats(token!, days),
     enabled: !!token,
+    staleTime: 2 * 60_000,
   });
 
-  const customersQ = useQuery({
-    queryKey: ["admin-customers"],
-    queryFn: () => getCustomers(token!),
-    enabled: !!token,
-  });
+  if (isLoading) return <p className="text-sm text-zinc-400">Загрузка...</p>;
+  if (!data) return null;
 
-  const designsQ = useQuery({
-    queryKey: ["admin-designs"],
-    queryFn: () => listDesigns(token!),
-    enabled: !!token,
-  });
+  const statusData = data.ordersByStatus.map(s => ({
+    name: STATUS_LABELS[s.status] ?? s.status,
+    value: s.count,
+  }));
 
-  const totalOrders = ordersQ.data?.length ?? "—";
-  // Admin orders API excludes PENDING_PAYMENT and EXPIRED; "new" = paid but not yet processed.
-  const newOrders = ordersQ.data?.filter((o) => o.status === "NEW").length ?? "—";
-  const publishedDesigns = designsQ.data?.filter((d) => d.status === "PUBLISHED").length ?? "—";
-  const totalCustomers = customersQ.data?.length ?? "—";
-
-  async function runAdminAction(action: "grant" | "revoke"): Promise<void> {
-    if (!token || !isAdmin) return;
-    const email = adminEmail.trim().toLowerCase();
-    if (!email) { setAdminErr("Укажите email пользователя"); return; }
-    setAdminErr(null);
-    setAdminMsg(null);
-    setAdminBusy(true);
-    try {
-      const res = action === "grant"
-        ? await grantAdminRole(email, token)
-        : await revokeAdminRole(email, token);
-      setAdminMsg(
-        action === "grant"
-          ? `Роль ADMIN выдана: ${res.email} (${res.roles.join(", ")})`
-          : `Роли обновлены: ${res.email} (${res.roles.join(", ")})`,
-      );
-      setAdminEmail("");
-    } catch (e) {
-      setAdminErr(e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Ошибка");
-    } finally {
-      setAdminBusy(false);
-    }
-  }
+  const revenueData = data.dailyRevenue.map(d => ({
+    date: d.date.slice(5),
+    revenue: Number(d.revenue),
+    orders: d.orders,
+  }));
 
   return (
-    <div>
-      <h1 className="mb-8 text-2xl font-bold text-zinc-100">Обзор</h1>
-
-      {/* KPI cards */}
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-        <StatCard label="Всего заказов" value={totalOrders} to="/admin/orders" />
-        <StatCard label="Новые заказы" value={newOrders} to="/admin/orders" />
-        <StatCard label="Дизайнов активно" value={publishedDesigns} to="/admin/designs" />
-        <StatCard label="Клиентов" value={totalCustomers} to="/admin/customers" />
+    <div className="flex flex-col gap-6">
+      <div className="flex items-center justify-between gap-4">
+        <h1 className="text-xl font-semibold text-white">Дашборд</h1>
+        <select
+          value={days}
+          onChange={e => setDays(Number(e.target.value))}
+          className="rounded border border-white/20 bg-zinc-800 px-3 py-1.5 text-sm text-white"
+        >
+          <option value={7}>7 дней</option>
+          <option value={30}>30 дней</option>
+          <option value={90}>90 дней</option>
+          <option value={365}>Год</option>
+        </select>
       </div>
 
-      {/* Quick links */}
-      <div className="mt-8 flex flex-wrap gap-3">
-        <Link
-          to="/admin/orders"
-          className="inline-flex rounded-lg border border-white/35 bg-white/10 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-white/20"
-        >
-          Заказы →
-        </Link>
-        <Link
-          to="/admin/designs"
-          className="inline-flex rounded-lg border border-white/15 bg-white/5 px-5 py-2.5 text-sm font-semibold text-zinc-200 transition hover:bg-white/10"
-        >
-          Дизайны →
-        </Link>
-        <Link
-          to="/admin/customers"
-          className="inline-flex rounded-lg border border-white/15 bg-white/5 px-5 py-2.5 text-sm font-semibold text-zinc-200 transition hover:bg-white/10"
-        >
-          Клиенты →
-        </Link>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+        <KpiCard label="Всего заказов" value={String(data.totalOrders)} sub={`+${data.ordersToday} сегодня`} />
+        <KpiCard label="Выручка" value={fmtKzt(data.revenueTotal)} sub={`+${fmtKzt(data.revenueToday)} сегодня`} />
+        <KpiCard label="Средний чек" value={fmtKzt(data.avgOrderValue)} />
+        <KpiCard label="Пользователей" value={String(data.totalUsers)} sub={`+${data.usersToday} сегодня`} />
       </div>
 
-      {/* Admin role management */}
-      {isAdmin && token ? (
-        <section className="mt-12 max-w-lg rounded-lg border border-white/10 bg-zinc-900/40 p-6">
-          <h2 className="mb-2 text-base font-semibold text-zinc-200">Администраторы</h2>
-          <p className="mb-4 text-sm text-zinc-500">
-            Выдать или снять роль ADMIN у зарегистрированного пользователя по email.
-          </p>
-          <label className="mb-3 flex flex-col gap-1 text-sm">
-            <span className="text-zinc-400">Email пользователя</span>
-            <input
-              type="email"
-              value={adminEmail}
-              onChange={(e) => setAdminEmail(e.target.value)}
-              placeholder="user@example.com"
-              className="rounded-lg border border-white/10 bg-zinc-950 px-3 py-2 text-zinc-100 outline-none focus:border-white/40 focus:ring-2 focus:ring-white/20"
+      <div className="rounded border border-white/10 bg-zinc-800/40 p-4">
+        <h2 className="mb-4 text-sm font-medium text-zinc-300">Выручка за {days} дней</h2>
+        <ResponsiveContainer width="100%" height={220}>
+          <LineChart data={revenueData}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#3f3f46" />
+            <XAxis dataKey="date" tick={{ fontSize: 10, fill: "#a1a1aa" }} />
+            <YAxis tick={{ fontSize: 10, fill: "#a1a1aa" }} tickFormatter={v => `${fmt(v)}₸`} />
+            <Tooltip
+              contentStyle={{ background: "#27272a", border: "1px solid #3f3f46", color: "#fff", fontSize: 12 }}
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              formatter={((v: number) => [`${v.toLocaleString("ru")} ₸`, "Выручка"]) as any}
             />
-          </label>
-          <div className="flex flex-wrap gap-2">
-            <Button type="button" variant="primary" className="rounded-lg" disabled={adminBusy} onClick={() => void runAdminAction("grant")}>
-              Выдать ADMIN
-            </Button>
-            <Button type="button" variant="outline" className="rounded-lg" disabled={adminBusy} onClick={() => void runAdminAction("revoke")}>
-              Снять ADMIN
-            </Button>
-          </div>
-          {adminErr ? <p className="mt-3 text-sm text-red-400">{adminErr}</p> : null}
-          {adminMsg ? <p className="mt-3 text-sm text-emerald-400">{adminMsg}</p> : null}
-        </section>
-      ) : null}
+            <Line type="monotone" dataKey="revenue" stroke="#a1a1aa" strokeWidth={2} dot={false} />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <div className="rounded border border-white/10 bg-zinc-800/40 p-4">
+          <h2 className="mb-4 text-sm font-medium text-zinc-300">Топ дизайнов</h2>
+          {data.topDesigns.length === 0 ? (
+            <p className="text-xs text-zinc-500">Нет данных</p>
+          ) : (
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={data.topDesigns.slice(0, 8)} layout="vertical">
+                <CartesianGrid strokeDasharray="3 3" stroke="#3f3f46" horizontal={false} />
+                <XAxis type="number" tick={{ fontSize: 10, fill: "#a1a1aa" }} />
+                <YAxis type="category" dataKey="name" tick={{ fontSize: 10, fill: "#a1a1aa" }} width={100} />
+                <Tooltip
+                  contentStyle={{ background: "#27272a", border: "1px solid #3f3f46", color: "#fff", fontSize: 12 }}
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  formatter={((v: number) => [v, "Заказов"]) as any}
+                />
+                <Bar dataKey="count" fill="#52525b" />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+
+        <div className="rounded border border-white/10 bg-zinc-800/40 p-4">
+          <h2 className="mb-4 text-sm font-medium text-zinc-300">Заказы по статусу</h2>
+          {statusData.length === 0 ? (
+            <p className="text-xs text-zinc-500">Нет данных</p>
+          ) : (
+            <ResponsiveContainer width="100%" height={200}>
+              <PieChart>
+                <Pie data={statusData} cx="50%" cy="50%" outerRadius={70} dataKey="value"
+                  label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
+                  labelLine={false} fontSize={9}>
+                  {statusData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                </Pie>
+                <Tooltip contentStyle={{ background: "#27272a", border: "1px solid #3f3f46", color: "#fff", fontSize: 12 }} />
+              </PieChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

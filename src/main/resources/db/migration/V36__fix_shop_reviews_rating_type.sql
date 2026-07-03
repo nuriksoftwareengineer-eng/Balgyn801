@@ -1,0 +1,2 @@
+ALTER TABLE shop_reviews
+    ALTER COLUMN rating TYPE INTEGER;

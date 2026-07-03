@@ -2,9 +2,11 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/app/auth-context";
-import { getAdminPayments } from "@/shared/api/backend-api";
+import { searchAdminPayments } from "@/shared/api/backend-api";
 import type { PaymentProvider, PaymentStatus } from "@/shared/api/types";
 import { cn } from "@/shared/lib/cn";
+import { AdminPagination, AdminSearchBar } from "@/shared/ui/admin-pagination";
+import { useDebounce } from "@/shared/hooks/useDebounce";
 
 const STATUS_COLORS: Record<string, string> = {
   PENDING: "text-amber-400",
@@ -43,16 +45,24 @@ export function AdminPaymentsPage() {
   const { token } = useAuth();
   const [provider, setProvider] = useState<PaymentProvider | "">("");
   const [status, setStatus] = useState<PaymentStatus | "">("");
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(0);
+  const debouncedSearch = useDebounce(search, 300);
 
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ["admin-payments", provider, status],
+    queryKey: ["admin-payments-search", provider, status, debouncedSearch, page],
     queryFn: () =>
-      getAdminPayments(token!, {
+      searchAdminPayments(token!, {
         provider: provider || undefined,
         status: status || undefined,
+        q: debouncedSearch || undefined,
+        page,
+        size: 50,
       }),
     enabled: !!token,
   });
+
+  const payments = data?.content ?? [];
 
   const selectClass =
     "rounded-[8px] border border-white/15 bg-zinc-800 px-3 py-2 text-sm text-zinc-200 outline-none focus:border-white/40";
@@ -70,10 +80,15 @@ export function AdminPaymentsPage() {
         </button>
       </div>
 
-      <div className="mb-5 flex flex-wrap gap-3">
+      <div className="mb-5 flex flex-wrap gap-3 items-center">
+        <AdminSearchBar
+          value={search}
+          onChange={(v) => { setSearch(v); setPage(0); }}
+          placeholder="Поиск по ID заказа, провайдеру…"
+        />
         <select
           value={provider}
-          onChange={(e) => setProvider(e.target.value as PaymentProvider | "")}
+          onChange={(e) => { setProvider(e.target.value as PaymentProvider | ""); setPage(0); }}
           className={selectClass}
         >
           {PROVIDERS.map((p) => (
@@ -84,7 +99,7 @@ export function AdminPaymentsPage() {
         </select>
         <select
           value={status}
-          onChange={(e) => setStatus(e.target.value as PaymentStatus | "")}
+          onChange={(e) => { setStatus(e.target.value as PaymentStatus | ""); setPage(0); }}
           className={selectClass}
         >
           {STATUSES.map((s) => (
@@ -93,6 +108,9 @@ export function AdminPaymentsPage() {
             </option>
           ))}
         </select>
+        {data && (
+          <span className="text-xs text-zinc-500">{data.totalElements} записей</span>
+        )}
       </div>
 
       {isLoading && (
@@ -106,7 +124,6 @@ export function AdminPaymentsPage() {
 
       {data && (
         <>
-          <p className="mb-3 text-xs text-zinc-500">{data.length} записей</p>
           <div className="overflow-x-auto rounded-[12px] border border-white/10">
             <table className="w-full min-w-[720px] text-sm">
               <thead>
@@ -122,7 +139,7 @@ export function AdminPaymentsPage() {
                 </tr>
               </thead>
               <tbody>
-                {data.map((payment) => (
+                {payments.map((payment) => (
                   <tr
                     key={payment.id}
                     className="border-b border-white/5 hover:bg-white/3"
@@ -170,7 +187,7 @@ export function AdminPaymentsPage() {
                     </td>
                   </tr>
                 ))}
-                {data.length === 0 && (
+                {payments.length === 0 && (
                   <tr>
                     <td
                       colSpan={8}
@@ -183,6 +200,13 @@ export function AdminPaymentsPage() {
               </tbody>
             </table>
           </div>
+          <AdminPagination
+            page={data.page}
+            totalPages={data.totalPages}
+            totalElements={data.totalElements}
+            size={data.size}
+            onPage={setPage}
+          />
         </>
       )}
     </div>

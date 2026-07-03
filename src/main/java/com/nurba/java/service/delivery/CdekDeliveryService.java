@@ -15,10 +15,11 @@ import com.nurba.java.exception.NotFoundException;
 import com.nurba.java.repositories.DesignGarmentPriceRepository;
 import com.nurba.java.repositories.DesignGarmentRepository;
 import com.nurba.java.repositories.ProductRepository;
-import com.nurba.java.service.GarmentWeightService;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -48,7 +49,6 @@ public class CdekDeliveryService {
     private final ProductRepository productRepository;
     private final DesignGarmentRepository designGarmentRepository;
     private final DesignGarmentPriceRepository designGarmentPriceRepository;
-    private final GarmentWeightService garmentWeightService;
 
     public List<CdekCityDto> searchCities(String query, Integer limit) {
         String q = query == null ? "" : query.trim();
@@ -96,6 +96,7 @@ public class CdekDeliveryService {
                 false);
     }
 
+    @Transactional(readOnly = true)
     public CdekOrderTariffResponse calculateOrder(CdekOrderTariffRequest request) {
         if (request == null) {
             throw new BusinessRuleException("Пустой запрос расчёта доставки");
@@ -132,9 +133,11 @@ public class CdekDeliveryService {
                         .orElseThrow(() -> new BusinessRuleException(
                                 "Цена в KZT не задана для варианта: id=" + item.designGarmentId()));
                 itemsTotal = itemsTotal.add(price.getAmount().multiply(BigDecimal.valueOf(qty)));
-                // Weight uses the same source as order creation (GarmentWeightService),
-                // not the legacy heuristic, so pre-order estimates match actual order weight.
-                BigDecimal unitKg = garmentWeightService.weightForType(garment.getGarmentType());
+                // Weight comes directly from the garment's profile so pre-order estimates
+                // match actual order weight without an extra service call.
+                BigDecimal unitKg = garment.getGarmentProfile() != null
+                        ? garment.getGarmentProfile().getWeightKg()
+                        : new BigDecimal("0.5");
                 totalWeightGrams += unitKg
                         .multiply(BigDecimal.valueOf(qty))
                         .multiply(BigDecimal.valueOf(1000))

@@ -1,11 +1,12 @@
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useCatalogGroups } from "@/shared/api/catalog-api";
+import { localizeName } from "@/shared/types/catalog";
 import { useSeoMeta } from "@/shared/hooks/useSeoMeta";
 import { Container } from "@/shared/ui/container";
 
 export function CatalogIndexPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { data: groups, isLoading, error } = useCatalogGroups();
 
   useSeoMeta({
@@ -53,14 +54,24 @@ export function CatalogIndexPage() {
                   to={`/catalog/${group.slug}`}
                   className="group block overflow-hidden border border-[--color-border] bg-white transition-shadow hover:shadow-md"
                 >
-                  <div className="aspect-[3/2] flex items-center justify-center bg-zinc-900">
-                    <span className="text-7xl font-bold uppercase text-white/10 select-none">
-                      {group.name.charAt(0)}
-                    </span>
+                  <div className="aspect-[3/2] overflow-hidden bg-zinc-900">
+                    {group.coverImageUrl ? (
+                      <img
+                        src={group.coverImageUrl}
+                        alt={group.name}
+                        className="h-full w-full object-cover object-center transition-transform duration-300 group-hover:scale-105"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center">
+                        <span className="text-7xl font-bold uppercase text-white/10 select-none">
+                          {group.name.charAt(0)}
+                        </span>
+                      </div>
+                    )}
                   </div>
                   <div className="flex items-center justify-between px-4 py-3.5">
                     <p className="text-sm font-semibold uppercase tracking-[0.06em] text-black">
-                      {group.name}
+                      {localizeName(group, i18n.language)}
                     </p>
                     <span className="text-[0.6rem] font-medium uppercase tracking-[0.14em] text-[--color-muted] transition group-hover:text-black">
                       →

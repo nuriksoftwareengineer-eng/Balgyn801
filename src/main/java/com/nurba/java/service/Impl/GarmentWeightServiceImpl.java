@@ -68,16 +68,16 @@ public class GarmentWeightServiceImpl implements GarmentWeightService {
         }
         BigDecimal total = BigDecimal.ZERO;
         for (OrderItem item : items) {
-            // Only design-based items carry a garment type (and therefore a weight).
+            // Only design-based items carry a garment profile (and therefore a weight).
             // Legacy product-based items contribute no shippable weight in this design-first store.
-            if (item.getDesignGarment() == null || item.getDesignGarment().getGarmentType() == null) {
+            if (item.getDesignGarment() == null || item.getDesignGarment().getGarmentProfile() == null) {
                 continue;
             }
             int qty = item.getQuantity() == null ? 0 : item.getQuantity();
             if (qty <= 0) {
                 continue;
             }
-            BigDecimal unit = weightForType(item.getDesignGarment().getGarmentType());
+            BigDecimal unit = item.getDesignGarment().getGarmentProfile().getWeightKg();
             total = total.add(unit.multiply(BigDecimal.valueOf(qty)));
         }
         return total.setScale(WEIGHT_SCALE, RoundingMode.HALF_UP);

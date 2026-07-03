@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   CONTACT_EMAIL,
   STORE_TELEGRAM_URL,
@@ -9,67 +10,52 @@ const linkClass =
   "font-medium text-black underline underline-offset-2 transition-colors hover:text-zinc-600";
 
 export function ReturnsPage() {
+  const { t } = useTranslation();
   return (
-    <InfoPage
-      title="Возврат и обмен"
-      lead="Мы проверяем каждое изделие перед отправкой и присылаем фото. Если что-то всё же пошло не так — вот как мы решаем такие ситуации."
-    >
-      <InfoSection heading="Товары из каталога">
-        <p>
-          Изделие из каталога надлежащего качества можно обменять или вернуть в
-          течение 14 дней с момента получения, если оно не было в носке,
-          сохранены ярлыки и товарный вид (ст. 30 Закона РК «О защите прав
-          потребителей»).
-        </p>
-        <p>
-          Стоимость обратной пересылки при возврате товара надлежащего качества
-          оплачивает покупатель.
-        </p>
+    <InfoPage title={t("returnsPage.title")} lead={t("returnsPage.lead")}>
+      <InfoSection heading={t("returnsPage.s1.heading")}>
+        <p>{t("returnsPage.s1.p1")}</p>
+        <p>{t("returnsPage.s1.p2")}</p>
       </InfoSection>
 
-      <InfoSection heading="Индивидуальные заказы">
+      <InfoSection heading={t("returnsPage.s2.heading")}>
         <p>
-          Изделия, изготовленные по вашему макету через раздел{" "}
+          {t("returnsPage.s2.before")}
           <Link to="/custom-design" className={linkClass}>
-            «Свой дизайн»
+            {t("returnsPage.s2.customLink")}
           </Link>
-          , являются товаром с индивидуально-определёнными свойствами и
-          возврату/обмену не подлежат — кроме случаев производственного брака.
+          {t("returnsPage.s2.after")}
         </p>
       </InfoSection>
 
-      <InfoSection heading="Брак или ошибка в заказе">
-        <p>
-          Если изделие пришло с дефектом вышивки, не тем размером или цветом —
-          напишите нам в течение 7 дней после получения: пришлите номер заказа и
-          фото проблемы. Мы бесплатно заменим изделие или вернём деньги — на ваш
-          выбор. Обратную пересылку в этом случае оплачиваем мы.
-        </p>
+      <InfoSection heading={t("returnsPage.s3.heading")}>
+        <p>{t("returnsPage.s3.p1")}</p>
       </InfoSection>
 
-      <InfoSection heading="Как оформить возврат">
+      <InfoSection heading={t("returnsPage.s4.heading")}>
         <ol className="list-decimal space-y-1.5 pl-5">
           <li>
-            Свяжитесь с нами:{" "}
+            {t("returnsPage.s4.step1before")}
             <a href={`mailto:${CONTACT_EMAIL}`} className={linkClass}>
               {CONTACT_EMAIL}
             </a>{" "}
-            или{" "}
-            <a
-              href={STORE_TELEGRAM_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={linkClass}
-            >
-              Telegram
-            </a>
-            . Укажите номер заказа и причину.
+            {t("returnsPage.s4.step1telegram") && (
+              <>
+                {"или "}
+                <a
+                  href={STORE_TELEGRAM_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={linkClass}
+                >
+                  {t("returnsPage.s4.step1telegram")}
+                </a>
+              </>
+            )}
+            {t("returnsPage.s4.step1after")}
           </li>
-          <li>Мы подтвердим возврат и согласуем способ обратной отправки.</li>
-          <li>
-            Деньги возвращаются тем же способом, которым была произведена
-            оплата, в течение 10 рабочих дней после получения изделия обратно.
-          </li>
+          <li>{t("returnsPage.s4.step2")}</li>
+          <li>{t("returnsPage.s4.step3")}</li>
         </ol>
       </InfoSection>
     </InfoPage>

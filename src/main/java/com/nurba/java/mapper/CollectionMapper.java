@@ -15,7 +15,9 @@ public interface CollectionMapper {
     @Mapping(target = "designs", ignore = true)
     Collection toEntity(CreateCollectionRequest request);
 
-    @Mapping(source = "catalogGroup.id", target = "groupId")
-    @Mapping(source = "catalogGroup.name", target = "groupName")
+    @Mapping(source = "catalogGroup.id",    target = "groupId")
+    @Mapping(source = "catalogGroup.name",  target = "groupName")
+    @Mapping(source = "catalogGroup.nameKk", target = "groupNameKk")
+    @Mapping(source = "catalogGroup.nameEn", target = "groupNameEn")
     CollectionResponse toResponse(Collection entity);
 }

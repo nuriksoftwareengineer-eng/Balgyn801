@@ -2,12 +2,16 @@ package com.nurba.java.controller;
 
 import com.nurba.java.api.AdminPaymentApi;
 import com.nurba.java.domain.Payment;
+import com.nurba.java.dto.responce.PageResponse;
 import com.nurba.java.dto.responce.PaymentResponse;
 import com.nurba.java.enums.PaymentProvider;
 import com.nurba.java.enums.PaymentStatus;
 import com.nurba.java.repositories.PaymentRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.math.BigDecimal;
@@ -34,6 +38,20 @@ public class AdminPaymentController implements AdminPaymentApi {
             payments = paymentRepository.findAllByOrderByCreatedAtDesc();
         }
         return payments.stream().map(AdminPaymentController::toResponse).toList();
+    }
+
+    @GetMapping("/search")
+    @PreAuthorize("hasRole('ADMIN')")
+    public PageResponse<PaymentResponse> search(
+            @RequestParam(required = false) PaymentProvider provider,
+            @RequestParam(required = false) PaymentStatus status,
+            @RequestParam(defaultValue = "") String q,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size) {
+
+        var pageable = PageRequest.of(page, size);
+        var result = paymentRepository.searchAdmin(provider, status, q.isBlank() ? null : q, pageable);
+        return PageResponse.of(result.map(AdminPaymentController::toResponse));
     }
 
     private static PaymentResponse toResponse(Payment p) {

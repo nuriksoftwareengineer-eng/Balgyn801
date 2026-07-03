@@ -3,9 +3,12 @@ import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/app/auth-context";
 import { useCurrency } from "@/app/currency-context";
+import { useCart } from "@/app/use-cart";
+import { makeCartLineKey, makeDesignLineKey } from "@/app/cart-context";
 import { getMyOrders } from "@/shared/api/backend-api";
-import type { OrderResponse, OrderStatus } from "@/shared/api/types";
+import type { OrderItemResponse, OrderResponse, OrderStatus } from "@/shared/api/types";
 import { Container } from "@/shared/ui/container";
+import { garmentLabel } from "@/shared/types/catalog";
 
 // Status → Tailwind pill classes
 const STATUS_PILL: Record<OrderStatus, string> = {
@@ -83,6 +86,7 @@ export function OrderHistoryPage() {
   const { token } = useAuth();
   const { format } = useCurrency();
   const navigate = useNavigate();
+  const { addDesignItem, addItem, increment } = useCart();
 
   const { data: orders, isLoading, error } = useQuery<OrderResponse[], Error>({
     queryKey: ["my-orders", token],
@@ -95,6 +99,62 @@ export function OrderHistoryPage() {
     navigate("/cart", {
       state: { retryOrderId: order.id, retryAmount: order.totalPrice },
     });
+  }
+
+  function handleRepeatOrder(order: OrderResponse) {
+    let added = 0;
+    (order.items ?? []).forEach((item: OrderItemResponse) => {
+      const qty = item.quantity > 0 ? item.quantity : 1;
+      if (
+        item.designGarmentId != null &&
+        item.colorId != null &&
+        item.sizeId != null &&
+        item.designSlug &&
+        item.groupSlug &&
+        item.collectionSlug
+      ) {
+        addDesignItem({
+          designGarmentId: item.designGarmentId,
+          designId: item.designGarmentId,
+          designSlug: item.designSlug,
+          groupSlug: item.groupSlug,
+          collectionSlug: item.collectionSlug,
+          title: item.designName ?? "",
+          garmentType: item.garmentType ?? "",
+          garmentLabel: garmentLabel(
+            { garmentType: item.garmentType ?? "", garmentTypeRu: item.garmentTypeRu, garmentTypeKk: item.garmentTypeKk },
+            i18n.language,
+          ),
+          price: item.unitPrice,
+          imageUrl: item.mainImageUrl,
+          colorId: item.colorId,
+          colorName: item.colorName ?? "",
+          colorHex: item.colorHex ?? "#000000",
+          sizeId: item.sizeId,
+          sizeLabel: item.sizeLabel ?? "",
+        });
+        const lineKey = makeDesignLineKey(item.designGarmentId, item.colorId, item.sizeId);
+        for (let i = 1; i < qty; i += 1) increment(lineKey);
+        added += 1;
+      } else if (item.productId != null) {
+        addItem(
+          {
+            id: item.productId,
+            title: item.productTitle ?? "",
+            price: item.unitPrice,
+            imageUrl: item.mainImageUrl,
+            inStock: true,
+          },
+          { size: item.sizeLabel, color: item.colorName },
+        );
+        const lineKey = makeCartLineKey(item.productId, item.sizeLabel, item.colorName);
+        for (let i = 1; i < qty; i += 1) increment(lineKey);
+        added += 1;
+      }
+    });
+    if (added > 0) {
+      navigate("/cart");
+    }
   }
 
   return (
@@ -200,20 +260,105 @@ export function OrderHistoryPage() {
                   </ul>
                 )}
 
+                {/* ── CDEK tracking ── */}
+                {order.cdekShipment && order.cdekShipment.cdekOrderUuid && (
+                  <div className="border-t border-[--color-border] px-5 py-3 md:px-6">
+                    <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.1em] text-[--color-muted]">
+                      {t("orders.cdek.title")}
+                    </p>
+                    <div className="flex flex-wrap gap-x-6 gap-y-1">
+                      {order.cdekShipment.trackingNumber && (
+                        <span className="text-[12px] text-black">
+                          <span className="text-[--color-muted]">{t("orders.cdek.tracking")}: </span>
+                          <a
+                            href={`https://www.cdek.ru/ru/tracking/?order_id=${order.cdekShipment.trackingNumber}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-mono font-semibold underline underline-offset-2 hover:text-zinc-600"
+                          >
+                            {order.cdekShipment.trackingNumber}
+                          </a>
+                        </span>
+                      )}
+                      {order.cdekShipment.status && (
+                        <span className="text-[12px] text-black">
+                          <span className="text-[--color-muted]">{t("orders.cdek.status")}: </span>
+                          {t(`orders.cdek.status_${order.cdekShipment.status}`, order.cdekShipment.status)}
+                        </span>
+                      )}
+                      {order.cdekShipment.estimatedDeliveryDate && (
+                        <span className="text-[12px] text-black">
+                          <span className="text-[--color-muted]">{t("orders.cdek.eta")}: </span>
+                          {order.cdekShipment.estimatedDeliveryDate}
+                        </span>
+                      )}
+                      {order.cdekShipment.deliveryPointAddress && (
+                        <span className="text-[12px] text-black">
+                          <span className="text-[--color-muted]">{t("orders.cdek.point")}: </span>
+                          {order.cdekShipment.deliveryPointAddress}
+                        </span>
+                      )}
+                    </div>
+                    {(order.cdekShipment.invoiceUrl || order.cdekShipment.barcodeUrl) && (
+                      <div className="mt-2 flex gap-4">
+                        {order.cdekShipment.invoiceUrl && (
+                          <a
+                            href={order.cdekShipment.invoiceUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[11px] font-semibold uppercase tracking-[0.1em] text-black underline underline-offset-2 hover:text-zinc-600"
+                          >
+                            {t("orders.cdek.invoice")}
+                          </a>
+                        )}
+                        {order.cdekShipment.barcodeUrl && (
+                          <a
+                            href={order.cdekShipment.barcodeUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[11px] font-semibold uppercase tracking-[0.1em] text-black underline underline-offset-2 hover:text-zinc-600"
+                          >
+                            {t("orders.cdek.barcode")}
+                          </a>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* ── Footer ── */}
-                <div className="flex flex-wrap items-center gap-x-5 gap-y-1 border-t border-[--color-border] bg-[--color-surface] px-5 py-3 md:px-6">
-                  <span className="text-[11px] uppercase tracking-[0.1em] text-[--color-muted]">
-                    {t(`orders.delivery_type.${order.deliveryType}`, order.deliveryType)}
-                  </span>
-                  {order.deliveryFee != null && order.deliveryFee > 0 && (
-                    <span className="text-[11px] text-[--color-muted]">
-                      {t("orders.delivery")}: {format(order.deliveryFee)}
+                <div className="flex flex-wrap items-center justify-between gap-x-5 gap-y-2 border-t border-[--color-border] bg-[--color-surface] px-5 py-3 md:px-6">
+                  <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
+                    <span className="text-[11px] uppercase tracking-[0.1em] text-[--color-muted]">
+                      {t(`orders.delivery_type.${order.deliveryType}`, order.deliveryType)}
                     </span>
-                  )}
-                  {order.comment && (
-                    <span className="text-[11px] italic text-[--color-muted]">
-                      "{order.comment}"
-                    </span>
+                    {order.deliveryFee != null && order.deliveryFee > 0 && (
+                      <span className="text-[11px] text-[--color-muted]">
+                        {t("orders.delivery")}: {format(order.deliveryFee)}
+                      </span>
+                    )}
+                    {order.couponCode && (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-mono text-emerald-600">
+                        🏷 {order.couponCode}
+                        {order.discountAmount != null && order.discountAmount > 0 && (
+                          <span>(-{format(order.discountAmount)})</span>
+                        )}
+                      </span>
+                    )}
+                    {order.comment && (
+                      <span className="text-[11px] italic text-[--color-muted]">
+                        "{order.comment}"
+                      </span>
+                    )}
+                  </div>
+                  {order.items && order.items.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => handleRepeatOrder(order)}
+                      className="text-[11px] font-bold uppercase tracking-[0.1em] text-black underline-offset-2 hover:underline"
+                    >
+                      {t("orders.repeatOrder")}
+                    </button>
                   )}
                 </div>
               </li>

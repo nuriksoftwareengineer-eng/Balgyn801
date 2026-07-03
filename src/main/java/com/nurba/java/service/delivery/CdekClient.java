@@ -2,6 +2,7 @@ package com.nurba.java.service.delivery;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nurba.java.config.CdekProperties;
 import com.nurba.java.dto.delivery.CdekCityDto;
@@ -20,6 +21,7 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -170,7 +172,10 @@ public class CdekClient {
                 .build();
         HttpResponse<String> resp = send(req);
         if (resp.statusCode() / 100 != 2) {
-            throw new BusinessRuleException("СДЭК " + uri.getPath() + ": HTTP " + resp.statusCode());
+            String rb = resp.body();
+            log.error("[CDEK] GET {} HTTP {}\nHeaders: {}\nResponse:\n{}",
+                    uri.getPath(), resp.statusCode(), resp.headers().map(), rb);
+            throw new BusinessRuleException(buildCdekErrorMessage("GET", uri.getPath(), resp.statusCode(), rb));
         }
         try {
             var listType = objectMapper.getTypeFactory()
@@ -188,6 +193,7 @@ public class CdekClient {
         } catch (Exception e) {
             throw new BusinessRuleException("СДЭК: не удалось сериализовать запрос: " + e.getMessage());
         }
+        log.info("[CDEK] POST {} request:\n{}", uri.getPath(), payload);
         HttpRequest req = HttpRequest.newBuilder(uri)
                 .timeout(Duration.ofSeconds(15))
                 .header("Authorization", "Bearer " + accessToken())
@@ -197,7 +203,10 @@ public class CdekClient {
                 .build();
         HttpResponse<String> resp = send(req);
         if (resp.statusCode() / 100 != 2) {
-            throw new BusinessRuleException("СДЭК " + uri.getPath() + ": HTTP " + resp.statusCode());
+            String rb = resp.body();
+            log.error("[CDEK] POST {} HTTP {}\nHeaders: {}\nRequest:\n{}\nResponse:\n{}",
+                    uri.getPath(), resp.statusCode(), resp.headers().map(), payload, rb);
+            throw new BusinessRuleException(buildCdekErrorMessage("POST", uri.getPath(), resp.statusCode(), rb));
         }
         try {
             return objectMapper.readValue(resp.body(), responseType);
@@ -214,6 +223,7 @@ public class CdekClient {
         } catch (Exception e) {
             throw new BusinessRuleException("СДЭК: не удалось сериализовать запрос: " + e.getMessage());
         }
+        log.info("[CDEK] POST {} request:\n{}", uri.getPath(), payload);
         HttpRequest req = HttpRequest.newBuilder(uri)
                 .timeout(Duration.ofSeconds(15))
                 .header("Authorization", "Bearer " + accessToken())
@@ -223,7 +233,10 @@ public class CdekClient {
                 .build();
         HttpResponse<String> resp = send(req);
         if (resp.statusCode() / 100 != 2) {
-            throw new BusinessRuleException("СДЭК " + uri.getPath() + ": HTTP " + resp.statusCode());
+            String rb = resp.body();
+            log.error("[CDEK] POST {} HTTP {}\nHeaders: {}\nRequest:\n{}\nResponse:\n{}",
+                    uri.getPath(), resp.statusCode(), resp.headers().map(), payload, rb);
+            throw new BusinessRuleException(buildCdekErrorMessage("POST", uri.getPath(), resp.statusCode(), rb));
         }
         return resp.body();
     }
@@ -237,7 +250,10 @@ public class CdekClient {
                 .build();
         HttpResponse<String> resp = send(req);
         if (resp.statusCode() / 100 != 2) {
-            throw new BusinessRuleException("СДЭК " + uri.getPath() + ": HTTP " + resp.statusCode());
+            String rb = resp.body();
+            log.error("[CDEK] GET {} HTTP {}\nHeaders: {}\nResponse:\n{}",
+                    uri.getPath(), resp.statusCode(), resp.headers().map(), rb);
+            throw new BusinessRuleException(buildCdekErrorMessage("GET", uri.getPath(), resp.statusCode(), rb));
         }
         return resp.body();
     }
@@ -251,7 +267,10 @@ public class CdekClient {
                 .build();
         HttpResponse<String> resp = send(req);
         if (resp.statusCode() / 100 != 2) {
-            throw new BusinessRuleException("СДЭК " + uri.getPath() + ": HTTP " + resp.statusCode());
+            String rb = resp.body();
+            log.error("[CDEK] DELETE {} HTTP {}\nHeaders: {}\nResponse:\n{}",
+                    uri.getPath(), resp.statusCode(), resp.headers().map(), rb);
+            throw new BusinessRuleException(buildCdekErrorMessage("DELETE", uri.getPath(), resp.statusCode(), rb));
         }
         return resp.body();
     }
@@ -318,6 +337,58 @@ public class CdekClient {
             throw new BusinessRuleException("СДЭК: не задан cdek.base-url");
         }
         return url.replaceAll("/+$", "");
+    }
+
+    /**
+     * Строит человекочитаемое сообщение об ошибке СДЭК из HTTP-статуса и распарсенных
+     * {@code errors[]} / {@code requests[].errors[]} в теле ответа. Полный дамп уже
+     * записан в лог вызывающим методом через {@code log.error()}.
+     */
+    private String buildCdekErrorMessage(String method, String path, int status, String responseBody) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("СДЭК отклонил запрос ").append(method).append(' ').append(path)
+          .append(" (HTTP ").append(status).append(')');
+
+        List<String> errors = extractCdekErrors(responseBody);
+        if (!errors.isEmpty()) {
+            sb.append("\nОшибки:");
+            errors.forEach(e -> sb.append("\n  ").append(e));
+        } else if (responseBody != null && !responseBody.isBlank()) {
+            int cap = Math.min(responseBody.length(), 500);
+            sb.append("\nОтвет: ").append(responseBody, 0, cap);
+            if (responseBody.length() > cap) sb.append("…");
+        }
+        return sb.toString();
+    }
+
+    /** Извлекает ошибки из {@code root.errors[]} и {@code root.requests[*].errors[]}. */
+    private List<String> extractCdekErrors(String responseBody) {
+        List<String> result = new ArrayList<>();
+        if (responseBody == null || responseBody.isBlank()) return result;
+        try {
+            JsonNode root = objectMapper.readTree(responseBody);
+            collectCdekErrors(root.path("errors"), result);
+            JsonNode requests = root.path("requests");
+            if (requests.isArray()) {
+                for (JsonNode reqNode : requests) {
+                    collectCdekErrors(reqNode.path("errors"), result);
+                }
+            }
+        } catch (Exception ignored) {}
+        return result;
+    }
+
+    private void collectCdekErrors(JsonNode errors, List<String> out) {
+        if (!errors.isArray()) return;
+        for (JsonNode err : errors) {
+            StringBuilder line = new StringBuilder();
+            if (err.hasNonNull("code")) line.append(err.get("code").asText());
+            if (err.hasNonNull("message")) {
+                if (line.length() > 0) line.append(": ");
+                line.append(err.get("message").asText());
+            }
+            if (line.length() > 0) out.add(line.toString());
+        }
     }
 
     /** Кешированный OAuth-токен с моментом протухания. */

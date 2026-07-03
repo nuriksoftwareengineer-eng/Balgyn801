@@ -49,6 +49,12 @@ public class Collection {
 
     private LocalDateTime createdAt;
 
+    @Column(name = "name_kk", length = 200)
+    private String nameKk;
+
+    @Column(name = "name_en", length = 200)
+    private String nameEn;
+
     @OneToMany(mappedBy = "collection", fetch = FetchType.LAZY)
     private List<Design> designs = new ArrayList<>();
 }

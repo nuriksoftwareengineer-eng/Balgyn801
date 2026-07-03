@@ -1,6 +1,5 @@
 package com.nurba.java.domain;
 
-import com.nurba.java.enums.GarmentType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -15,8 +14,8 @@ import java.util.Set;
 @Table(
     name = "design_garments",
     uniqueConstraints = @UniqueConstraint(
-        name = "uq_design_garment_type",
-        columnNames = {"design_id", "garment_type"}
+        name = "uq_design_garment_profile",
+        columnNames = {"design_id", "garment_profile_id"}
     )
 )
 @Data
@@ -32,9 +31,9 @@ public class DesignGarment {
     @JoinColumn(name = "design_id", nullable = false)
     private Design design;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "garment_type", nullable = false, length = 30)
-    private GarmentType garmentType;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "garment_profile_id", nullable = false)
+    private GarmentProfile garmentProfile;
 
     @Column(nullable = false)
     private Boolean active = true;
