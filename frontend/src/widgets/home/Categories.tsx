@@ -3,12 +3,6 @@ import { motion } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useCatalogGroups } from "@/shared/api/catalog-api";
-import img0 from "@/assets/figma/image0.jpeg";
-import img1 from "@/assets/figma/image1.jpeg";
-import img2 from "@/assets/figma/image2.jpeg";
-import img3 from "@/assets/figma/image3.jpeg";
-
-const COVERS = [img0, img1, img2, img3];
 
 /** «Каталог» — реальные группы каталога с обложками. */
 export function Categories() {
@@ -48,12 +42,20 @@ export function Categories() {
                 transition={{ duration: 0.6, delay: i * 0.1 }}
               >
                 <Link to={`/catalog/${g.slug}`} className="group block cursor-pointer">
-                  <div className="relative mb-4 aspect-[4/5] overflow-hidden border border-[#E6E6E6] bg-white">
-                    <img
-                      src={COVERS[i % COVERS.length]}
-                      alt={g.name}
-                      className="h-full w-full object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-110"
-                    />
+                  <div className="relative mb-4 aspect-[4/5] overflow-hidden border border-[#E6E6E6] bg-zinc-900">
+                    {g.coverImageUrl ? (
+                      <img
+                        src={g.coverImageUrl}
+                        alt={g.name}
+                        className="h-full w-full object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-110"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center">
+                        <span className="text-7xl font-bold uppercase text-white/10 select-none">
+                          {g.name.charAt(0)}
+                        </span>
+                      </div>
+                    )}
                     <div className="absolute inset-0 bg-black/0 transition-colors duration-500 group-hover:bg-black/15" />
                     <div className="absolute bottom-4 right-4 flex h-10 w-10 translate-y-2 items-center justify-center rounded-full bg-white opacity-0 transition-all duration-500 group-hover:translate-y-0 group-hover:opacity-100">
                       <ArrowUpRight className="h-5 w-5" />

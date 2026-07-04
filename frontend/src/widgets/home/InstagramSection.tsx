@@ -1,11 +1,11 @@
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import p1 from "@/assets/figma/photo_5289740941222682480_y.jpg";
-import p2 from "@/assets/figma/photo_5289740941222682481_y.jpg";
-import p3 from "@/assets/figma/photo_5289740941222682482_y.jpg";
-import p4 from "@/assets/figma/photo_5289740941222682483_y.jpg";
-import p5 from "@/assets/figma/photo_5289740941222682485_y.jpg";
-import p6 from "@/assets/figma/photo_5289740941222682486_y.jpg";
+import p1 from "@/assets/instagram/ig1.jpg";
+import p2 from "@/assets/instagram/ig2.jpg";
+import p3 from "@/assets/instagram/ig3.jpg";
+import p4 from "@/assets/instagram/ig4.jpg";
+import p5 from "@/assets/instagram/ig5.jpg";
+import p6 from "@/assets/instagram/ig6.jpg";
 
 const PHOTOS = [p1, p2, p3, p4, p5, p6];
 const IG_URL = "https://instagram.com/balgyn.bol";

@@ -20,11 +20,11 @@ export const PRODUCT_CATEGORIES = CATEGORY_LABELS.filter(
 export const CONTACT_EMAIL = "zhakaevdias228@Gmail.com";
 
 /** Telegram: прямой чат с магазином (поддержка / заказы). */
-export const STORE_TELEGRAM_URL = "https://t.me/balgyncatalog";
+export const STORE_TELEGRAM_URL = "https://t.me/balgynbol";
 export const SUPPORT_TELEGRAM_URL = "https://t.me/balgynbol";
 
 /** Telegram Channel — канал для обновлений и дропов. */
-export const TELEGRAM_CHANNEL_URL = "https://t.me/balgyn_channel";
+export const TELEGRAM_CHANNEL_URL = "https://t.me/balgyncatalog";
 
 /** WhatsApp номер магазина. */
 export const WHATSAPP_URL = "https://wa.me/77001234567";

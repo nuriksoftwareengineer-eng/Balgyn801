@@ -472,6 +472,17 @@ export async function syncOrderShipment(
   );
 }
 
+/** Получить / обновить URL документов СДЭК (штрихкод, квитанция) (ADMIN). */
+export async function fetchOrderDocs(
+  orderId: number,
+  token: string,
+): Promise<CdekShipmentResponse> {
+  return apiFetch<CdekShipmentResponse>(
+    `/cdek-shipment/by-order/${orderId}/fetch-docs`,
+    { method: "POST", token },
+  );
+}
+
 /** Отменить отправление СДЭК (ADMIN). */
 export async function cancelOrderShipment(
   orderId: number,

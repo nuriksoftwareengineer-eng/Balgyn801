@@ -45,4 +45,9 @@ public class CdekShipmentController implements CdekShipmentApi {
     public CdekShipmentResponse cancelShipment(Long orderId) {
         return cdekOrderService.cancelShipment(orderId);
     }
+
+    @Override
+    public CdekShipmentResponse fetchDocuments(Long orderId) {
+        return cdekOrderService.fetchDocuments(orderId);
+    }
 }

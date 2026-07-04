@@ -27,4 +27,15 @@ public interface DeliveryProvider {
 
     /** Отменить отправление у провайдера. */
     void cancelShipment(String cdekOrderUuid);
+
+    /**
+     * Получить URL документов отправления (штрихкод, квитанция).
+     * По умолчанию возвращает null-результат — провайдеры без поддержки переопределяют.
+     */
+    default DocumentResult fetchDocuments(String cdekOrderUuid) {
+        return new DocumentResult(null, null);
+    }
+
+    /** URL PDF-документов отправления (оба поля могут быть null если ещё не готовы). */
+    record DocumentResult(String invoiceUrl, String barcodeUrl) {}
 }

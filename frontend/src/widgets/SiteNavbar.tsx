@@ -39,6 +39,8 @@ export function SiteNavbar() {
   const navLinks = [
     { labelKey: "nav.catalog", to: "/catalog" },
     { labelKey: "nav.customDesign", to: "/custom-design" },
+    { labelKey: "nav.reviews", to: "/reviews" },
+    { labelKey: "nav.faq", to: "/faq" },
     { labelKey: "nav.about", to: "/about" },
     { labelKey: "nav.contacts", to: "/contacts" },
   ];

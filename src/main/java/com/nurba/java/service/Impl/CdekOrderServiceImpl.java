@@ -147,6 +147,22 @@ public class CdekOrderServiceImpl implements CdekOrderService {
         return toResponse(shipmentRepository.save(shipment));
     }
 
+    @Override
+    @Transactional
+    public CdekShipmentResponse fetchDocuments(Long orderId) {
+        CdekShipment shipment = requireShipment(orderId);
+        requireUuid(shipment);
+        DeliveryProvider.DocumentResult result = provider.fetchDocuments(shipment.getCdekOrderUuid());
+        if (result.invoiceUrl() != null) {
+            shipment.setInvoiceUrl(result.invoiceUrl());
+        }
+        if (result.barcodeUrl() != null) {
+            shipment.setBarcodeUrl(result.barcodeUrl());
+        }
+        shipment.setUpdatedAt(LocalDateTime.now());
+        return toResponse(shipmentRepository.save(shipment));
+    }
+
     // ── helpers ───────────────────────────────────────────────────────────────────
 
     /**

@@ -15,7 +15,9 @@
     "contacts": "Contacts",
     "allCollections": "All Collections",
     "loadingCatalog": "Loading catalog…",
-    "wishlist": "Wishlist"
+    "wishlist": "Wishlist",
+    "reviews": "Reviews",
+    "faq": "FAQ"
   },
   "header": {
     "openMenu": "Open menu",
@@ -48,7 +50,12 @@
     "title": "Profile",
     "myOrders": "My orders →",
     "adminPanel": "Admin Panel →",
-    "logout": "Sign out"
+    "logout": "Sign out",
+    "cdek": {
+      "title": "My CDEK Shipments",
+      "noShipments": "No active CDEK shipments",
+      "viewAll": "All orders →"
+    }
   },
   "payment": {
     "selectMethod": "Payment",
@@ -144,7 +151,11 @@
       "eta": "Estimated delivery",
       "point": "Pickup point",
       "invoice": "Invoice",
-      "barcode": "Barcode"
+      "barcode": "Barcode",
+      "fetchDocs": "Fetch documents",
+      "openLabel": "Open label",
+      "downloadPdf": "Download PDF",
+      "printLabel": "Print"
     }
   },
   "recovery": {
@@ -413,7 +424,8 @@
       "delivery": "Shipping & Payment",
       "returns": "Returns & Exchanges",
       "trackOrder": "Track Order",
-      "contacts": "Contacts"
+      "contacts": "Contacts",
+      "faq": "FAQ"
     },
     "social": {
       "title": "Social",
@@ -659,6 +671,74 @@
       "allContacts": "All contact methods — on the ",
       "contactsLink": "Contacts",
       "allContactsAfter": " page."
+    },
+    "hero": {
+      "eyebrow": "Almaty · since 2023",
+      "tagline": "Embroidered clothing with character. Every piece is handcrafted in Almaty."
+    },
+    "story": {
+      "heading": "Our Story",
+      "p1": "Balgyn was born in 2023 as a response to the lack of truly unique clothing in Kazakhstan. Founder Dias Abris created a brand that bridges traditional craft with contemporary streetwear.",
+      "p2": "We don't mass-produce. Every design is a limited run, every garment passes through an embroiderer's hands. A Balgyn piece is a story stitched into fabric."
+    },
+    "values": {
+      "heading": "Our Values",
+      "v1": { "title": "Hand Embroidery", "desc": "Every design is executed on professional embroidery equipment using premium-grade threads." },
+      "v2": { "title": "Limited Runs", "desc": "Small batches guarantee exclusivity — your piece won't be on everyone else." },
+      "v3": { "title": "Made in Almaty", "desc": "Production in Kazakhstan. We create local jobs and take pride in our roots." }
+    },
+    "custom": {
+      "heading": "Custom Design",
+      "desc": "Bring your idea, logo, or sketch — we'll turn it into embroidery. We work with corporate orders, team uniforms, and personalized gifts.",
+      "btn": "Order Custom"
+    },
+    "delivery": {
+      "heading": "Delivery",
+      "kz": "All of Kazakhstan",
+      "world": "Worldwide",
+      "kzDesc": "CDEK, courier, pickup",
+      "worldDesc": "International shipping"
     }
+  },
+  "reviews": {
+    "title": "Reviews",
+    "subtitle": "Real reviews from our customers",
+    "breadcrumb": "Reviews",
+    "noReviews": "No reviews yet.",
+    "loadError": "Failed to load reviews.",
+    "filterAll": "All",
+    "count_one": "{{count}} review",
+    "count_other": "{{count}} reviews",
+    "prev": "← Back",
+    "next": "Next →"
+  },
+  "faq": {
+    "title": "Frequently Asked Questions",
+    "subtitle": "Everything about Balgyn, orders, and delivery",
+    "breadcrumb": "FAQ",
+    "q1": "How do I place an order?",
+    "a1": "Browse the catalog, choose a design, select garment type, color, and size, add to cart, and checkout. You only need to provide your name and phone number — no registration required.",
+    "q2": "What sizes are available?",
+    "a2": "We offer sizes XS–3XL depending on the garment type. A detailed size chart is available on each design page.",
+    "q3": "Can I order a custom design?",
+    "a3": "Yes! Use the Custom Design section: describe your idea and leave your contact details. We'll create the embroidery based on your sketch or concept.",
+    "q4": "How do I pay?",
+    "a4": "We accept Kaspi, Halyk, Visa and Mastercard via Freedom Pay; PayPal for international payments; Mir, Visa, Mastercard via VTB Kazakhstan.",
+    "q5": "How long does production take?",
+    "a5": "Standard turnaround is 7–14 business days. For custom designs, the timeline is agreed individually at the time of ordering.",
+    "q6": "How is delivery handled in Kazakhstan?",
+    "a6": "Within Kazakhstan: CDEK to a pickup point, taxi/courier in Almaty, or pickup in person. Exact cost and timing are calculated automatically at checkout.",
+    "q7": "Do you ship internationally?",
+    "a7": "Yes, we ship to Russia, Belarus, and other CIS countries via CDEK, and worldwide by international post. Timelines vary by destination.",
+    "q8": "How can I track my order?",
+    "a8": "Use the Track Order section on our website. After shipping, your CDEK tracking number will appear in the My Orders section of your account.",
+    "q9": "What materials do you use?",
+    "a9": "Garments are made from heavyweight cotton (220–280 g/m²) and premium fleece. Embroidery threads are high-quality polyester with rich, lasting colors.",
+    "q10": "Can I return an item?",
+    "a10": "Exchanges and returns are accepted within 14 days if the item is unworn and the embroidery is undamaged. Custom orders based on individual designs are non-refundable.",
+    "q11": "How do I care for embroidered items?",
+    "a11": "Machine wash inside-out at 30–40°C. Iron only on the reverse side. Avoid bleach and harsh dry-cleaning chemicals.",
+    "q12": "How can I contact you?",
+    "a12": "Telegram: @balgyn.bol, WhatsApp: +7 700 123-45-67, Email: balgyn.studio@gmail.com. We respond on business days 10:00–18:00 (GMT+5)."
   }
 }

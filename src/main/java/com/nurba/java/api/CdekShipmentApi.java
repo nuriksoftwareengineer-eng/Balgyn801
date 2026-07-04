@@ -37,4 +37,8 @@ public interface CdekShipmentApi {
     @Operation(summary = "Отменить отправление СДЭК")
     @PostMapping("/by-order/{orderId}/cancel")
     CdekShipmentResponse cancelShipment(@PathVariable Long orderId);
+
+    @Operation(summary = "Получить / обновить URL документов СДЭК (штрихкод, квитанция)")
+    @PostMapping("/by-order/{orderId}/fetch-docs")
+    CdekShipmentResponse fetchDocuments(@PathVariable Long orderId);
 }

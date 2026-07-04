@@ -26,7 +26,7 @@ export function ContactsPage() {
               rel="noopener noreferrer"
               className={linkClass}
             >
-              @balgyn_shop
+              @balgyn.bol
             </a>
           </div>
           <div className="flex flex-wrap items-baseline justify-between gap-2 px-4 py-3">
@@ -39,7 +39,7 @@ export function ContactsPage() {
               rel="noopener noreferrer"
               className={linkClass}
             >
-              @balgyn_channel
+              @balgyncatalog
             </a>
           </div>
           <div className="flex flex-wrap items-baseline justify-between gap-2 px-4 py-3">
@@ -68,12 +68,12 @@ export function ContactsPage() {
               Instagram
             </span>
             <a
-              href="https://instagram.com/balgyn_shop"
+              href="https://instagram.com/balgyn.bol"
               target="_blank"
               rel="noopener noreferrer"
               className={linkClass}
             >
-              @balgyn_shop
+              @balgyn.bol
             </a>
           </div>
         </div>

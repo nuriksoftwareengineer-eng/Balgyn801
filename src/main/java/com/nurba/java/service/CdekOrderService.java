@@ -20,4 +20,7 @@ public interface CdekOrderService {
 
     /** Отменить отправление у провайдера и пометить статус CANCELLED. */
     CdekShipmentResponse cancelShipment(Long orderId);
+
+    /** Получить (или обновить) URL документов (штрихкод, квитанция) у провайдера CDEK. */
+    CdekShipmentResponse fetchDocuments(Long orderId);
 }

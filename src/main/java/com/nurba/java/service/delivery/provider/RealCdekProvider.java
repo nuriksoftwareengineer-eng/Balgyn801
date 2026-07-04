@@ -89,6 +89,26 @@ public class RealCdekProvider implements DeliveryProvider {
         log.info("[CDEK] Заказ отменён uuid={}", cdekOrderUuid);
     }
 
+    // ── fetchDocuments ────────────────────────────────────────────────────────────
+
+    @Override
+    public DocumentResult fetchDocuments(String cdekOrderUuid) {
+        ensureReady();
+        String barcodeUrl = null;
+        String invoiceUrl = null;
+        try {
+            barcodeUrl = client.requestBarcode(cdekOrderUuid);
+        } catch (Exception e) {
+            log.warn("[CDEK] Штрихкод для uuid={} недоступен: {}", cdekOrderUuid, e.getMessage());
+        }
+        try {
+            invoiceUrl = client.requestInvoice(cdekOrderUuid);
+        } catch (Exception e) {
+            log.warn("[CDEK] Квитанция для uuid={} недоступна: {}", cdekOrderUuid, e.getMessage());
+        }
+        return new DocumentResult(invoiceUrl, barcodeUrl);
+    }
+
     // ── request building ─────────────────────────────────────────────────────────
 
     /**

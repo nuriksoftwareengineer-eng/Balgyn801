@@ -150,6 +150,79 @@ public class CdekClient {
         return deleteString(URI.create(baseUrl() + "/orders/" + uuid));
     }
 
+    /**
+     * Запрашивает штрихкод для заказа CDEK.
+     * {@code POST /v2/print/barcodes} → опрашивает {@code GET /v2/print/barcodes/{uuid}}
+     * до получения URL (5 попыток × 2 с). Возвращает URL PDF или null.
+     */
+    public String requestBarcode(String cdekOrderUuid) {
+        ensureConfigured();
+        Map<String, Object> body = Map.of("orders", List.of(Map.of("order_uuid", cdekOrderUuid)));
+        String raw = postJsonString(URI.create(baseUrl() + "/print/barcodes"), body);
+        String printUuid = extractPrintUuid(raw);
+        if (printUuid == null) {
+            log.warn("[CDEK] Штрихкод: print-uuid не получен для заказа {}", cdekOrderUuid);
+            return null;
+        }
+        return pollPrintUrl("/print/barcodes/" + printUuid, 5, 2_000);
+    }
+
+    /**
+     * Запрашивает квитанцию (накладную) для заказа CDEK.
+     * {@code POST /v2/print/invoices} → {@code GET /v2/print/invoices/{uuid}}.
+     */
+    public String requestInvoice(String cdekOrderUuid) {
+        ensureConfigured();
+        Map<String, Object> body = Map.of("orders", List.of(Map.of("order_uuid", cdekOrderUuid)));
+        String raw = postJsonString(URI.create(baseUrl() + "/print/invoices"), body);
+        String printUuid = extractPrintUuid(raw);
+        if (printUuid == null) {
+            log.warn("[CDEK] Квитанция: print-uuid не получен для заказа {}", cdekOrderUuid);
+            return null;
+        }
+        return pollPrintUrl("/print/invoices/" + printUuid, 5, 2_000);
+    }
+
+    private String extractPrintUuid(String rawJson) {
+        try {
+            JsonNode root = objectMapper.readTree(rawJson);
+            JsonNode entity = root.path("entity");
+            if (entity.hasNonNull("uuid")) {
+                return entity.get("uuid").asText();
+            }
+        } catch (Exception e) {
+            log.warn("[CDEK] Не удалось извлечь print uuid: {}", e.getMessage());
+        }
+        return null;
+    }
+
+    private String pollPrintUrl(String path, int maxAttempts, long delayMs) {
+        for (int attempt = 0; attempt < maxAttempts; attempt++) {
+            if (attempt > 0) {
+                try {
+                    Thread.sleep(delayMs);
+                } catch (InterruptedException ex) {
+                    Thread.currentThread().interrupt();
+                    return null;
+                }
+            }
+            try {
+                String raw = getString(URI.create(baseUrl() + path));
+                JsonNode root = objectMapper.readTree(raw);
+                JsonNode entity = root.path("entity");
+                if (entity.hasNonNull("url")) {
+                    String url = entity.get("url").asText();
+                    log.info("[CDEK] Документ готов: {}", url);
+                    return url;
+                }
+            } catch (Exception e) {
+                log.warn("[CDEK] Попытка {} получить {}: {}", attempt + 1, path, e.getMessage());
+            }
+        }
+        log.warn("[CDEK] Документ {} не готов после {} попыток", path, maxAttempts);
+        return null;
+    }
+
     private String extractUuid(String rawJson) {
         try {
             var node = objectMapper.readTree(rawJson);

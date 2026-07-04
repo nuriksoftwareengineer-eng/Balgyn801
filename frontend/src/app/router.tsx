@@ -168,6 +168,9 @@ const AdminSiteSettingsPage = lazy(() =>
 const ReviewsPage = lazy(() =>
   import("@/pages/ReviewsPage").then((m) => ({ default: m.ReviewsPage })),
 );
+const FAQPage = lazy(() =>
+  import("@/pages/FAQPage").then((m) => ({ default: m.FAQPage })),
+);
 const AdminReviewsPage = lazy(() =>
   import("@/admin/AdminReviewsPage").then((m) => ({ default: m.AdminReviewsPage })),
 );
@@ -299,6 +302,14 @@ const router = createBrowserRouter([
         element: (
           <Suspense fallback={<PageLoadFallback />}>
             <ReviewsPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "faq",
+        element: (
+          <Suspense fallback={<PageLoadFallback />}>
+            <FAQPage />
           </Suspense>
         ),
       },

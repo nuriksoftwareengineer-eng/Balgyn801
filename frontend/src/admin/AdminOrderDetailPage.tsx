@@ -5,6 +5,7 @@ import { useAuth } from "@/app/auth-context";
 import {
   cancelOrderShipment,
   createOrderShipment,
+  fetchOrderDocs,
   getOrderByIdAdmin,
   getOrderShipment,
   patchOrderStatusAdmin,
@@ -129,10 +130,11 @@ export function AdminOrderDetailPage() {
   });
 
   const shipmentMut = useMutation({
-    mutationFn: async (action: "create" | "sync" | "cancel") => {
+    mutationFn: async (action: "create" | "sync" | "cancel" | "fetch-docs") => {
       if (!token) throw new Error("Нет токена");
       if (action === "create") return createOrderShipment(id, token);
       if (action === "sync") return syncOrderShipment(id, token);
+      if (action === "fetch-docs") return fetchOrderDocs(id, token);
       return cancelOrderShipment(id, token);
     },
     onMutate: () => setShipmentError(null),
@@ -382,6 +384,16 @@ export function AdminOrderDetailPage() {
               onClick={() => shipmentMut.mutate("sync")}
             >
               Синхронизировать статус
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="rounded-[10px]"
+              disabled={!shipment || shipmentMut.isPending || !!shipment?.mock}
+              onClick={() => shipmentMut.mutate("fetch-docs")}
+              title={shipment?.mock ? "Недоступно в mock-режиме" : "Получить штрихкод и квитанцию через CDEK API"}
+            >
+              Получить документы
             </Button>
             <Button
               type="button"
