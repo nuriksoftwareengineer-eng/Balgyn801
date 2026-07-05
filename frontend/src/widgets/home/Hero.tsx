@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import heroVideo from "@/assets/figma/homepage.MOV";
+import heroVideo from "@/assets/figma/homepage.mp4";
 import heroImg from "@/assets/figma/photo_5289740941222682479_y.jpg";
 
 export function Hero() {
@@ -21,8 +21,6 @@ export function Hero() {
           className="absolute left-0 top-0 h-full w-full object-cover"
         >
           <source src={heroVideo} type="video/mp4" />
-          <source src={heroVideo} type="video/quicktime" />
-          <img src={heroImg} alt="BALGYN — SS26" className="h-full w-full object-cover" />
         </video>
       </div>
       <div className="absolute inset-0 bg-black mix-blend-multiply opacity-[0.68]" />
