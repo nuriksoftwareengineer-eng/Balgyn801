@@ -3,6 +3,18 @@
 }
 
 {$DOMAIN} {
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "SAMEORIGIN"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self'; frame-ancestors 'none';"
+    }
+
+    request_body {
+        max_size 20MB
+    }
+
     handle /api/* {
         reverse_proxy app:8080
     }
@@ -13,3 +25,4 @@
         reverse_proxy frontend:80
     }
 }
+
