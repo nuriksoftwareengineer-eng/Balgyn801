@@ -2,7 +2,6 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import heroVideo from "@/assets/figma/homepage.mp4";
-import heroImg from "@/assets/figma/photo_5289740941222682479_y.jpg";
 
 export function Hero() {
   const { t } = useTranslation();
@@ -16,7 +15,6 @@ export function Hero() {
           loop
           playsInline
           preload="auto"
-          poster={heroImg}
           aria-hidden="true"
           className="absolute left-0 top-0 h-full w-full object-cover"
         >
@@ -35,9 +33,14 @@ export function Hero() {
           {t("home.hero.badge")}
         </motion.p>
 
-        <h1 className="text-center text-[72px] font-extrabold uppercase leading-[0.9] tracking-[-0.04em] sm:text-[120px] md:text-[180px]">
+        <motion.h1
+          initial={{ y: 40, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 1, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+          className="text-center text-[72px] font-extrabold uppercase leading-[0.9] tracking-[-0.04em] sm:text-[120px] md:text-[180px]"
+        >
           BALGYN
-        </h1>
+        </motion.h1>
 
         <motion.p
           initial={{ y: 20, opacity: 0 }}
