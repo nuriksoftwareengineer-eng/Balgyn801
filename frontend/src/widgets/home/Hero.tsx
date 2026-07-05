@@ -35,14 +35,9 @@ export function Hero() {
           {t("home.hero.badge")}
         </motion.p>
 
-        <motion.h1
-          initial={{ y: 40, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 1, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-          className="text-center text-[72px] font-extrabold uppercase leading-[0.9] tracking-[-0.04em] sm:text-[120px] md:text-[180px]"
-        >
+        <h1 className="text-center text-[72px] font-extrabold uppercase leading-[0.9] tracking-[-0.04em] sm:text-[120px] md:text-[180px]">
           BALGYN
-        </motion.h1>
+        </h1>
 
         <motion.p
           initial={{ y: 20, opacity: 0 }}
