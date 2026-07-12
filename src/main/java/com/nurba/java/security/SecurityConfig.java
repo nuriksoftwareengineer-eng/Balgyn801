@@ -135,8 +135,8 @@ public class SecurityConfig {
                             // Public coupon validation
                             .requestMatchers(HttpMethod.GET, "/api/v1/coupons/validate").permitAll()
 
-                            // Parcel tracking — public read (order ownership validated at service layer)
-                            .requestMatchers(HttpMethod.GET, "/api/v1/orders/*/tracking").permitAll()
+                            // Order tracking — public read (ownership validated at service layer)
+                            .requestMatchers(HttpMethod.GET, "/api/v1/orders/*/tracking-info").permitAll()
 
                             .requestMatchers(HttpMethod.GET, "/api/v1/product/**").permitAll()
 

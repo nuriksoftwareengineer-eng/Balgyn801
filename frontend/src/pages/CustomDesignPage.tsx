@@ -51,22 +51,20 @@ export function CustomDesignPage() {
 
   return (
     <>
-      {/* ── Hero ─────────────────────────────────────────────── */}
-      <div className="border-b border-[--color-border] bg-black">
-        <Container className="py-12 md:py-16">
-          <nav className="mb-5 flex items-center gap-2 text-[0.55rem] uppercase tracking-[0.16em] text-white/40">
-            <Link to="/" className="transition hover:text-white/70">{t("nav.home")}</Link>
-            <span>/</span>
-            <span className="text-white/70">{t("customDesign.title")}</span>
-          </nav>
-          <h1 className="text-4xl font-extrabold uppercase tracking-[-0.02em] text-white md:text-6xl">
-            {t("customDesign.title")}
-          </h1>
-        </Container>
-      </div>
+      {/* ── Header — light editorial ─────────────────────────── */}
+      <Container className="pb-4 pt-12 md:pt-16">
+        <nav className="mb-6 flex items-center gap-2 text-[10px] uppercase tracking-[0.16em] text-[--color-muted]">
+          <Link to="/" className="transition-colors hover:text-black">{t("nav.home")}</Link>
+          <span aria-hidden>/</span>
+          <span className="text-black">{t("customDesign.title")}</span>
+        </nav>
+        <h1 className="display text-[40px] uppercase text-black md:text-[60px]">
+          {t("customDesign.title")}
+        </h1>
+      </Container>
 
       {/* ── Content ──────────────────────────────────────────── */}
-      <Container className="py-10 md:py-14">
+      <Container className="py-8 md:py-10">
         <div className="max-w-2xl">
           <p className="mb-10 text-[15px] leading-relaxed text-[--color-muted]">
             {t("customDesign.lead")}
@@ -146,7 +144,7 @@ export function CustomDesignPage() {
 
             <button
               type="submit"
-              className="mt-2 flex w-full items-center justify-center gap-3 bg-black py-4 text-[13px] font-bold uppercase tracking-[0.14em] text-white transition hover:bg-zinc-800 sm:w-auto sm:px-10"
+              className="mt-2 flex w-full items-center justify-center gap-3 bg-black py-4 text-[12px] font-semibold uppercase tracking-[0.16em] text-white transition hover:bg-zinc-800 sm:w-auto sm:px-10"
             >
               <svg viewBox="0 0 24 24" className="h-5 w-5 fill-current" aria-hidden="true">
                 <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>

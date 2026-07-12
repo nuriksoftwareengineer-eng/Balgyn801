@@ -27,21 +27,22 @@ export function ProfilePage() {
 
   return (
     <>
-      {/* Hero */}
-      <div className="border-b border-[--color-border] bg-black">
-        <Container className="py-12 md:py-16">
-          <h1 className="text-4xl font-extrabold uppercase tracking-[-0.01em] text-white md:text-5xl">
-            {t("profile.title")}
-          </h1>
-        </Container>
-      </div>
+      {/* Header */}
+      <Container className="pb-4 pt-12 md:pt-16">
+        <p className="mb-2 text-[10px] uppercase tracking-[0.2em] text-[--color-muted]">
+          {t("nav.profile")}
+        </p>
+        <h1 className="display text-[40px] uppercase text-black md:text-[56px]">
+          {t("profile.title")}
+        </h1>
+      </Container>
 
-      <Container className="py-10 md:py-14">
-        <div className="max-w-[540px]">
+      <Container className="py-8 md:py-10">
+        <div className="max-w-[560px]">
           {/* User info */}
-          <dl className="flex flex-col gap-6 border-b border-[--color-border] pb-8">
+          <dl className="flex flex-col gap-6 border-t border-[--color-border] pt-8">
             <div>
-              <dt className="mb-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[--color-muted]">
+              <dt className="mb-1.5 text-[10px] uppercase tracking-[0.2em] text-[--color-muted]">
                 Email
               </dt>
               <dd className="text-[15px] text-black">{user.email}</dd>
@@ -87,20 +88,21 @@ export function ProfilePage() {
               <ul className="flex flex-col divide-y divide-[--color-border] border border-[--color-border]">
                 {cdekShipments.map((order) => {
                   const s = order.cdekShipment!;
+                  const tn = s.trackingNumber || order.trackingNumber;
                   return (
                     <li key={order.id} className="px-4 py-3">
-                      <div className="flex items-center justify-between gap-3">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
                         <span className="text-[12px] font-semibold text-black">
                           #{order.id}
                         </span>
-                        {s.trackingNumber && (
+                        {tn && (
                           <a
-                            href={`https://www.cdek.ru/ru/tracking/?order_id=${s.trackingNumber}`}
+                            href={`https://www.cdek.ru/ru/tracking/?order_id=${encodeURIComponent(tn)}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="font-mono text-[11px] font-semibold underline underline-offset-2 hover:text-zinc-600"
                           >
-                            {s.trackingNumber}
+                            {tn}
                           </a>
                         )}
                       </div>

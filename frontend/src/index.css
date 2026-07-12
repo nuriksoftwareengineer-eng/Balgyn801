@@ -6,11 +6,17 @@
   /* Montserrat replaces Bebas Neue + DM Sans */
   --font-sans: "Montserrat", ui-sans-serif, system-ui, sans-serif;
 
-  /* Palette */
-  --color-surface:    #f7f7f7;
-  --color-border:     #e8e8e8;
-  --color-muted:      #6b6b6b;
-  --color-danger:     #d00000;
+  /* Palette — gallery neutrals for a quiet, premium base */
+  --color-surface:    #f4f4f2;
+  --color-border:     #ececec;
+  --color-hairline:   #f0f0f0;
+  --color-muted:      #767676;
+  --color-ink:        #0a0a0a;
+  --color-danger:     #c81e1e;
+
+  /* Motion — slow, considered easing (fashion-editorial feel) */
+  --ease-out-expo:    cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out-soft: cubic-bezier(0.65, 0, 0.35, 1);
 }
 
 /* ─── Base ───────────────────────────────────────────────────────────────── */
@@ -21,10 +27,50 @@ html {
 body {
   margin: 0;
   font-family: var(--font-sans);
+  font-weight: 400;
   background: #ffffff;
-  color: #000000;
+  color: var(--color-ink);
+  letter-spacing: -0.01em;
+  text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* ─── Editorial type helpers ─────────────────────────────────────────────── */
+/* Eyebrow / small caps label — the quiet connective tissue of a premium layout */
+.eyebrow {
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  color: var(--color-muted);
+}
+
+/* Display headline — tight tracking, no shouting weight */
+.display {
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 0.95;
+}
+
+/* Animated underline that draws in from the left on hover */
+.link-underline {
+  position: relative;
+}
+.link-underline::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -2px;
+  height: 1px;
+  width: 100%;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.45s var(--ease-out-expo);
+}
+.link-underline:hover::after {
+  transform: scaleX(1);
 }
 
 /* ─── Skeleton loader ────────────────────────────────────────────────────── */
@@ -45,6 +91,23 @@ body {
   100% { transform: scale(1); }
 }
 
+/* ─── Focus accessibility ────────────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* ─── Gallery image ──────────────────────────────────────────────────────── */
+/* Slow, editorial zoom on hover — the calm "look, don't shout" motion. */
+.gallery-img {
+  transition: transform 0.9s var(--ease-out-expo);
+  will-change: transform;
+}
+.group:hover .gallery-img {
+  transform: scale(1.035);
+}
+
 /* ─── Reduced motion ─────────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   html {
@@ -53,5 +116,11 @@ body {
 
   .skeleton-shimmer {
     animation: none !important;
+  }
+
+  .gallery-img,
+  .group:hover .gallery-img {
+    transition: none !important;
+    transform: none !important;
   }
 }

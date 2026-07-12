@@ -22,12 +22,12 @@ export function BestSellers() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-80px" }}
           transition={{ duration: 0.7 }}
-          className="mb-12 flex flex-col justify-between gap-4 md:flex-row md:items-end"
+          className="mb-14 flex flex-col justify-between gap-5 md:flex-row md:items-end"
         >
-          <h2 className="text-[40px] font-extrabold uppercase leading-[1.1] tracking-[-0.04em] sm:text-[48px] md:text-[88px]">
+          <h2 className="display text-[38px] uppercase sm:text-[52px] md:text-[76px]">
             {t("home.bestSellers.title")}
           </h2>
-          <p className="max-w-[300px] text-[16px] text-black">
+          <p className="max-w-[320px] text-[15px] leading-relaxed text-[--color-muted]">
             {t("home.bestSellers.desc")}
           </p>
         </motion.div>
@@ -54,28 +54,28 @@ export function BestSellers() {
                   to={`/catalog/${design.groupSlug}/${design.collectionSlug}/${design.slug}`}
                   className="group block"
                 >
-                  <div className="relative aspect-[3/4] overflow-hidden border border-[#E6E6E6] bg-[#F5F5F5] transition-colors group-hover:border-black">
+                  <div className="relative aspect-[4/5] overflow-hidden bg-[--color-surface]">
                     {design.mainImageUrl ? (
                       <img
                         src={design.mainImageUrl}
                         alt={design.name}
-                        className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                        className="gallery-img absolute inset-0 h-full w-full object-cover"
                       />
                     ) : (
-                      <div className="absolute inset-0 flex items-center justify-center text-[96px] font-extrabold text-black/10">
+                      <div className="absolute inset-0 flex items-center justify-center text-[96px] font-semibold text-black/[0.08]">
                         {design.name.charAt(0).toUpperCase()}
                       </div>
                     )}
-                    <div className="absolute right-4 top-4 bg-white px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-black">
-                      № 0{i + 1}
-                    </div>
+                    <span className="absolute right-3 top-3 text-[11px] tabular-nums text-black/40">
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
                   </div>
-                  <div className="mt-4 flex flex-col gap-1">
-                    <span className="text-[10px] uppercase tracking-[0.2em] text-[#7A7A7A]">
+                  <div className="mt-3.5 flex flex-col gap-1">
+                    <span className="text-[10px] uppercase tracking-[0.2em] text-[--color-muted]">
                       {design.collectionName}
                     </span>
-                    <h4 className="text-[14px] font-semibold group-hover:underline">
-                      {design.name}
+                    <h4 className="text-[13px] font-medium">
+                      <span className="link-underline">{design.name}</span>
                     </h4>
                   </div>
                 </Link>

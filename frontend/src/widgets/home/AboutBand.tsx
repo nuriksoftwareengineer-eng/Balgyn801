@@ -16,10 +16,10 @@ export function AboutBand() {
           className="container mx-auto px-4 md:px-8"
         >
           <div className="flex flex-col items-center justify-center text-center">
-            <h2 className="mb-6 text-center text-[40px] font-extrabold uppercase leading-[1.1] tracking-[-0.04em] sm:text-[48px] md:mb-8 md:text-[88px]">
+            <h2 className="display mb-6 text-center text-[38px] uppercase sm:text-[48px] md:mb-8 md:text-[80px]">
               {t("home.about.title")}
             </h2>
-            <p className="mx-auto mb-12 max-w-[560px] text-center text-[16px] font-normal leading-relaxed text-[#D9D9D9] md:mb-16 md:text-[20px]">
+            <p className="mx-auto mb-12 max-w-[540px] text-center text-[16px] font-normal leading-relaxed text-white/70 md:mb-16 md:text-[19px]">
               {t("home.about.desc")}
             </p>
 
@@ -43,7 +43,7 @@ export function AboutBand() {
 
       <div className="border-t border-white/20 py-6">
         <Marquee
-          items={["balgyn", "✶", "крой — нить — шов", "✶", "made in kz", "✶"]}
+          items={["balgyn", "✶", "крой · нить · шов", "✶", "made in kz", "✶"]}
           speed={60}
           reverse
         />

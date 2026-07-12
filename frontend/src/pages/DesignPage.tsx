@@ -302,7 +302,7 @@ export function DesignPage() {
       <>
         <div className="border-b border-[--color-border] bg-black">
           <Container className="py-12 md:py-16">
-            <h1 className="text-4xl font-extrabold uppercase tracking-[-0.02em] text-white md:text-5xl">
+            <h1 className="text-4xl font-bold uppercase tracking-[-0.02em] text-white md:text-5xl">
               {t("design.notFound")}
             </h1>
           </Container>
@@ -322,34 +322,23 @@ export function DesignPage() {
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <>
-      {/* ── Hero ─────────────────────────────────────────────────────── */}
-      <div className="border-b border-[--color-border] bg-black">
-        <Container className="py-12 md:py-16">
-          <nav className="mb-5 flex flex-wrap items-center gap-2 text-[0.55rem] uppercase tracking-[0.16em] text-white/40">
-            <Link to="/" className="transition hover:text-white/70">{t("nav.home")}</Link>
-            <span>/</span>
-            <Link to="/catalog" className="transition hover:text-white/70">{t("nav.catalog")}</Link>
-            <span>/</span>
-            <Link to={`/catalog/${groupSlug}`} className="transition hover:text-white/70">
-              {localizeName({ name: design.groupName, nameKk: design.groupNameKk, nameEn: design.groupNameEn }, i18n.language)}
-            </Link>
-            <span>/</span>
-            <Link to={`/catalog/${groupSlug}/${collectionSlug}`} className="transition hover:text-white/70">
-              {localizeName({ name: design.collectionName, nameKk: design.collectionNameKk, nameEn: design.collectionNameEn }, i18n.language)}
-            </Link>
-            <span>/</span>
-            <span className="text-white/70">{localizeName(design, i18n.language)}</span>
-          </nav>
-          <h1 className="text-4xl font-extrabold uppercase tracking-[-0.02em] text-white md:text-6xl">
-            {localizeName(design, i18n.language)}
-          </h1>
-        </Container>
-      </div>
+      {/* ── Content — photo-first two-column layout ──────────────────── */}
+      <Container className="py-6 md:py-10">
+        {/* Breadcrumb */}
+        <nav className="mb-6 flex flex-wrap items-center gap-2 text-[10px] uppercase tracking-[0.16em] text-[--color-muted] md:mb-10">
+          <Link to="/" className="transition hover:text-black">{t("nav.home")}</Link>
+          <span>/</span>
+          <Link to="/catalog" className="transition hover:text-black">{t("nav.catalog")}</Link>
+          <span>/</span>
+          <Link to={`/catalog/${groupSlug}/${collectionSlug}`} className="transition hover:text-black">
+            {localizeName({ name: design.collectionName, nameKk: design.collectionNameKk, nameEn: design.collectionNameEn }, i18n.language)}
+          </Link>
+          <span>/</span>
+          <span className="text-black">{localizeName(design, i18n.language)}</span>
+        </nav>
 
-      {/* ── Content ──────────────────────────────────────────────────── */}
-      <Container className="py-8 md:py-10">
-        <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:gap-10">
-          {/* Image + Gallery */}
+        <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:gap-16">
+          {/* Image + Gallery — dominant column */}
           {(() => {
             const allImages = [
               ...(design.mainImageUrl ? [design.mainImageUrl] : []),
@@ -357,21 +346,21 @@ export function DesignPage() {
             ];
             const activeImg = allImages[galleryIndex];
             return (
-              <div className="w-full lg:w-[380px] lg:shrink-0">
+              <div className="w-full lg:flex-1">
                 {/* Main image */}
                 <div
-                  className="group relative aspect-square w-full cursor-zoom-in overflow-hidden bg-zinc-900"
+                  className="group relative aspect-[4/5] w-full cursor-zoom-in overflow-hidden bg-[--color-surface]"
                   onClick={() => { if (allImages.length) setLightboxOpen(true); }}
                 >
                   {activeImg ? (
                     <img
                       src={activeImg}
                       alt={design.name}
-                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                      className="gallery-img h-full w-full object-cover"
                     />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center">
-                      <span className="text-7xl font-extrabold text-white/10">
+                      <span className="text-8xl font-semibold text-black/[0.07]">
                         {design.name.charAt(0).toUpperCase()}
                       </span>
                     </div>
@@ -423,10 +412,18 @@ export function DesignPage() {
             );
           })()}
 
-          {/* Selectors */}
-          <div className="flex-1 min-w-0">
+          {/* Selectors — secondary column, sticky on desktop */}
+          <div className="w-full min-w-0 lg:w-[380px] lg:shrink-0 lg:sticky lg:top-28">
+            {/* Title */}
+            <p className="mb-2 text-[10px] uppercase tracking-[0.2em] text-[--color-muted]">
+              {localizeName({ name: design.collectionName, nameKk: design.collectionNameKk, nameEn: design.collectionNameEn }, i18n.language)}
+            </p>
+            <h1 className="mb-5 text-[28px] font-semibold uppercase leading-[1.05] tracking-[-0.01em] md:text-[34px]">
+              {localizeName(design, i18n.language)}
+            </h1>
+
             {design.description ? (
-              <p className="mb-6 text-sm leading-relaxed text-[--color-muted]">
+              <p className="mb-7 text-[14px] leading-relaxed text-[--color-muted]">
                 {design.description}
               </p>
             ) : null}
@@ -514,7 +511,7 @@ export function DesignPage() {
                             "border px-4 py-2.5 text-[13px] transition",
                             selectedGarmentId === g.id
                               ? "border-black bg-black text-white"
-                              : "border-[--color-border] bg-white text-black hover:border-zinc-400",
+                              : "border-[--color-border] bg-white text-black hover:border-black",
                           )}
                         >
                           {garmentLabel(g, i18n.language)}
@@ -549,7 +546,7 @@ export function DesignPage() {
                             "h-9 w-9 rounded-none border-2 transition",
                             selectedColorId === c.id
                               ? "border-black scale-110"
-                              : "border-zinc-200 hover:border-zinc-500",
+                              : "border-zinc-200 hover:border-black",
                           )}
                           style={{ backgroundColor: c.hexCode }}
                           aria-label={c.name}
@@ -576,7 +573,7 @@ export function DesignPage() {
                             "min-w-[2.75rem] border px-3 py-2 text-[13px] font-medium transition",
                             selectedSizeId === s.id
                               ? "border-black bg-black text-white"
-                              : "border-[--color-border] bg-white text-black hover:border-zinc-400",
+                              : "border-[--color-border] bg-white text-black hover:border-black",
                           )}
                         >
                           {s.label}
@@ -589,7 +586,7 @@ export function DesignPage() {
                 {/* Price + CTA */}
                 <div className="border-t border-[--color-border] pt-5">
                   {displayPrice != null && (
-                    <p className="mb-5 text-3xl font-extrabold tracking-[-0.02em] text-black">
+                    <p className="mb-5 text-3xl font-bold tracking-[-0.02em] text-black">
                       {formatMoney(displayPrice)} ₸
                     </p>
                   )}
@@ -597,7 +594,7 @@ export function DesignPage() {
                     type="button"
                     disabled={!canAdd || added}
                     onClick={handleAddToCart}
-                    className="w-full bg-black py-4 text-[13px] font-bold uppercase tracking-[0.14em] text-white transition hover:bg-zinc-800 disabled:opacity-40 sm:w-auto sm:px-10"
+                    className="w-full bg-black py-4 text-[12px] font-semibold uppercase tracking-[0.16em] text-white transition hover:bg-zinc-800 disabled:opacity-40 sm:w-auto sm:px-10"
                   >
                     {added ? t("design.added") : t("design.addToCart")}
                   </button>

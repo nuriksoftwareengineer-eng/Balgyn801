@@ -16,56 +16,54 @@ export function DesignProductCard({
   const initial = product.title?.trim().charAt(0).toUpperCase() || "B";
   return (
     <Link to={`/catalog/${product.id}`} className="group relative block">
-      <div className="relative aspect-[3/4] overflow-hidden border border-[#E6E6E6] bg-[#F5F5F5] transition-colors group-hover:border-black">
+      <div className="relative aspect-[4/5] overflow-hidden bg-[--color-surface]">
         {product.imageUrl ? (
           <img
             src={product.imageUrl}
             alt={product.title}
-            className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+            className="gallery-img absolute inset-0 h-full w-full object-cover"
           />
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center text-[96px] font-extrabold text-black/10">
+          <div className="absolute inset-0 flex items-center justify-center text-[96px] font-semibold text-black/[0.08]">
             {initial}
           </div>
         )}
 
         {index ? (
-          <div className="absolute right-4 top-4 bg-white px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-black">
-            № 0{index}
-          </div>
+          <span className="absolute right-3 top-3 text-[11px] tabular-nums text-black/40">
+            {String(index).padStart(2, "0")}
+          </span>
         ) : null}
 
-        <div className="absolute left-4 top-4 flex flex-col gap-2">
-          {!product.inStock ? (
-            <span className="border border-black bg-white px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-black">
-              {t("product.soldOut")}
-            </span>
-          ) : null}
-        </div>
+        {!product.inStock ? (
+          <span className="absolute left-3 top-3 text-[10px] font-medium uppercase tracking-[0.18em] text-black">
+            {t("product.soldOut")}
+          </span>
+        ) : null}
 
-        <div className="absolute bottom-0 left-0 hidden w-full translate-y-full p-4 transition-transform duration-500 group-hover:translate-y-0 md:block">
-          <span className="flex w-full items-center justify-center gap-2 bg-white/95 px-4 py-3 text-[14px] font-semibold uppercase tracking-[0.08em] text-black backdrop-blur-sm transition-colors group-hover:bg-black group-hover:text-white">
-            <Plus className="h-4 w-4" />
+        <div className="absolute inset-x-0 bottom-0 hidden translate-y-2 p-3 opacity-0 transition-all duration-500 group-hover:translate-y-0 group-hover:opacity-100 md:block">
+          <span className="flex w-full items-center justify-center gap-2 bg-black px-4 py-3 text-[12px] font-medium uppercase tracking-[0.14em] text-white">
+            <Plus className="h-3.5 w-3.5" />
             {t("product.addToCart")}
           </span>
         </div>
       </div>
 
-      <div className="mt-4 flex items-start justify-between gap-2">
+      <div className="mt-3.5 flex items-start justify-between gap-2">
         <div className="flex flex-col">
           {product.category ? (
-            <span className="mb-1 text-[10px] uppercase tracking-[0.2em] text-[#7A7A7A]">
+            <span className="mb-1 text-[10px] uppercase tracking-[0.2em] text-[--color-muted]">
               {product.category}
             </span>
           ) : null}
-          <h4 className="text-[14px] font-semibold">{product.title}</h4>
+          <h4 className="text-[13px] font-medium">{product.title}</h4>
           {product.description ? (
-            <p className="mt-1 line-clamp-1 text-[12px] text-[#7A7A7A]">
+            <p className="mt-1 line-clamp-1 text-[12px] text-[--color-muted]">
               {product.description}
             </p>
           ) : null}
         </div>
-        <p className="whitespace-nowrap text-[14px] font-semibold">
+        <p className="whitespace-nowrap text-[13px] font-medium">
           {formatMoney(product.price)} ₸
         </p>
       </div>

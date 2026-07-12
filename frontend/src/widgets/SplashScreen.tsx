@@ -52,7 +52,7 @@ export function SplashScreen() {
       `}</style>
 
       <p
-        className="text-[clamp(3.5rem,14vw,9rem)] font-extrabold uppercase leading-none tracking-[-0.04em] text-white"
+        className="text-[clamp(3.5rem,14vw,9rem)] font-bold uppercase leading-none tracking-[-0.04em] text-white"
         style={{ letterSpacing: "-0.04em" }}
       >
         {"BALGYN".split("").map((ch, i) => (

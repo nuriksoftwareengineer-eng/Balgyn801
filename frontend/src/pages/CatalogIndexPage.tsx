@@ -4,6 +4,7 @@ import { useCatalogGroups } from "@/shared/api/catalog-api";
 import { localizeName } from "@/shared/types/catalog";
 import { useSeoMeta } from "@/shared/hooks/useSeoMeta";
 import { Container } from "@/shared/ui/container";
+import { CatalogCard } from "@/widgets/catalog/CatalogCard";
 
 export function CatalogIndexPage() {
   const { t, i18n } = useTranslation();
@@ -16,86 +17,60 @@ export function CatalogIndexPage() {
 
   return (
     <>
-      {/* ── Hero ────────────────────────────────────────────── */}
-      <div className="border-b border-[--color-border] bg-black">
-        <Container className="py-14 md:py-20">
-          <nav className="mb-5 flex items-center gap-2 text-[0.55rem] uppercase tracking-[0.16em] text-white/40">
-            <Link to="/" className="transition hover:text-white/70">{t("nav.home")}</Link>
-            <span>/</span>
-            <span className="text-white/70">{t("nav.catalog")}</span>
-          </nav>
-          <h1 className="text-5xl font-semibold uppercase tracking-[0.04em] text-white md:text-7xl">
-            {t("nav.catalog")}
-          </h1>
-        </Container>
-      </div>
+      {/* ── Header — light editorial ─────────────────────────── */}
+      <Container className="pb-8 pt-12 md:pt-16">
+        <nav className="mb-6 flex items-center gap-2 text-[10px] uppercase tracking-[0.16em] text-[--color-muted]">
+          <Link to="/" className="transition-colors hover:text-black">{t("nav.home")}</Link>
+          <span aria-hidden>/</span>
+          <span className="text-black">{t("nav.catalog")}</span>
+        </nav>
+        <h1 className="display text-[44px] uppercase text-black md:text-[64px]">
+          {t("nav.catalog")}
+        </h1>
+      </Container>
 
       {/* ── Groups grid ─────────────────────────────────────── */}
-      <div className="py-10 md:py-14">
+      <div className="pb-16 md:pb-24">
         <Container>
           {isLoading ? (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
+            <div className="grid grid-cols-1 gap-x-4 gap-y-10 sm:grid-cols-2 md:grid-cols-3">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="overflow-hidden border border-[--color-border]">
-                  <div className="aspect-[3/2] animate-pulse bg-[--color-surface]" />
-                  <div className="px-4 py-4">
-                    <div className="h-2 w-24 animate-pulse bg-[--color-surface]" />
-                  </div>
+                <div key={i}>
+                  <div className="aspect-[4/5] animate-pulse bg-[--color-surface]" />
+                  <div className="mt-4 h-3 w-28 animate-pulse bg-[--color-surface]" />
                 </div>
               ))}
             </div>
           ) : error ? (
             <p className="text-sm text-[--color-danger]">{t("catalog.loadError", "Не удалось загрузить каталог.")}</p>
           ) : groups && groups.length > 0 ? (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
+            <div className="grid grid-cols-1 gap-x-4 gap-y-10 sm:grid-cols-2 md:grid-cols-3">
               {groups.map((group) => (
-                <Link
+                <CatalogCard
                   key={group.id}
                   to={`/catalog/${group.slug}`}
-                  className="group block overflow-hidden border border-[--color-border] bg-white transition-shadow hover:shadow-md"
-                >
-                  <div className="aspect-[3/2] overflow-hidden bg-zinc-900">
-                    {group.coverImageUrl ? (
-                      <img
-                        src={group.coverImageUrl}
-                        alt={group.name}
-                        className="h-full w-full object-cover object-center transition-transform duration-300 group-hover:scale-105"
-                      />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center">
-                        <span className="text-7xl font-bold uppercase text-white/10 select-none">
-                          {group.name.charAt(0)}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex items-center justify-between px-4 py-3.5">
-                    <p className="text-sm font-semibold uppercase tracking-[0.06em] text-black">
-                      {localizeName(group, i18n.language)}
-                    </p>
-                    <span className="text-[0.6rem] font-medium uppercase tracking-[0.14em] text-[--color-muted] transition group-hover:text-black">
-                      →
-                    </span>
-                  </div>
-                </Link>
+                  title={localizeName(group, i18n.language)}
+                  cover={group.coverImageUrl}
+                  hint={t("home.categories.viewAll", "Смотреть →")}
+                />
               ))}
             </div>
           ) : (
-            <div className="flex flex-col items-start gap-5 py-10">
+            <div className="mx-auto flex max-w-md flex-col items-center gap-6 py-20 text-center">
               <div className="flex h-16 w-16 items-center justify-center bg-[--color-surface] text-3xl select-none">
                 🧵
               </div>
               <div>
-                <p className="mb-1 text-[15px] font-semibold text-black">
+                <p className="mb-1.5 text-[16px] font-medium text-black">
                   {t("catalog.emptyTitle", "Каталог пока пуст")}
                 </p>
-                <p className="text-[13px] text-[--color-muted]">
-                  {t("catalog.emptySubtitle", "Мы добавляем коллекции — скоро они появятся здесь.")}
+                <p className="text-[14px] leading-relaxed text-[--color-muted]">
+                  {t("catalog.emptySubtitle", "Мы добавляем коллекции. Скоро они появятся здесь.")}
                 </p>
               </div>
               <Link
                 to="/custom-design"
-                className="inline-block border border-black px-5 py-2.5 text-[11px] font-bold uppercase tracking-[0.14em] text-black transition hover:bg-black hover:text-white"
+                className="inline-flex items-center justify-center bg-black px-7 py-3.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-white transition hover:bg-zinc-800"
               >
                 {t("catalog.customDesignCta", "Оформить свой дизайн →")}
               </Link>

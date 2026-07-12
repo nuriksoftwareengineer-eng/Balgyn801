@@ -283,6 +283,8 @@ export type OrderResponse = {
   items?: OrderItemResponse[];
   address?: DeliveryAddressResponse | null;
   cdekShipment?: CdekShipmentResponse | null;
+  /** Carrier tracking number set by admin on shipment. Null until assigned. */
+  trackingNumber?: string | null;
   couponCode?: string | null;
   discountAmount?: number | null;
   createdAt: string;
@@ -414,6 +416,24 @@ export type AdminUserResponse = {
   email: string;
   roles: string[];
   createdAt: string;
+};
+
+export type OrderStatusHistoryEntry = {
+  status: OrderStatus;
+  /** java.util.Date — serialized as epoch millis by Jackson */
+  occurredAt: number;
+};
+
+export type OrderTrackingResponse = {
+  orderId: number;
+  orderStatus: OrderStatus;
+  deliveryType: DeliveryType;
+  totalPrice: number;
+  createdAt: string;
+  statusHistory: OrderStatusHistoryEntry[];
+  /** Consolidated carrier tracking number (cdekShipment wins, then order-level). Null until assigned. */
+  trackingNumber?: string | null;
+  cdekShipment?: CdekShipmentResponse | null;
 };
 
 export type PaymentResponse = {

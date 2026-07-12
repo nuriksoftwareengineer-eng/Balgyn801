@@ -401,6 +401,9 @@ public class OrderServiceImpl implements OrderService {
 
         order.setStatus(next);
         order.setUpdatedAt(LocalDateTime.now());
+        if (request.getTrackingNumber() != null && !request.getTrackingNumber().isBlank()) {
+            order.setTrackingNumber(request.getTrackingNumber().trim());
+        }
         orderRepository.save(order);
         recordHistory(order, next);
 

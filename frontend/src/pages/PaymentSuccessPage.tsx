@@ -86,13 +86,13 @@ export function PaymentSuccessPage() {
         <div className="flex flex-wrap gap-3">
           <Link
             to="/orders"
-            className="inline-flex items-center justify-center bg-black px-6 py-3 text-[12px] font-bold uppercase tracking-[0.14em] text-white transition hover:bg-zinc-800"
+            className="inline-flex items-center justify-center bg-black px-6 py-3 text-[12px] font-semibold uppercase tracking-[0.16em] text-white transition hover:bg-zinc-800"
           >
             {t("payment.success.toOrders")}
           </Link>
           <Link
             to="/catalog"
-            className="inline-flex items-center justify-center border border-[--color-border] bg-white px-6 py-3 text-[12px] font-bold uppercase tracking-[0.14em] text-black transition hover:border-black/60"
+            className="inline-flex items-center justify-center border border-[--color-border] bg-white px-6 py-3 text-[12px] font-semibold uppercase tracking-[0.16em] text-black transition hover:border-black/60"
           >
             {t("payment.success.toCatalog")}
           </Link>

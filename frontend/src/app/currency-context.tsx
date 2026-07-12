@@ -40,18 +40,17 @@ const CURRENCY_META: Record<Currency, { symbol: string; decimals: number; locale
   RUB: { symbol: "₽", decimals: 0, locale: "ru-RU" },
 };
 
+/**
+ * Freedom Pay compliance: prices must display in KZT (₸) by default for every
+ * visitor. Only an explicit user choice (persisted below) may switch currency —
+ * never guess from navigator.language, since that previously showed RUB/USD/EUR
+ * to visitors before they made any choice.
+ */
 function detectDefaultCurrency(): Currency {
   const stored = localStorage.getItem(STORAGE_KEY);
   if (stored && ["KZT", "USD", "EUR", "RUB"].includes(stored)) {
     return stored as Currency;
   }
-  const lang = navigator.language ?? "";
-  if (lang.startsWith("kk") || lang.endsWith("-KZ")) return "KZT";
-  if (lang.startsWith("ru-KZ") || lang === "ru-KZ") return "KZT";
-  if (lang.startsWith("ru")) return "RUB";
-  if (["de", "fr", "it", "es", "nl", "pt", "pl"].some((l) => lang.startsWith(l)))
-    return "EUR";
-  if (lang.startsWith("en")) return "USD";
   return "KZT";
 }
 

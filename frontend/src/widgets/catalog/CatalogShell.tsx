@@ -31,7 +31,7 @@ export function CatalogShell({
               ) : (
                 <span className="text-black">{c.label}</span>
               )}
-              {i < crumbs.length - 1 ? <span aria-hidden>›</span> : null}
+              {i < crumbs.length - 1 ? <span aria-hidden>/</span> : null}
             </span>
           ))}
         </nav>

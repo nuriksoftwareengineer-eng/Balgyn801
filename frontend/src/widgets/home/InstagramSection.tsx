@@ -33,14 +33,14 @@ export function InstagramSection() {
           transition={{ duration: 0.7 }}
           className="mb-10 flex flex-col items-start justify-between gap-4 md:flex-row md:items-end"
         >
-          <h2 className="text-[40px] font-extrabold uppercase leading-[1.1] tracking-[-0.04em] sm:text-[48px] md:text-[64px]">
+          <h2 className="display text-[38px] uppercase sm:text-[48px] md:text-[64px]">
             BALGYN BOL
           </h2>
           <a
             href={IG_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="group inline-flex items-center gap-2 text-[14px] font-semibold uppercase tracking-[0.08em] hover:text-[#7A7A7A]"
+            className="group inline-flex items-center gap-2 text-[13px] font-medium uppercase tracking-[0.14em] text-black transition-colors hover:text-[--color-muted]"
           >
             <IgIcon className="h-5 w-5" />
             {t("home.instagram.follow")}

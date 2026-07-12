@@ -212,7 +212,7 @@ class InventoryReleaseIntegrationTest {
         order.setUpdatedAt(LocalDateTime.now());
         orderRepository.save(order);
 
-        orderService.updateOrderStatus(orderId, new UpdateOrderStatusRequest(OrderStatus.CANCELLED));
+        orderService.updateOrderStatus(orderId, UpdateOrderStatusRequest.builder().status(OrderStatus.CANCELLED).build());
 
         assertThat(currentInventoryQty()).isEqualTo(5);
         Order cancelled = orderRepository.findById(orderId).orElseThrow();
@@ -225,7 +225,7 @@ class InventoryReleaseIntegrationTest {
         long orderId = createOrder(2);
         InitResult init = initPayment(orderId);
 
-        orderService.updateOrderStatus(orderId, new UpdateOrderStatusRequest(OrderStatus.CANCELLED));
+        orderService.updateOrderStatus(orderId, UpdateOrderStatusRequest.builder().status(OrderStatus.CANCELLED).build());
 
         assertThat(currentInventoryQty()).isEqualTo(5);
         Payment payment = paymentRepository.findByProviderPaymentId(init.providerPaymentId()).orElseThrow();
@@ -238,10 +238,10 @@ class InventoryReleaseIntegrationTest {
         long orderId = createOrder(2);
         assertThat(currentInventoryQty()).isEqualTo(3);
 
-        orderService.updateOrderStatus(orderId, new UpdateOrderStatusRequest(OrderStatus.CANCELLED));
+        orderService.updateOrderStatus(orderId, UpdateOrderStatusRequest.builder().status(OrderStatus.CANCELLED).build());
         assertThat(currentInventoryQty()).isEqualTo(5);
 
-        orderService.updateOrderStatus(orderId, new UpdateOrderStatusRequest(OrderStatus.CANCELLED));
+        orderService.updateOrderStatus(orderId, UpdateOrderStatusRequest.builder().status(OrderStatus.CANCELLED).build());
         assertThat(currentInventoryQty()).isEqualTo(5);
     }
 
@@ -308,7 +308,7 @@ class InventoryReleaseIntegrationTest {
         orderRepository.save(order);
 
         // Admin cancels a SHIPPED order (e.g. parcel lost in transit after dispatch)
-        orderService.updateOrderStatus(orderId, new UpdateOrderStatusRequest(OrderStatus.CANCELLED));
+        orderService.updateOrderStatus(orderId, UpdateOrderStatusRequest.builder().status(OrderStatus.CANCELLED).build());
 
         // Inventory must NOT be returned — goods already left the warehouse
         assertThat(currentInventoryQty()).isEqualTo(3);
@@ -330,7 +330,7 @@ class InventoryReleaseIntegrationTest {
         orderRepository.save(order);
 
         org.assertj.core.api.Assertions.assertThatThrownBy(() ->
-                orderService.updateOrderStatus(orderId, new UpdateOrderStatusRequest(OrderStatus.CANCELLED))
+                orderService.updateOrderStatus(orderId, UpdateOrderStatusRequest.builder().status(OrderStatus.CANCELLED).build())
         ).isInstanceOf(com.nurba.java.exception.BusinessRuleException.class);
 
         // Inventory unchanged — DELIVERED transition was rejected

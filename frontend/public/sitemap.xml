@@ -16,6 +16,11 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://balgyn.kz/reviews</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://balgyn.kz/about</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
@@ -26,9 +31,24 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://balgyn.kz/faq</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://balgyn.kz/delivery</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://balgyn.kz/returns</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.4</priority>
+  </url>
+  <url>
+    <loc>https://balgyn.kz/track-order</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.4</priority>
   </url>
   <url>
     <loc>https://balgyn.kz/privacy</loc>

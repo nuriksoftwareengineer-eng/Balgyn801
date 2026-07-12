@@ -103,14 +103,14 @@ class OrderStateMachineIntegrationTest {
     }
 
     private void assertTransitionAllowed(long orderId, OrderStatus target) {
-        orderService.updateOrderStatus(orderId, new UpdateOrderStatusRequest(target));
+        orderService.updateOrderStatus(orderId, UpdateOrderStatusRequest.builder().status(target).build());
         Order updated = orderRepository.findById(orderId).orElseThrow();
         assertThat(updated.getStatus()).isEqualTo(target);
     }
 
     private void assertTransitionBlocked(long orderId, OrderStatus target) {
         assertThatThrownBy(() ->
-                orderService.updateOrderStatus(orderId, new UpdateOrderStatusRequest(target))
+                orderService.updateOrderStatus(orderId, UpdateOrderStatusRequest.builder().status(target).build())
         ).isInstanceOf(BusinessRuleException.class);
     }
 

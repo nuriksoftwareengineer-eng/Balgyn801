@@ -1,14 +1,16 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { useAuth } from "@/app/auth-context";
 import { useCurrency } from "@/app/currency-context";
 import { useCart } from "@/app/use-cart";
 import { makeCartLineKey, makeDesignLineKey } from "@/app/cart-context";
-import { getMyOrders } from "@/shared/api/backend-api";
-import type { OrderItemResponse, OrderResponse, OrderStatus } from "@/shared/api/types";
+import { getMyOrders, getMyOrderTrackingInfo } from "@/shared/api/backend-api";
+import type { OrderItemResponse, OrderResponse, OrderStatus, OrderTrackingResponse } from "@/shared/api/types";
 import { Container } from "@/shared/ui/container";
 import { garmentLabel } from "@/shared/types/catalog";
+import { OrderTrackingPanel } from "@/shared/ui/OrderTrackingPanel";
 
 // Status → Tailwind pill classes
 const STATUS_PILL: Record<OrderStatus, string> = {
@@ -88,12 +90,33 @@ export function OrderHistoryPage() {
   const navigate = useNavigate();
   const { addDesignItem, addItem, increment } = useCart();
 
+  const [openTracking, setOpenTracking] = useState<Record<number, boolean>>({});
+  const [trackingData, setTrackingData] = useState<Record<number, OrderTrackingResponse>>({});
+  const [trackingLoading, setTrackingLoading] = useState<Record<number, boolean>>({});
+
   const { data: orders, isLoading, error } = useQuery<OrderResponse[], Error>({
     queryKey: ["my-orders", token],
     queryFn: () => getMyOrders(token!),
     enabled: !!token,
     staleTime: 30_000,
   });
+
+  async function loadTracking(orderId: number) {
+    if (trackingData[orderId]) {
+      setOpenTracking((prev) => ({ ...prev, [orderId]: !prev[orderId] }));
+      return;
+    }
+    setTrackingLoading((prev) => ({ ...prev, [orderId]: true }));
+    try {
+      const result = await getMyOrderTrackingInfo(orderId, token!);
+      setTrackingData((prev) => ({ ...prev, [orderId]: result }));
+      setOpenTracking((prev) => ({ ...prev, [orderId]: true }));
+    } catch {
+      // silently ignore; existing order info still shows
+    } finally {
+      setTrackingLoading((prev) => ({ ...prev, [orderId]: false }));
+    }
+  }
 
   function handlePayOrder(order: OrderResponse) {
     navigate("/cart", {
@@ -159,16 +182,17 @@ export function OrderHistoryPage() {
 
   return (
     <>
-      {/* Hero */}
-      <div className="border-b border-[--color-border] bg-black">
-        <Container className="py-12 md:py-16">
-          <h1 className="text-4xl font-extrabold uppercase tracking-[-0.01em] text-white md:text-5xl">
-            {t("orders.title")}
-          </h1>
-        </Container>
-      </div>
+      {/* Header */}
+      <Container className="pb-4 pt-12 md:pt-16">
+        <p className="mb-2 text-[10px] uppercase tracking-[0.2em] text-[--color-muted]">
+          {t("nav.profile")}
+        </p>
+        <h1 className="display text-[40px] uppercase text-black md:text-[56px]">
+          {t("orders.title")}
+        </h1>
+      </Container>
 
-      <Container className="py-10 md:py-14">
+      <Container className="py-8 md:py-10">
         {error ? (
           <p className="text-[14px] text-[--color-danger]">{error.message}</p>
         ) : isLoading ? (
@@ -187,7 +211,7 @@ export function OrderHistoryPage() {
             </div>
             <Link
               to="/catalog"
-              className="inline-block bg-black px-6 py-3 text-[12px] font-bold uppercase tracking-[0.14em] text-white transition hover:bg-zinc-800"
+              className="inline-block bg-black px-6 py-3 text-[12px] font-semibold uppercase tracking-[0.16em] text-white transition hover:bg-zinc-800"
             >
               {t("orders.toCatalog")}
             </Link>
@@ -200,32 +224,32 @@ export function OrderHistoryPage() {
                 className="border border-[--color-border] bg-white"
               >
                 {/* ── Card header ── */}
-                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[--color-border] px-5 py-4 md:px-6">
-                  <div className="flex items-center gap-3">
-                    <span className="text-[13px] font-bold text-black">
-                      {t("orders.order")} #{order.id}
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[--color-border] px-5 py-5 md:px-7">
+                  <div className="flex items-center gap-4">
+                    <span className="text-[13px] font-medium tabular-nums text-black">
+                      {t("orders.order")} №{order.id}
                     </span>
                     {order.status && (
                       <span
-                        className={`inline-flex items-center gap-1.5 border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] ${STATUS_PILL[order.status]}`}
+                        className={`inline-flex items-center gap-1.5 border px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.12em] ${STATUS_PILL[order.status]}`}
                       >
                         <span className={`h-1.5 w-1.5 rounded-full ${STATUS_DOT[order.status]}`} />
                         {t(`orders.status.${order.status}`)}
                       </span>
                     )}
                   </div>
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-5">
                     <span className="text-[12px] text-[--color-muted]">
                       {fmtDate(order.createdAt, i18n.language)}
                     </span>
-                    <span className="text-[15px] font-bold text-black">
+                    <span className="text-[15px] font-semibold tabular-nums text-black">
                       {format(order.totalPrice)}
                     </span>
                     {order.status === "PENDING_PAYMENT" && (
                       <button
                         type="button"
                         onClick={() => handlePayOrder(order)}
-                        className="inline-flex items-center justify-center bg-black px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-white transition hover:bg-zinc-800"
+                        className="inline-flex items-center justify-center bg-black px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-white transition hover:bg-zinc-800"
                       >
                         {t("orders.payNow")}
                       </button>
@@ -260,69 +284,109 @@ export function OrderHistoryPage() {
                   </ul>
                 )}
 
-                {/* ── CDEK tracking ── */}
-                {order.cdekShipment && order.cdekShipment.cdekOrderUuid && (
-                  <div className="border-t border-[--color-border] px-5 py-3 md:px-6">
-                    <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.1em] text-[--color-muted]">
-                      {t("orders.cdek.title")}
-                    </p>
-                    <div className="flex flex-wrap gap-x-6 gap-y-1">
-                      {order.cdekShipment.trackingNumber && (
-                        <span className="text-[12px] text-black">
-                          <span className="text-[--color-muted]">{t("orders.cdek.tracking")}: </span>
-                          <a
-                            href={`https://www.cdek.ru/ru/tracking/?order_id=${order.cdekShipment.trackingNumber}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="font-mono font-semibold underline underline-offset-2 hover:text-zinc-600"
-                          >
-                            {order.cdekShipment.trackingNumber}
-                          </a>
-                        </span>
-                      )}
-                      {order.cdekShipment.status && (
-                        <span className="text-[12px] text-black">
-                          <span className="text-[--color-muted]">{t("orders.cdek.status")}: </span>
-                          {t(`orders.cdek.status_${order.cdekShipment.status}`, order.cdekShipment.status)}
-                        </span>
-                      )}
-                      {order.cdekShipment.estimatedDeliveryDate && (
-                        <span className="text-[12px] text-black">
-                          <span className="text-[--color-muted]">{t("orders.cdek.eta")}: </span>
-                          {order.cdekShipment.estimatedDeliveryDate}
-                        </span>
-                      )}
-                      {order.cdekShipment.deliveryPointAddress && (
-                        <span className="text-[12px] text-black">
-                          <span className="text-[--color-muted]">{t("orders.cdek.point")}: </span>
-                          {order.cdekShipment.deliveryPointAddress}
-                        </span>
-                      )}
-                    </div>
-                    {(order.cdekShipment.invoiceUrl || order.cdekShipment.barcodeUrl) && (
-                      <div className="mt-2 flex gap-4">
-                        {order.cdekShipment.invoiceUrl && (
-                          <a
-                            href={order.cdekShipment.invoiceUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-[11px] font-semibold uppercase tracking-[0.1em] text-black underline underline-offset-2 hover:text-zinc-600"
-                          >
-                            {t("orders.cdek.invoice")}
-                          </a>
+                {/* ── CDEK tracking summary ── */}
+                {order.cdekShipment && order.cdekShipment.cdekOrderUuid && (() => {
+                  const tn = order.cdekShipment!.trackingNumber || order.trackingNumber;
+                  return (
+                    <div className="border-t border-[--color-border] px-5 py-3 md:px-6">
+                      <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.1em] text-[--color-muted]">
+                        {t("orders.cdek.title")}
+                      </p>
+                      <div className="flex flex-wrap items-center gap-x-6 gap-y-1">
+                        {tn && (
+                          <span className="text-[12px] text-black">
+                            <span className="text-[--color-muted]">{t("tracking.trackNumber")}: </span>
+                            <span className="font-mono font-semibold">{tn}</span>
+                          </span>
                         )}
-                        {order.cdekShipment.barcodeUrl && (
-                          <a
-                            href={order.cdekShipment.barcodeUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-[11px] font-semibold uppercase tracking-[0.1em] text-black underline underline-offset-2 hover:text-zinc-600"
-                          >
-                            {t("orders.cdek.barcode")}
-                          </a>
+                        {order.cdekShipment!.status && (
+                          <span className="text-[12px] text-black">
+                            <span className="text-[--color-muted]">{t("orders.cdek.status")}: </span>
+                            {t(`orders.cdek.status_${order.cdekShipment!.status}`, order.cdekShipment!.status)}
+                          </span>
+                        )}
+                        {order.cdekShipment!.estimatedDeliveryDate && (
+                          <span className="text-[12px] text-black">
+                            <span className="text-[--color-muted]">{t("orders.cdek.eta")}: </span>
+                            {order.cdekShipment!.estimatedDeliveryDate}
+                          </span>
+                        )}
+                        {order.cdekShipment!.deliveryPointAddress && (
+                          <span className="text-[12px] text-black">
+                            <span className="text-[--color-muted]">{t("orders.cdek.point")}: </span>
+                            {order.cdekShipment!.deliveryPointAddress}
+                          </span>
                         )}
                       </div>
-                    )}
+                      {tn && (
+                        <div className="mt-2">
+                          <a
+                            href={`https://www.cdek.ru/ru/tracking/?order_id=${encodeURIComponent(tn)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 border border-black bg-black px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-white transition-colors hover:bg-zinc-800"
+                          >
+                            {t("tracking.trackBtn")} →
+                          </a>
+                        </div>
+                      )}
+                      {(order.cdekShipment!.invoiceUrl || order.cdekShipment!.barcodeUrl) && (
+                        <div className="mt-2 flex gap-4">
+                          {order.cdekShipment!.invoiceUrl && (
+                            <a
+                              href={order.cdekShipment!.invoiceUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[11px] font-semibold uppercase tracking-[0.1em] text-black underline underline-offset-2 hover:text-zinc-600"
+                            >
+                              {t("orders.cdek.invoice")}
+                            </a>
+                          )}
+                          {order.cdekShipment!.barcodeUrl && (
+                            <a
+                              href={order.cdekShipment!.barcodeUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[11px] font-semibold uppercase tracking-[0.1em] text-black underline underline-offset-2 hover:text-zinc-600"
+                            >
+                              {t("orders.cdek.barcode")}
+                            </a>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+
+                {/* ── KazPost / POSTAL tracking summary ── */}
+                {order.deliveryType === "POSTAL" && order.trackingNumber && (
+                  <div className="border-t border-[--color-border] px-5 py-3 md:px-6">
+                    <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.1em] text-[--color-muted]">
+                      {t("tracking.carrierKazpost")}
+                    </p>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <span className="font-mono text-[13px] font-semibold text-black">
+                        {order.trackingNumber}
+                      </span>
+                      <a
+                        href="https://track.kazpost.kz/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 border border-black bg-black px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-white transition-colors hover:bg-zinc-800"
+                      >
+                        {t("tracking.trackBtn")} →
+                      </a>
+                    </div>
+                  </div>
+                )}
+
+                {/* ── Status history (lazy-loaded) ── */}
+                {openTracking[order.id] && trackingData[order.id] && (
+                  <div className="border-t border-[--color-border] px-5 py-4 md:px-6">
+                    <OrderTrackingPanel
+                      tracking={trackingData[order.id]}
+                      showDocs={true}
+                    />
                   </div>
                 )}
 
@@ -351,15 +415,29 @@ export function OrderHistoryPage() {
                       </span>
                     )}
                   </div>
-                  {order.items && order.items.length > 0 && (
+                  <div className="flex items-center gap-4">
                     <button
                       type="button"
-                      onClick={() => handleRepeatOrder(order)}
-                      className="text-[11px] font-bold uppercase tracking-[0.1em] text-black underline-offset-2 hover:underline"
+                      onClick={() => loadTracking(order.id)}
+                      disabled={trackingLoading[order.id]}
+                      className="text-[11px] font-bold uppercase tracking-[0.1em] text-black underline-offset-2 hover:underline disabled:opacity-40"
                     >
-                      {t("orders.repeatOrder")}
+                      {trackingLoading[order.id]
+                        ? "..."
+                        : openTracking[order.id]
+                        ? t("orders.hideHistory")
+                        : t("orders.showHistory")}
                     </button>
-                  )}
+                    {order.items && order.items.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => handleRepeatOrder(order)}
+                        className="text-[11px] font-bold uppercase tracking-[0.1em] text-black underline-offset-2 hover:underline"
+                      >
+                        {t("orders.repeatOrder")}
+                      </button>
+                    )}
+                  </div>
                 </div>
               </li>
             ))}

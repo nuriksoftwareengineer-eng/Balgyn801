@@ -1,13 +1,18 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import heroVideo from "@/assets/figma/homepage.mp4";
+import heroVideo from "@/assets/figma/homepage.MOV";
+
+const EASE = [0.16, 1, 0.3, 1] as const;
 
 export function Hero() {
   const { t } = useTranslation();
+  const [videoReady, setVideoReady] = useState(false);
 
   return (
-    <section className="relative min-h-[88vh] w-full bg-black text-white overflow-hidden flex flex-col justify-center items-center">
+    <section className="relative flex min-h-[100svh] w-full flex-col overflow-hidden bg-black text-white">
+      {/* Video */}
       <div className="absolute inset-0 h-full w-full overflow-hidden pointer-events-none">
         <video
           autoPlay
@@ -16,66 +21,71 @@ export function Hero() {
           playsInline
           preload="auto"
           aria-hidden="true"
-          className="absolute left-0 top-0 h-full w-full object-cover"
+          onCanPlay={() => setVideoReady(true)}
+          className={`absolute left-0 top-0 h-full w-full object-cover transition-opacity duration-[1200ms] ${videoReady ? "opacity-100" : "opacity-0"}`}
         >
           <source src={heroVideo} type="video/mp4" />
+          <source src={heroVideo} type="video/quicktime" />
         </video>
       </div>
-      <div className="absolute inset-0 bg-black mix-blend-multiply opacity-[0.68]" />
+      {/* Gradient scrim — heavier at the bottom where the type sits */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-black/40" />
 
-      <div className="relative z-10 flex w-full flex-col items-center justify-center px-4 md:px-8">
+      {/* Top eyebrow */}
+      <div className="relative z-10 px-4 pt-28 md:px-8 md:pt-32">
         <motion.p
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
-          className="mb-10 text-center text-[11px] font-semibold uppercase tracking-[0.24em] text-white"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.9, ease: EASE }}
+          className="text-[11px] font-medium uppercase tracking-[0.28em] text-white/70"
         >
           {t("home.hero.badge")}
         </motion.p>
+      </div>
 
-        <motion.h1
-          initial={{ y: 40, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 1, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-          className="text-center text-[72px] font-extrabold uppercase leading-[0.9] tracking-[-0.04em] sm:text-[120px] md:text-[180px]"
-        >
-          BALGYN
-        </motion.h1>
-
-        <motion.p
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.8, delay: 0.4, ease: "easeOut" }}
-          className="mb-10 mt-6 max-w-[600px] text-center text-[16px] leading-[26px] text-white/85 md:text-[20px]"
-        >
-          {t("home.hero.tagline")}
-        </motion.p>
-
-        <motion.div
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.8, delay: 0.6, ease: "easeOut" }}
-        >
-          <Link
-            to="/catalog"
-            className="group inline-flex h-[64px] w-full items-center justify-center gap-4 bg-white px-10 text-[16px] font-semibold uppercase tracking-[0.08em] text-black transition hover:bg-[#f0f0f0] sm:w-[354px] md:h-[72px] md:text-[20px]"
-          >
-            {t("home.hero.cta")}
-            <svg
-              className="h-[18px] w-[18px] transition-transform duration-300 group-hover:translate-x-1 group-hover:-translate-y-1"
-              viewBox="0 0 21 21"
-              fill="none"
+      {/* Bottom-anchored composition */}
+      <div className="relative z-10 mt-auto px-4 pb-12 md:px-8 md:pb-16">
+        <div className="flex flex-col gap-8 md:flex-row md:items-end md:justify-between">
+          <div className="max-w-[900px]">
+            <motion.h1
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 1.1, delay: 0.1, ease: EASE }}
+              className="text-[clamp(64px,18vw,220px)] font-bold uppercase leading-[0.82] tracking-[-0.04em]"
             >
-              <path
-                d="M1 20H20V1M20 20L1 1"
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-              />
-            </svg>
-          </Link>
-        </motion.div>
+              BALGYN
+            </motion.h1>
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.9, delay: 0.35, ease: EASE }}
+              className="mt-5 max-w-[440px] text-[15px] leading-relaxed text-white/75 md:text-[17px]"
+            >
+              {t("home.hero.tagline")}
+            </motion.p>
+          </div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.9, delay: 0.5, ease: EASE }}
+            className="shrink-0"
+          >
+            <Link
+              to="/catalog"
+              className="group inline-flex h-14 items-center justify-center gap-3 border border-white/80 bg-white px-9 text-[12px] font-semibold uppercase tracking-[0.16em] text-black transition-colors duration-500 hover:bg-transparent hover:text-white md:h-[60px]"
+            >
+              {t("home.hero.cta")}
+              <svg
+                className="h-3.5 w-3.5 transition-transform duration-500 group-hover:translate-x-1 group-hover:-translate-y-1"
+                viewBox="0 0 21 21"
+                fill="none"
+              >
+                <path d="M1 20H20V1M20 20L1 1" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+              </svg>
+            </Link>
+          </motion.div>
+        </div>
       </div>
     </section>
   );

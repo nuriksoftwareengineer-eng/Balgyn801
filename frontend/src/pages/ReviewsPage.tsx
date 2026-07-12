@@ -66,20 +66,20 @@ export function ReviewsPage() {
   return (
     <div className="py-12 md:py-16">
       <Container>
-        <nav className="mb-6 flex items-center gap-2 text-[0.6rem] uppercase tracking-[0.14em] text-[--color-muted]">
+        <nav className="mb-6 flex items-center gap-2 text-[10px] uppercase tracking-[0.16em] text-[--color-muted]">
           <Link to="/" className="transition-colors hover:text-black">
             {t("aboutPage.breadcrumbHome")}
           </Link>
-          <span aria-hidden>›</span>
+          <span aria-hidden>/</span>
           <span className="text-black">{t("reviews.breadcrumb", "Отзывы")}</span>
         </nav>
 
-        <div className="mb-8 flex flex-wrap items-end justify-between gap-6">
+        <div className="mb-10 flex flex-wrap items-end justify-between gap-6">
           <div>
-            <h1 className="text-3xl font-semibold uppercase tracking-[0.04em] text-black md:text-4xl">
+            <h1 className="display text-[40px] uppercase text-black md:text-[60px]">
               {t("reviews.title", "Отзывы")}
             </h1>
-            <p className="mt-2 text-sm text-[--color-muted]">
+            <p className="mt-4 text-[15px] text-[--color-muted]">
               {t("reviews.subtitle", "Реальные отзывы наших покупателей")}
             </p>
           </div>

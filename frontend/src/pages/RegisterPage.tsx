@@ -37,7 +37,7 @@ export function RegisterPage() {
 
   return (
     <>
-      <h1 className="mb-2 text-[32px] font-extrabold uppercase tracking-[-0.02em] text-black">
+      <h1 className="mb-2 text-[32px] font-bold uppercase tracking-[-0.02em] text-black">
         {t("auth.registerHeading")}
       </h1>
       <p className="mb-8 text-[13px] text-[--color-muted]">
@@ -95,7 +95,7 @@ export function RegisterPage() {
         <button
           type="submit"
           disabled={submitting}
-          className="mt-2 w-full bg-black py-4 text-[13px] font-bold uppercase tracking-[0.14em] text-white transition hover:bg-zinc-800 disabled:opacity-50"
+          className="mt-2 w-full bg-black py-4 text-[12px] font-semibold uppercase tracking-[0.16em] text-white transition hover:bg-zinc-800 disabled:opacity-50"
         >
           {submitting ? t("auth.creatingAccount") : t("auth.createAccount")}
         </button>

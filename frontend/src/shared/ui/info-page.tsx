@@ -24,7 +24,7 @@ export function InfoPage({
           <Link to="/" className="transition-colors hover:text-black">
             {t("nav.home")}
           </Link>
-          <span aria-hidden>›</span>
+          <span aria-hidden>/</span>
           <span className="text-black">{title}</span>
         </nav>
 
@@ -53,7 +53,7 @@ export function InfoSection({
 }) {
   return (
     <section>
-      <h2 className="mb-3 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-black">
+      <h2 className="mb-3 text-xs font-medium tracking-wide text-[--color-muted]">
         {heading}
       </h2>
       <div className="flex flex-col gap-3 text-sm leading-relaxed text-zinc-700">

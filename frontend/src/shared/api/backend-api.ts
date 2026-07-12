@@ -23,6 +23,7 @@ import type {
   LoginRequest,
   MediaUploadResponse,
   OrderResponse,
+  OrderTrackingResponse,
   PaymentInitRequest,
   PaymentResponse,
   PaymentWebhookRequest,
@@ -372,6 +373,23 @@ export async function calculateCdekTariffByOrder(
 /** История заказов текущего пользователя (с JWT). */
 export async function getMyOrders(token: string): Promise<OrderResponse[]> {
   return apiFetch<OrderResponse[]>("/me/orders", { token });
+}
+
+/** Полная информация об отслеживании одного заказа (аутентифицированный пользователь). */
+export async function getMyOrderTrackingInfo(
+  orderId: number,
+  token: string,
+): Promise<OrderTrackingResponse> {
+  return apiFetch<OrderTrackingResponse>(`/me/orders/${orderId}/tracking-info`, { token });
+}
+
+/** Публичное отслеживание по номеру заказа и телефону (гость). */
+export async function getOrderTrackingInfo(
+  orderId: number,
+  phone: string,
+): Promise<OrderTrackingResponse> {
+  const params = new URLSearchParams({ phone });
+  return apiFetch<OrderTrackingResponse>(`/orders/${orderId}/tracking-info?${params}`);
 }
 
 /** Инициализация оплаты по заказу (публично). */

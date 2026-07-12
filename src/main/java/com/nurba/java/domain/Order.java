@@ -95,6 +95,10 @@ public class Order {
     @Column(name = "discount_amount", precision = 10, scale = 2)
     private BigDecimal discountAmount;
 
+    /** Tracking number assigned by the carrier (CDEK, KazPost, etc.). Set by admin on shipment. */
+    @Column(name = "tracking_number", length = 100)
+    private String trackingNumber;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

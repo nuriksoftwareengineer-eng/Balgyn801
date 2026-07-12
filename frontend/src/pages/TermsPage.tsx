@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { CONTACT_EMAIL } from "@/shared/constants/store-content";
 import { InfoPage, InfoSection } from "@/shared/ui/info-page";
+import { MerchantDetails } from "@/shared/ui/MerchantDetails";
 
 const linkClass =
   "font-medium text-black underline underline-offset-2 transition-colors hover:text-zinc-600";
@@ -66,6 +67,10 @@ export function TermsPage() {
           </Link>
           {t("termsPage.s7.after")}
         </p>
+      </InfoSection>
+
+      <InfoSection heading={t("merchant.title")}>
+        <MerchantDetails />
       </InfoSection>
     </InfoPage>
   );

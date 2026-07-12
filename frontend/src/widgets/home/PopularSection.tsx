@@ -12,9 +12,9 @@ function HeartBtn({ designId }: { designId: number }) {
     <button
       type="button"
       onClick={(e) => { e.preventDefault(); e.stopPropagation(); void toggle(designId); }}
-      className={`absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 shadow transition hover:scale-110 ${active ? "text-red-500" : "text-zinc-400 hover:text-red-400"}`}
+      className={`absolute right-3 top-3 flex h-8 w-8 items-center justify-center opacity-0 transition-all duration-300 group-hover:opacity-100 ${active ? "text-black opacity-100" : "text-black/50 hover:text-black"}`}
     >
-      <svg viewBox="0 0 24 24" fill={active ? "currentColor" : "none"} stroke="currentColor" strokeWidth={2} className="h-4 w-4">
+      <svg viewBox="0 0 24 24" fill={active ? "currentColor" : "none"} stroke="currentColor" strokeWidth={1.6} className="h-[18px] w-[18px]">
         <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
       </svg>
     </button>
@@ -25,21 +25,21 @@ function DesignCard({ d }: { d: DesignResponse }) {
   const href = `/catalog/${d.groupSlug}/${d.collectionSlug}/${d.slug}`;
   return (
     <Link to={href} className="group block">
-      <div className="relative aspect-square w-full overflow-hidden bg-[--color-surface]">
+      <div className="relative aspect-[4/5] w-full overflow-hidden bg-[--color-surface]">
         {d.mainImageUrl ? (
-          <img src={d.mainImageUrl} alt={d.name} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" />
+          <img src={d.mainImageUrl} alt={d.name} className="gallery-img h-full w-full object-cover" loading="lazy" />
         ) : (
-          <div className="flex h-full w-full items-center justify-center bg-zinc-900">
-            <span className="text-4xl font-bold text-white/15 uppercase">{d.name.charAt(0)}</span>
+          <div className="flex h-full w-full items-center justify-center">
+            <span className="text-5xl font-semibold uppercase text-black/[0.08]">{d.name.charAt(0)}</span>
           </div>
         )}
         <HeartBtn designId={d.id} />
       </div>
-      <div className="mt-2 px-0.5">
-        <p className="truncate text-[0.8rem] font-semibold uppercase tracking-[0.04em] text-black group-hover:text-zinc-600 transition-colors">
+      <div className="mt-3.5">
+        <p className="truncate text-[13px] font-medium text-black">
           {d.name}
         </p>
-        <p className="text-[0.65rem] text-zinc-500">{d.collectionName}</p>
+        <p className="mt-0.5 text-[11px] uppercase tracking-[0.16em] text-[--color-muted]">{d.collectionName}</p>
       </div>
     </Link>
   );
@@ -52,7 +52,7 @@ export function PopularSection() {
   if (!data || data.length === 0) return null;
 
   return (
-    <section className="py-14 md:py-20 bg-[--color-surface]">
+    <section className="py-14 md:py-20">
       <div className="mx-auto max-w-[1440px] px-4 md:px-6">
         <div className="mb-8 flex items-center justify-between">
           <h2 className="text-xl font-semibold uppercase tracking-[0.12em]">{t("home.popular", "Популярное")}</h2>

@@ -36,6 +36,15 @@ export function SiteNavbar() {
 
   useEffect(() => setMobileOpen(false), [location.pathname]);
 
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMobileOpen(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [mobileOpen]);
+
   const navLinks = [
     { labelKey: "nav.catalog", to: "/catalog" },
     { labelKey: "nav.customDesign", to: "/custom-design" },
@@ -60,15 +69,15 @@ export function SiteNavbar() {
         <div className="mx-auto flex h-[72px] max-w-[1440px] items-center justify-between px-4 md:h-[96px] md:px-8">
           <Link
             to="/"
-            className="text-[24px] font-extrabold uppercase tracking-[-0.02em] md:text-[30px]"
+            className="text-[22px] font-bold uppercase tracking-[0.02em] md:text-[26px]"
           >
             BALGYN
           </Link>
 
           {/* Desktop nav */}
-          <nav className="hidden items-center gap-[40px] text-[15px] font-semibold uppercase tracking-[0.1em] xl:flex">
+          <nav className="hidden items-center gap-[36px] text-[12px] font-medium uppercase tracking-[0.16em] xl:flex">
             {navLinks.map((l) => (
-              <Link key={l.to} to={l.to} className={`transition-colors ${mutedCls}`}>
+              <Link key={l.to} to={l.to} className={`link-underline transition-colors ${mutedCls}`}>
                 {t(l.labelKey)}
               </Link>
             ))}
@@ -107,7 +116,7 @@ export function SiteNavbar() {
               aria-label={user ? t("nav.profile") : t("nav.login")}
               className={`hidden transition-colors md:flex ${mutedCls}`}
             >
-              <User className="h-[26px] w-[26px]" />
+              <User className="h-[21px] w-[21px]" strokeWidth={1.5} />
             </Link>
 
             {/* Wishlist */}
@@ -116,9 +125,9 @@ export function SiteNavbar() {
               aria-label={t("nav.wishlist", "Избранное")}
               className={`relative hidden transition-colors md:flex ${mutedCls}`}
             >
-              <Heart className="h-[26px] w-[26px]" />
+              <Heart className="h-[21px] w-[21px]" strokeWidth={1.5} />
               {wishlistCount > 0 && (
-                <span className="absolute -right-2 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white">
+                <span className="absolute -right-2 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-black text-[9px] font-semibold text-white">
                   {wishlistCount > 9 ? "9+" : wishlistCount}
                 </span>
               )}
@@ -129,10 +138,10 @@ export function SiteNavbar() {
               type="button"
               onClick={openDrawer}
               aria-label={t("header.cartItems", { count: totalQty })}
-              className={`flex items-center gap-2 transition-colors ${mutedCls}`}
+              className={`flex items-center gap-1.5 transition-colors ${mutedCls}`}
             >
-              <ShoppingBag className="h-[26px] w-[26px]" />
-              <span className="text-[16px] font-semibold leading-none tracking-[0.08em] md:text-[18px]">
+              <ShoppingBag className="h-[21px] w-[21px]" strokeWidth={1.5} />
+              <span className="text-[13px] font-medium leading-none tracking-[0.06em] tabular-nums">
                 ({totalQty})
               </span>
             </button>
@@ -144,7 +153,7 @@ export function SiteNavbar() {
               className={`-mr-2 p-2 xl:hidden transition-colors ${mutedCls}`}
               aria-label={t("header.openMenu")}
             >
-              <Menu className="h-7 w-7" />
+              <Menu className="h-6 w-6" strokeWidth={1.5} />
             </button>
           </div>
         </div>
@@ -157,7 +166,7 @@ export function SiteNavbar() {
             <div />
             <Link
               to="/"
-              className="text-center text-[18px] font-extrabold uppercase tracking-[-0.02em]"
+              className="text-center text-[18px] font-bold uppercase tracking-[0.02em]"
             >
               BALGYN
             </Link>
@@ -167,7 +176,7 @@ export function SiteNavbar() {
               className="-mr-2 justify-self-end p-2"
               aria-label={t("header.closeMenu")}
             >
-              <X className="h-6 w-6" />
+              <X className="h-6 w-6" strokeWidth={1.5} />
             </button>
           </div>
 
@@ -176,17 +185,17 @@ export function SiteNavbar() {
               <Link
                 key={l.to}
                 to={l.to}
-                className="text-[28px] font-bold uppercase tracking-[-0.02em]"
+                className="text-[30px] font-semibold uppercase tracking-[-0.01em] transition-opacity hover:opacity-60"
               >
                 {t(l.labelKey)}
               </Link>
             ))}
-            <Link to="/wishlist" className="text-[28px] font-bold uppercase tracking-[-0.02em]">
+            <Link to="/wishlist" className="text-[30px] font-semibold uppercase tracking-[-0.01em] transition-opacity hover:opacity-60">
               {t("nav.wishlist", "Избранное")}
             </Link>
             <Link
               to={user ? "/profile" : "/login"}
-              className="text-[28px] font-bold uppercase tracking-[-0.02em]"
+              className="text-[30px] font-semibold uppercase tracking-[-0.01em] transition-opacity hover:opacity-60"
             >
               {user ? t("nav.profile") : t("nav.login")}
             </Link>

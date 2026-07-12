@@ -34,7 +34,7 @@ export class ErrorBoundary extends Component<Props, State> {
             <button
               type="button"
               onClick={() => window.location.reload()}
-              className="mt-2 bg-black px-5 py-2 text-[12px] font-bold uppercase tracking-[0.12em] text-white hover:bg-zinc-800"
+              className="mt-2 bg-black px-5 py-2 text-[12px] font-semibold uppercase tracking-[0.16em] text-white hover:bg-zinc-800"
             >
               Обновить страницу
             </button>

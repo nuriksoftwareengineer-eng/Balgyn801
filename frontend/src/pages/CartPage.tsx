@@ -536,7 +536,7 @@ function OrderSuccess({
           type="button"
           disabled={paymentBusy}
           onClick={onPay}
-          className="bg-black px-6 py-2.5 text-[13px] font-bold uppercase tracking-[0.14em] text-white transition hover:bg-zinc-800 disabled:opacity-50"
+          className="bg-black px-6 py-2.5 text-[12px] font-semibold uppercase tracking-[0.16em] text-white transition hover:bg-zinc-800 disabled:opacity-50"
         >
           {paymentBusy ? t("payment.payingBtn") : t("payment.payBtn")}
         </button>
@@ -556,7 +556,7 @@ function OrderSuccess({
         <button
           type="button"
           onClick={onContinue}
-          className="border border-[--color-border] px-6 py-2.5 text-[13px] font-bold uppercase tracking-[0.14em] text-black transition hover:border-black"
+          className="border border-[--color-border] px-6 py-2.5 text-[12px] font-semibold uppercase tracking-[0.16em] text-black transition hover:border-black"
         >
           {t("cart.order.close")}
         </button>
@@ -642,7 +642,7 @@ function RecoveryBanner({
           type="button"
           disabled={busy}
           onClick={onPay}
-          className="bg-black px-6 py-2.5 text-[13px] font-bold uppercase tracking-[0.14em] text-white transition hover:bg-zinc-800 disabled:opacity-50"
+          className="bg-black px-6 py-2.5 text-[12px] font-semibold uppercase tracking-[0.16em] text-white transition hover:bg-zinc-800 disabled:opacity-50"
         >
           {busy ? t("payment.payingBtn") : t("payment.payBtn")}
         </button>
@@ -1968,16 +1968,11 @@ export function CartPage() {
 
   if (phase === "cart") {
     return (
-      <div className="py-14">
+      <div className="py-12 md:py-16">
         <Container>
-          <motion.h1
-            className="mb-6 text-4xl font-extrabold uppercase tracking-[-0.02em] text-black md:text-5xl"
-            initial={{ opacity: 0, y: reduceMotion ? 0 : 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: reduceMotion ? 0 : 0.3 }}
-          >
+          <h1 className="display mb-8 text-[40px] uppercase text-black md:text-[56px]">
             {t("cart.title")}
-          </motion.h1>
+          </h1>
 
           {justAddedTitle && lines.length > 0 ? (
             <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border border-[--color-border] bg-[--color-surface] px-4 py-3 text-sm">
@@ -1995,14 +1990,17 @@ export function CartPage() {
           ) : null}
 
           {lines.length === 0 ? (
-            <div className="max-w-sm border border-[--color-border] bg-white px-6 py-10 text-center">
-              <p className="m-0 text-sm text-[--color-muted]">
+            <div className="mx-auto flex max-w-md flex-col items-center gap-6 py-20 text-center">
+              <div className="flex h-16 w-16 items-center justify-center bg-[--color-surface] text-3xl select-none">
+                🧵
+              </div>
+              <p className="m-0 text-[15px] leading-relaxed text-[--color-muted]">
                 {t("cart.emptyAction")}
               </p>
               <button
                 type="button"
                 onClick={() => navigate("/catalog")}
-                className="mt-6 bg-black px-6 py-3 text-[12px] font-bold uppercase tracking-[0.14em] text-white transition hover:bg-zinc-800"
+                className="inline-flex items-center justify-center bg-black px-7 py-3.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-white transition hover:bg-zinc-800"
               >
                 {t("cart.toCatalog")}
               </button>
@@ -2102,7 +2100,7 @@ export function CartPage() {
                       onKeyDown={e => { if (e.key === "Enter") void handleApplyCoupon(); }}
                     />
                     <button type="button" onClick={() => void handleApplyCoupon()} disabled={couponBusy || !couponInput.trim()}
-                      className="shrink-0 bg-black px-4 py-2 text-[11px] font-bold uppercase tracking-[0.12em] text-white transition hover:bg-zinc-800 disabled:opacity-40">
+                      className="shrink-0 bg-black px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-white transition hover:bg-zinc-800 disabled:opacity-40">
                       {couponBusy ? "..." : t("cart.coupon.apply", "Применить")}
                     </button>
                   </div>
@@ -2145,7 +2143,7 @@ export function CartPage() {
                       setPhase("checkout");
                       setStep(1);
                     }}
-                    className="bg-black px-8 py-4 text-[13px] font-bold uppercase tracking-[0.14em] text-white transition hover:bg-zinc-800"
+                    className="bg-black px-8 py-4 text-[12px] font-semibold uppercase tracking-[0.16em] text-white transition hover:bg-zinc-800"
                   >
                     {t("cart.checkout")}
                   </button>
@@ -2168,13 +2166,13 @@ export function CartPage() {
   // ── Render: Checkout ──────────────────────────────────────────────────────────
 
   return (
-    <div className="py-10">
+    <div className="py-10 md:py-16">
       <Container>
-        <div className="mb-2">
-          <h1 className="text-3xl font-extrabold uppercase tracking-[-0.02em] text-black md:text-4xl">
+        <div className="mb-3">
+          <h1 className="display text-[32px] uppercase text-black md:text-[44px]">
             {t("cart.checkoutFlow.title")}
           </h1>
-          <p className="mt-1 text-sm text-[--color-muted]">
+          <p className="mt-2 text-[13px] text-[--color-muted]">
             {t("cart.goods", { count: totalQty })}
             {" "}· {formatMoney(subtotal)} ₸
           </p>
@@ -2227,7 +2225,7 @@ export function CartPage() {
                     <button
                       type="button"
                       onClick={handleNext}
-                      className="bg-black px-8 py-4 text-[13px] font-bold uppercase tracking-[0.14em] text-white transition hover:bg-zinc-800"
+                      className="bg-black px-8 py-4 text-[12px] font-semibold uppercase tracking-[0.16em] text-white transition hover:bg-zinc-800"
                     >
                       {t("cart.checkoutFlow.continue")}
                     </button>
@@ -2236,7 +2234,7 @@ export function CartPage() {
                       type="button"
                       disabled={orderMutation.isPending}
                       onClick={handleSubmitOrder}
-                      className="bg-black px-8 py-4 text-[13px] font-bold uppercase tracking-[0.14em] text-white transition hover:bg-zinc-800 disabled:opacity-50"
+                      className="bg-black px-8 py-4 text-[12px] font-semibold uppercase tracking-[0.16em] text-white transition hover:bg-zinc-800 disabled:opacity-50"
                     >
                       {orderMutation.isPending
                         ? t("cart.checkoutFlow.submitting")

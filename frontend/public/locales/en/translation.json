@@ -156,7 +156,9 @@
       "openLabel": "Open label",
       "downloadPdf": "Download PDF",
       "printLabel": "Print"
-    }
+    },
+    "showHistory": "History",
+    "hideHistory": "Hide"
   },
   "recovery": {
     "title": "Pending order",
@@ -365,9 +367,18 @@
   "home": {
     "announcement": "Free shipping from a minimum order amount · New drops every week",
     "trust": {
-      "delivery": { "title": "Delivery", "desc": "Worldwide" },
-      "embroidery": { "title": "Embroidery", "desc": "Almaty, KZ" },
-      "quality": { "title": "Quality", "desc": "100% Cotton" }
+      "delivery": {
+        "title": "Delivery",
+        "desc": "Worldwide"
+      },
+      "embroidery": {
+        "title": "Embroidery",
+        "desc": "Almaty, KZ"
+      },
+      "quality": {
+        "title": "Quality",
+        "desc": "Premium fabrics"
+      }
     },
     "hero": {
       "badge": "Shipping worldwide!",
@@ -375,10 +386,22 @@
       "cta": "View collection"
     },
     "values": {
-      "embroidery": { "title": "Hand embroidery", "desc": "Each piece is crafted by hand using our signature technique." },
-      "unique": { "title": "Unique designs", "desc": "Original graphic imagery unlike anything else." },
-      "quality": { "title": "Material quality", "desc": "We select only the finest fabrics: dense cotton, Premium fleece." },
-      "limited": { "title": "Limited edition", "desc": "Small batches guarantee the exclusivity of every piece." }
+      "embroidery": {
+        "title": "Hand embroidery",
+        "desc": "Each piece is crafted by hand using our signature technique."
+      },
+      "unique": {
+        "title": "Unique designs",
+        "desc": "Original graphic imagery unlike anything else."
+      },
+      "quality": {
+        "title": "Material quality",
+        "desc": "We select only the finest fabrics: dense cotton, Premium fleece."
+      },
+      "limited": {
+        "title": "Limited edition",
+        "desc": "Small batches guarantee the exclusivity of every piece."
+      }
     },
     "bestSellers": {
       "title": "Best Sellers",
@@ -400,13 +423,33 @@
     "about": {
       "title": "About the brand",
       "desc": "Balgyn is an embroidery brand from Almaty, created for those who value individuality and the quality of hand embroidery.",
-      "stat1": { "value": "Edition", "label": "Small batches" },
-      "stat2": { "value": "Material", "label": "100% cotton" },
-      "stat3": { "value": "Production", "label": "Almaty" }
+      "stat1": {
+        "value": "Edition",
+        "label": "Small batches"
+      },
+      "stat2": {
+        "value": "Material",
+        "label": "Selected fabrics"
+      },
+      "stat3": {
+        "value": "Production",
+        "label": "Almaty"
+      }
     },
     "categories": {
       "viewAll": "View →"
     }
+  },
+  "merchant": {
+    "title": "Merchant Details",
+    "ie": "Individual Entrepreneur",
+    "ieShort": "IE",
+    "owner": "Owner",
+    "iin": "IIN",
+    "iinShort": "IIN",
+    "legalAddress": "Legal address",
+    "email": "Email",
+    "phone": "Phone"
   },
   "footer": {
     "marquee": {
@@ -417,6 +460,7 @@
       "title": "Shop",
       "catalog": "Catalog",
       "customDesign": "Custom Design",
+      "reviews": "Reviews",
       "about": "About"
     },
     "help": {
@@ -478,7 +522,23 @@
     "errorRequired": "Please enter order number and phone",
     "submitBtn": "Check status",
     "resultTitle": "Order #{{number}}",
-    "resultDesc": "Online tracking is coming soon. For now you can check your status in Telegram — just share your order number and phone."
+    "cdekApp": {
+      "cdekNote": "If your order is shipped via CDEK:",
+      "title": "Easiest way — the CDEK app",
+      "desc": "After placing your order, your shipment will appear automatically in the app if you sign in with the same phone number you provided at checkout.",
+      "features": [
+        "Current status and route",
+        "Push notifications on status changes",
+        "QR codes for pickup point",
+        "Delivery history"
+      ],
+      "appStore": "Download on App Store",
+      "googlePlay": "Get it on Google Play"
+    },
+    "searching": "Loading...",
+    "notFound": "Order not found. Please check your order number and phone.",
+    "errorGeneric": "Could not load data. Please try again later.",
+    "telegramHelp": "Need help tracking your order? Contact us via"
   },
   "catalog": {
     "emptyTitle": "Designs coming soon",
@@ -605,10 +665,22 @@
     "lead": "Available delivery methods depend on the region and are shown when placing an order. Exact cost is calculated automatically at the \"Delivery\" step.",
     "kazakhstan": {
       "heading": "Kazakhstan",
-      "pickup": { "title": "Pickup", "desc": "Free. Pickup in Almaty by arrangement — we'll agree on place and time after order placement." },
-      "courier": { "title": "Courier / Taxi", "desc": "Delivery within Almaty. Fixed cost is shown when placing the order." },
-      "kazpost": { "title": "Kazpost", "desc": "Delivery throughout Kazakhstan. Cost depends on parcel weight." },
-      "cdek": { "title": "CDEK", "desc": "To a pickup point in your city. Cost and timing are calculated per CDEK rates at checkout." }
+      "pickup": {
+        "title": "Pickup",
+        "desc": "Free. Pickup in Almaty by arrangement — we'll agree on place and time after order placement."
+      },
+      "courier": {
+        "title": "Courier / Taxi",
+        "desc": "Delivery within Almaty. Fixed cost is shown when placing the order."
+      },
+      "kazpost": {
+        "title": "Kazpost",
+        "desc": "Delivery throughout Kazakhstan. Cost depends on parcel weight."
+      },
+      "cdek": {
+        "title": "CDEK",
+        "desc": "To a pickup point in your city. Cost and timing are calculated per CDEK rates at checkout."
+      }
     },
     "russia": {
       "heading": "Russia & CIS",
@@ -683,21 +755,23 @@
     },
     "values": {
       "heading": "Our Values",
-      "v1": { "title": "Hand Embroidery", "desc": "Every design is executed on professional embroidery equipment using premium-grade threads." },
-      "v2": { "title": "Limited Runs", "desc": "Small batches guarantee exclusivity — your piece won't be on everyone else." },
-      "v3": { "title": "Made in Almaty", "desc": "Production in Kazakhstan. We create local jobs and take pride in our roots." }
+      "v1": {
+        "title": "Hand Embroidery",
+        "desc": "Every design is executed on professional embroidery equipment using premium-grade threads."
+      },
+      "v2": {
+        "title": "Limited Runs",
+        "desc": "Small batches guarantee exclusivity — your piece won't be on everyone else."
+      },
+      "v3": {
+        "title": "Made in Almaty",
+        "desc": "Production in Kazakhstan. We create local jobs and take pride in our roots."
+      }
     },
     "custom": {
       "heading": "Custom Design",
       "desc": "Bring your idea, logo, or sketch — we'll turn it into embroidery. We work with corporate orders, team uniforms, and personalized gifts.",
       "btn": "Order Custom"
-    },
-    "delivery": {
-      "heading": "Delivery",
-      "kz": "All of Kazakhstan",
-      "world": "Worldwide",
-      "kzDesc": "CDEK, courier, pickup",
-      "worldDesc": "International shipping"
     }
   },
   "reviews": {
@@ -733,12 +807,23 @@
     "q8": "How can I track my order?",
     "a8": "Use the Track Order section on our website. After shipping, your CDEK tracking number will appear in the My Orders section of your account.",
     "q9": "What materials do you use?",
-    "a9": "Garments are made from heavyweight cotton (220–280 g/m²) and premium fleece. Embroidery threads are high-quality polyester with rich, lasting colors.",
+    "a9": "T-shirts — 100% cotton, 200 g/m². Sweatshirts — 300 g/m². Hoodies — 320 g/m². We use both embroidery and DTF printing. Embroidery threads are high-quality polyester with excellent color fastness.",
     "q10": "Can I return an item?",
-    "a10": "Exchanges and returns are accepted within 14 days if the item is unworn and the embroidery is undamaged. Custom orders based on individual designs are non-refundable.",
+    "a10": "Exchange is only possible in the case of an error on our part (wrong size, manufacturing defect, or order fulfillment error). Custom items made to the client's individual design cannot be returned or exchanged.",
     "q11": "How do I care for embroidered items?",
     "a11": "Machine wash inside-out at 30–40°C. Iron only on the reverse side. Avoid bleach and harsh dry-cleaning chemicals.",
     "q12": "How can I contact you?",
-    "a12": "Telegram: @balgyn.bol, WhatsApp: +7 700 123-45-67, Email: balgyn.studio@gmail.com. We respond on business days 10:00–18:00 (GMT+5)."
+    "a12": "Instagram: @balgyn.bol · Telegram: @balgyn.bol · WhatsApp: +7 708 193 75 10 · Email: balgyn.studio@gmail.com. Mon–Fri, 10:00–18:00 (GMT+5).",
+    "q13": "What is the easiest way to track my order with CDEK?",
+    "a13": "The best way is to download the official CDEK app. Sign in with the same phone number you used when placing your order — your shipment will appear automatically. The app provides: current status and route, push notifications on status changes, QR codes for pickup, and delivery history."
+  },
+  "tracking": {
+    "historyTitle": "Status history",
+    "trackNumber": "Tracking number",
+    "trackBtn": "Track order",
+    "noTrackingYet": "The tracking number will be available once the order is handed over to the carrier.",
+    "hint": "Once the order is dispatched, we will add a tracking number. Click \"Track order\" to open the carrier's official website. If the number isn't pre-filled, simply copy and paste it into the search field.",
+    "carrierCdek": "CDEK",
+    "carrierKazpost": "KazPost"
   }
 }

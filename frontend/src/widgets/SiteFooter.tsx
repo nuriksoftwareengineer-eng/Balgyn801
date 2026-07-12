@@ -1,10 +1,18 @@
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Marquee } from "@/widgets/home/Marquee";
-import { STORE_TELEGRAM_URL, TELEGRAM_CHANNEL_URL } from "@/shared/constants/store-content";
+import {
+  STORE_TELEGRAM_URL,
+  TELEGRAM_CHANNEL_URL,
+  WHATSAPP_URL,
+  CONTACT_EMAIL,
+  MERCHANT,
+} from "@/shared/constants/store-content";
 
 const linkClass =
-  "text-[14px] text-[#D9D9D9] transition-colors hover:text-white";
+  "text-[13px] text-[#9A9A9A] transition-colors hover:text-white";
+
+const headingClass =
+  "mb-4 text-[10px] font-medium uppercase tracking-[0.2em] text-[#6E6E6E]";
 
 export function SiteFooter() {
   const { t } = useTranslation();
@@ -12,24 +20,18 @@ export function SiteFooter() {
 
   return (
     <footer className="bg-black text-white">
-      <div className="border-y border-white/20 py-4 md:py-6">
-        <Marquee
-          items={["balgyn", "✸", t("footer.marquee.fresh"), "✸", t("footer.marquee.embroidery"), "✸"]}
-          speed={70}
-        />
-      </div>
-
-      <div className="container mx-auto px-4 pb-12 pt-20 md:px-8 md:pt-24">
-        <div className="mb-20 grid grid-cols-2 gap-12 md:grid-cols-4 md:mb-24">
-          <div className="flex flex-col gap-4">
-            <h4 className="mb-2 text-[12px] font-semibold uppercase tracking-wider">{t("footer.shop.title")}</h4>
+      <div className="container mx-auto px-4 pb-8 pt-16 md:px-8 md:pt-24">
+        <div className="mb-16 grid grid-cols-2 gap-10 md:mb-20 md:grid-cols-4 md:gap-10">
+          <div className="flex flex-col gap-2.5">
+            <h4 className={headingClass}>{t("footer.shop.title")}</h4>
             <Link to="/catalog" className={linkClass}>{t("footer.shop.catalog")}</Link>
             <Link to="/custom-design" className={linkClass}>{t("footer.shop.customDesign")}</Link>
+            <Link to="/reviews" className={linkClass}>{t("footer.shop.reviews")}</Link>
             <Link to="/about" className={linkClass}>{t("footer.shop.about")}</Link>
           </div>
 
-          <div className="flex flex-col gap-4">
-            <h4 className="mb-2 text-[12px] font-semibold uppercase tracking-wider">{t("footer.help.title")}</h4>
+          <div className="flex flex-col gap-2.5">
+            <h4 className={headingClass}>{t("footer.help.title")}</h4>
             <Link to="/delivery" className={linkClass}>{t("footer.help.delivery")}</Link>
             <Link to="/returns" className={linkClass}>{t("footer.help.returns")}</Link>
             <Link to="/faq" className={linkClass}>{t("footer.help.faq")}</Link>
@@ -37,22 +39,24 @@ export function SiteFooter() {
             <Link to="/contacts" className={linkClass}>{t("footer.help.contacts")}</Link>
           </div>
 
-          <div className="flex flex-col gap-4">
-            <h4 className="mb-2 text-[12px] font-semibold uppercase tracking-wider">{t("footer.social.title")}</h4>
+          <div className="flex flex-col gap-2.5">
+            <h4 className={headingClass}>{t("footer.social.title")}</h4>
             <a href="https://instagram.com/balgyn.bol" target="_blank" rel="noopener noreferrer" className={linkClass}>Instagram</a>
             <a href="https://tiktok.com/@balgyn.bol" target="_blank" rel="noopener noreferrer" className={linkClass}>TikTok</a>
             <a href={STORE_TELEGRAM_URL} target="_blank" rel="noopener noreferrer" className={linkClass}>Telegram</a>
             <a href={TELEGRAM_CHANNEL_URL} target="_blank" rel="noopener noreferrer" className={linkClass}>{t("footer.social.telegramChannel")}</a>
+            <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className={linkClass}>WhatsApp</a>
+            <a href={`mailto:${CONTACT_EMAIL}`} className={linkClass}>Email</a>
           </div>
 
-          <div className="col-span-2 flex flex-col gap-4 md:col-span-1">
-            <h4 className="mb-2 text-[12px] font-semibold uppercase tracking-wider">{t("footer.newsletter.title")}</h4>
-            <p className="mb-2 text-[14px] text-[#D9D9D9]">{t("footer.newsletter.desc")}</p>
+          <div className="col-span-2 flex flex-col gap-2.5 md:col-span-1">
+            <h4 className={headingClass}>{t("footer.newsletter.title")}</h4>
+            <p className="mb-1 text-[13px] text-[#B0B0B0]">{t("footer.newsletter.desc")}</p>
             <a
               href="https://instagram.com/balgyn.bol"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex w-fit items-center gap-2 border-b border-[#7A7A7A] pb-2 text-[14px] text-[#D9D9D9] transition-colors hover:border-white hover:text-white"
+              className="inline-flex w-fit items-center gap-2 border-b border-[#7A7A7A] pb-1.5 text-[13px] text-[#B0B0B0] transition-colors hover:border-white hover:text-white"
             >
               {t("footer.newsletter.follow")}
             </a>
@@ -60,7 +64,7 @@ export function SiteFooter() {
         </div>
 
         {/* Payment logos */}
-        <div className="mb-10 flex flex-wrap items-center gap-3 border-t border-[#2A2A2A] pt-8">
+        <div className="mb-12 flex flex-wrap items-center gap-2.5 md:mb-16">
           {/* Visa — official wordmark SVG (Simple Icons) */}
           <div className="flex h-9 w-[60px] items-center justify-center rounded border border-white/10 bg-white/5">
             <svg viewBox="0 0 24 24" className="h-4 w-auto fill-white" aria-label="Visa" xmlns="http://www.w3.org/2000/svg">
@@ -81,6 +85,23 @@ export function SiteFooter() {
               <path d="M7.076 21.337H2.47a.641.641 0 01-.633-.74L4.944.901C5.026.382 5.474 0 5.998 0h7.46c2.57 0 4.578.543 5.69 1.81 1.01 1.15 1.304 2.42 1.012 4.287-.023.143-.047.288-.077.437-.983 5.05-4.349 6.797-8.647 6.797h-2.19c-.524 0-.968.382-1.05.9l-1.12 7.106zm14.146-14.42a3.35 3.35 0 00-.607-.541c-.013.076-.026.175-.041.254-.93 4.778-4.005 7.201-9.138 7.201h-2.19a.563.563 0 00-.556.479l-1.187 7.527h-.506l-.24 1.516a.56.56 0 00.554.647h3.882c.46 0 .85-.334.922-.788.06-.26.76-4.852.816-5.09a.932.932 0 01.923-.788h.58c3.76 0 6.705-1.528 7.565-5.946.36-1.847.174-3.388-.777-4.471z"/>
             </svg>
           </div>
+          {/* Apple Pay */}
+          <div className="flex h-9 w-[60px] items-center justify-center gap-1 rounded border border-white/10 bg-white/5" aria-label="Apple Pay">
+            <svg viewBox="0 0 24 24" className="h-[15px] shrink-0 fill-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+              <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+            </svg>
+            <span className="text-[10px] font-semibold text-white" aria-hidden="true">Pay</span>
+          </div>
+          {/* Google Pay */}
+          <div className="flex h-9 w-[68px] items-center justify-center gap-1 rounded border border-white/10 bg-white px-2" aria-label="Google Pay">
+            <svg viewBox="0 0 24 24" className="h-[14px] shrink-0" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+            </svg>
+            <span className="text-[10px] font-semibold text-[#3c4043]" aria-hidden="true">Pay</span>
+          </div>
           {/* FreedomPay */}
           <div className="flex h-9 min-w-[72px] items-center justify-center rounded border border-white/10 bg-white/5 px-3">
             <span className="text-[9px] font-extrabold uppercase tracking-widest text-white/70">
@@ -93,20 +114,32 @@ export function SiteFooter() {
           </div>
         </div>
 
-        <div className="flex flex-col gap-8 border-t border-[#2A2A2A] pt-8">
-          <p className="text-[44px] font-extrabold uppercase leading-none tracking-[-0.04em] md:text-[72px]">
+        {/* Giant wordmark — the footer anchor */}
+        <div className="border-t border-[#242424] pt-12 md:pt-16">
+          <p className="select-none text-[19vw] font-bold uppercase leading-[0.8] tracking-[-0.05em] text-white md:text-[15vw]">
             BALGYN
           </p>
-          <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
-            <p className="text-center text-[12px] uppercase tracking-wider text-[#7A7A7A] md:text-left">
+
+          {/* Bottom bar */}
+          <div className="mt-10 flex flex-col gap-4 border-t border-[#1C1C1C] pt-6 md:flex-row md:items-center md:justify-between">
+            <p className="text-[11px] tracking-wide text-[#6E6E6E]">
               {t("footer.rights", { year })}
             </p>
-            <div className="flex flex-wrap justify-center gap-6 text-[10px] uppercase tracking-[0.2em] text-[#7A7A7A]">
+            <div className="flex flex-wrap gap-x-7 gap-y-2 text-[11px] tracking-wide text-[#6E6E6E]">
               <Link to="/privacy" className="transition-colors hover:text-white">{t("footer.legal.privacy")}</Link>
               <Link to="/terms" className="transition-colors hover:text-white">{t("footer.legal.terms")}</Link>
               <Link to="/returns" className="transition-colors hover:text-white">{t("footer.legal.returns")}</Link>
             </div>
           </div>
+
+          {/* Requisites — secondary line (full details on Contacts & Public Offer; kept for Freedom Pay compliance) */}
+          <p className="mt-4 text-[10px] leading-relaxed text-[#565656]">
+            {t("merchant.ieShort")} {MERCHANT.ieName} · {t("merchant.iinShort")} {MERCHANT.iin}
+            {" · "}
+            <Link to="/contacts" className="underline-offset-2 transition-colors hover:text-[#9A9A9A] hover:underline">
+              {t("merchant.title")}
+            </Link>
+          </p>
         </div>
       </div>
     </footer>

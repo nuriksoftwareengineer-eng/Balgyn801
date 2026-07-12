@@ -36,13 +36,13 @@ export function AboutPage() {
             <Link to="/" className="transition-colors hover:text-white/70">
               {t("aboutPage.breadcrumbHome")}
             </Link>
-            <span aria-hidden>›</span>
+            <span aria-hidden>/</span>
             <span className="text-white/60">{t("aboutPage.breadcrumb")}</span>
           </nav>
           <p className="mb-4 text-[0.6rem] font-semibold uppercase tracking-[0.24em] text-white/40">
             {t("aboutPage.hero.eyebrow")}
           </p>
-          <h1 className="text-3xl font-extrabold uppercase leading-none tracking-[-0.02em] text-white md:text-5xl lg:text-6xl">
+          <h1 className="text-3xl font-bold uppercase leading-none tracking-[-0.02em] text-white md:text-5xl lg:text-6xl">
             {t("aboutPage.title")}
           </h1>
           <p className="mt-6 max-w-xl text-[15px] leading-relaxed text-white/60">
@@ -55,7 +55,7 @@ export function AboutPage() {
         {/* Story */}
         <section className="mb-16 grid gap-8 md:grid-cols-2 md:gap-16">
           <div>
-            <p className="mb-4 text-[0.6rem] font-semibold uppercase tracking-[0.2em] text-[--color-muted]">
+            <p className="mb-4 text-xs font-medium tracking-wide text-[--color-muted]">
               {t("aboutPage.story.heading")}
             </p>
             <p className="text-[15px] leading-relaxed text-zinc-700">
@@ -71,7 +71,7 @@ export function AboutPage() {
 
         {/* Values */}
         <section className="mb-16 border-t border-[--color-border] pt-12">
-          <p className="mb-8 text-[0.6rem] font-semibold uppercase tracking-[0.2em] text-[--color-muted]">
+          <p className="mb-8 text-xs font-medium tracking-wide text-[--color-muted]">
             {t("aboutPage.values.heading")}
           </p>
           <div className="grid gap-6 sm:grid-cols-3">
@@ -93,7 +93,7 @@ export function AboutPage() {
 
         {/* CEO / Founder */}
         <section className="mb-16 border-t border-[--color-border] pt-12">
-          <p className="mb-8 text-[0.6rem] font-semibold uppercase tracking-[0.2em] text-[--color-muted]">
+          <p className="mb-8 text-xs font-medium tracking-wide text-[--color-muted]">
             {t("aboutPage.ceo.role")}
           </p>
           <div className="grid gap-10 md:grid-cols-[minmax(0,260px)_1fr] md:items-center md:gap-14">
@@ -122,10 +122,10 @@ export function AboutPage() {
               </div>
             </div>
             <div>
-              <h2 className="mb-1 text-2xl font-extrabold uppercase tracking-[-0.01em] text-black">
+              <h2 className="mb-1 text-2xl font-bold uppercase tracking-[-0.01em] text-black">
                 Dias Abris
               </h2>
-              <p className="mb-4 text-[0.6rem] font-semibold uppercase tracking-[0.2em] text-[--color-muted]">
+              <p className="mb-4 text-xs font-medium tracking-wide text-[--color-muted]">
                 Founder & CEO, Balgyn
               </p>
               <p className="mb-4 text-[14px] leading-relaxed text-zinc-700">
@@ -137,7 +137,7 @@ export function AboutPage() {
               <div className="flex flex-wrap gap-3">
                 <Link
                   to="/custom-design"
-                  className="inline-flex h-11 items-center justify-center bg-black px-6 text-[12px] font-bold uppercase tracking-[0.1em] text-white transition hover:bg-zinc-800"
+                  className="inline-flex h-11 items-center justify-center bg-black px-6 text-[12px] font-semibold uppercase tracking-[0.16em] text-white transition hover:bg-zinc-800"
                 >
                   {t("aboutPage.ceo.customBtn")}
                 </Link>
@@ -145,7 +145,7 @@ export function AboutPage() {
                   href={SUPPORT_TELEGRAM_URL}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex h-11 items-center justify-center border border-[--color-border] bg-white px-6 text-[12px] font-bold uppercase tracking-[0.1em] text-black transition hover:border-black"
+                  className="inline-flex h-11 items-center justify-center border border-[--color-border] bg-white px-6 text-[12px] font-semibold uppercase tracking-[0.16em] text-black transition hover:border-black"
                 >
                   {t("aboutPage.ceo.telegramBtn")}
                 </a>
@@ -156,7 +156,7 @@ export function AboutPage() {
 
         {/* How we work */}
         <section className="mb-16 border-t border-[--color-border] pt-12">
-          <p className="mb-4 text-[0.6rem] font-semibold uppercase tracking-[0.2em] text-[--color-muted]">
+          <p className="mb-4 text-xs font-medium tracking-wide text-[--color-muted]">
             {t("aboutPage.howWeWork.heading")}
           </p>
           <ul className="list-disc space-y-3 pl-5 text-[14px] leading-relaxed text-zinc-700">
@@ -182,7 +182,7 @@ export function AboutPage() {
         <section className="mb-16 border-t border-[--color-border] pt-12">
           <div className="grid gap-6 md:grid-cols-2 md:items-center">
             <div>
-              <p className="mb-2 text-[0.6rem] font-semibold uppercase tracking-[0.2em] text-[--color-muted]">
+              <p className="mb-2 text-xs font-medium tracking-wide text-[--color-muted]">
                 {t("aboutPage.custom.heading")}
               </p>
               <p className="text-[14px] leading-relaxed text-zinc-700">
@@ -192,7 +192,7 @@ export function AboutPage() {
             <div className="md:text-right">
               <Link
                 to="/custom-design"
-                className="inline-flex h-12 items-center justify-center bg-black px-8 text-[12px] font-bold uppercase tracking-[0.12em] text-white transition hover:bg-zinc-800"
+                className="inline-flex h-12 items-center justify-center bg-black px-8 text-[12px] font-semibold uppercase tracking-[0.16em] text-white transition hover:bg-zinc-800"
               >
                 {t("aboutPage.custom.btn")}
               </Link>
@@ -202,7 +202,7 @@ export function AboutPage() {
 
         {/* Quality */}
         <section className="mb-16 border-t border-[--color-border] pt-12">
-          <p className="mb-3 text-[0.6rem] font-semibold uppercase tracking-[0.2em] text-[--color-muted]">
+          <p className="mb-3 text-xs font-medium tracking-wide text-[--color-muted]">
             {t("aboutPage.quality.heading")}
           </p>
           <p className="text-[14px] leading-relaxed text-zinc-700">
@@ -210,34 +210,9 @@ export function AboutPage() {
           </p>
         </section>
 
-        {/* Delivery */}
-        <section className="mb-16 border-t border-[--color-border] pt-12">
-          <p className="mb-6 text-[0.6rem] font-semibold uppercase tracking-[0.2em] text-[--color-muted]">
-            {t("aboutPage.delivery.heading")}
-          </p>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="border border-[--color-border] p-6">
-              <p className="mb-1 text-[15px] font-semibold text-black">
-                {t("aboutPage.delivery.kz")}
-              </p>
-              <p className="text-[13px] text-[--color-muted]">
-                {t("aboutPage.delivery.kzDesc")}
-              </p>
-            </div>
-            <div className="border border-[--color-border] p-6">
-              <p className="mb-1 text-[15px] font-semibold text-black">
-                {t("aboutPage.delivery.world")}
-              </p>
-              <p className="text-[13px] text-[--color-muted]">
-                {t("aboutPage.delivery.worldDesc")}
-              </p>
-            </div>
-          </div>
-        </section>
-
         {/* Contacts */}
-        <section className="border border-[--color-border] bg-[--color-surface] p-6">
-          <p className="mb-3 text-[0.6rem] font-semibold uppercase tracking-[0.2em] text-[--color-muted]">
+        <section className="border-t border-[--color-border] pt-12">
+          <p className="mb-3 text-xs text-[--color-muted]">
             {t("aboutPage.contacts.heading")}
           </p>
           <ul className="m-0 flex list-none flex-col gap-2 p-0 text-[14px] text-zinc-700">

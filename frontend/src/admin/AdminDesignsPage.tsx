@@ -167,6 +167,27 @@ export function AdminDesignsPage() {
     }
   }
 
+  /** Reorder a gallery image by one position. Order is persisted on save. */
+  function moveGalleryItem(from: number, dir: -1 | 1) {
+    setGallery((g) => {
+      const to = from + dir;
+      if (to < 0 || to >= g.length) return g;
+      const next = [...g];
+      const [item] = next.splice(from, 1);
+      next.splice(to, 0, item);
+      return next;
+    });
+  }
+
+  /** Promote a gallery image to the cover (main). The old cover moves to the front of the gallery. */
+  function makeCover(url: string) {
+    setGallery((g) => {
+      const without = g.filter((u) => u !== url);
+      return mainImageUrl && mainImageUrl !== url ? [mainImageUrl, ...without] : without;
+    });
+    setMainImageUrl(url);
+  }
+
   const saveMut = useMutation({
     mutationFn: () => {
       if (!collectionId) throw new Error("Выберите коллекцию");
@@ -332,8 +353,11 @@ export function AdminDesignsPage() {
             />
             {mainBusy && <p className="text-xs text-zinc-400">Загружаем…</p>}
             {mainImageUrl && (
-              <div className="mt-1 flex items-center gap-2">
-                <img src={mainImageUrl} alt="main" className="max-h-24 rounded object-contain bg-zinc-800" />
+              <div className="mt-1 flex items-center gap-3">
+                <div className="relative">
+                  <img src={mainImageUrl} alt="main" className="h-24 w-24 rounded object-cover bg-zinc-800" />
+                  <span className="absolute left-1 top-1 rounded bg-black/70 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-white">Обложка</span>
+                </div>
                 <button type="button" onClick={() => setMainImageUrl("")} className="text-xs text-red-400 hover:text-red-300">
                   Убрать
                 </button>
@@ -343,7 +367,7 @@ export function AdminDesignsPage() {
 
           {/* Gallery */}
           <label className="flex flex-col gap-1.5">
-            <span className="text-xs text-zinc-400">Галерея (можно несколько)</span>
+            <span className="text-xs text-zinc-400">Галерея (можно несколько; первая рядом с обложкой)</span>
             <input
               ref={galleryRef}
               type="file"
@@ -357,20 +381,51 @@ export function AdminDesignsPage() {
           </label>
 
           {gallery.length > 0 && (
-            <div className="sm:col-span-2 flex flex-wrap gap-2">
-              {gallery.map((url, i) => (
-                <div key={url + i} className="relative">
-                  <img src={url} alt={`g${i}`} className="h-20 w-20 rounded object-cover bg-zinc-800" />
-                  <button
-                    type="button"
-                    onClick={() => setGallery((g) => g.filter((_, idx) => idx !== i))}
-                    className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs text-white hover:bg-red-400"
-                    aria-label="Удалить из галереи"
-                  >
-                    ×
-                  </button>
-                </div>
-              ))}
+            <div className="sm:col-span-2">
+              <p className="mb-2 text-[11px] text-zinc-500">
+                Наведите на фото: ← → — порядок · ★ — сделать обложкой · × — удалить. Порядок сохраняется.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {gallery.map((url, i) => (
+                  <div key={url + i} className="group relative h-24 w-24 overflow-hidden rounded">
+                    <img src={url} alt={`g${i}`} className="h-24 w-24 object-cover bg-zinc-800" />
+                    <span className="absolute left-1 top-1 rounded bg-black/60 px-1 text-[9px] tabular-nums text-white/90">{i + 1}</span>
+                    <div className="absolute inset-0 flex flex-col justify-between bg-black/0 p-1 opacity-0 transition-all duration-200 group-hover:bg-black/55 group-hover:opacity-100">
+                      <div className="flex justify-end">
+                        <button
+                          type="button"
+                          onClick={() => setGallery((g) => g.filter((_, idx) => idx !== i))}
+                          className="flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs text-white hover:bg-red-400"
+                          aria-label="Удалить из галереи"
+                        >×</button>
+                      </div>
+                      <div className="flex items-center justify-between gap-1">
+                        <button
+                          type="button"
+                          onClick={() => moveGalleryItem(i, -1)}
+                          disabled={i === 0}
+                          className="flex h-5 w-5 items-center justify-center rounded bg-white/85 text-xs text-black hover:bg-white disabled:opacity-30"
+                          aria-label="Сдвинуть влево"
+                        >←</button>
+                        <button
+                          type="button"
+                          onClick={() => makeCover(url)}
+                          className="flex h-5 w-5 items-center justify-center rounded bg-white/85 text-xs text-black hover:bg-white"
+                          aria-label="Сделать обложкой"
+                          title="Сделать обложкой"
+                        >★</button>
+                        <button
+                          type="button"
+                          onClick={() => moveGalleryItem(i, 1)}
+                          disabled={i === gallery.length - 1}
+                          className="flex h-5 w-5 items-center justify-center rounded bg-white/85 text-xs text-black hover:bg-white disabled:opacity-30"
+                          aria-label="Сдвинуть вправо"
+                        >→</button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>

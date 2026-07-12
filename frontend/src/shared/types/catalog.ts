@@ -24,6 +24,8 @@ export interface CollectionSummary {
   groupNameEn?: string | null;
   sortOrder: number;
   active: boolean;
+  coverImageUrl?: string | null;
+  bannerImageUrl?: string | null;
 }
 
 export interface DesignSummary {

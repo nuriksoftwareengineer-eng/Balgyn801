@@ -25,7 +25,7 @@ function DesignsEmptyState() {
       </div>
       <Link
         to="/custom-design"
-        className="inline-block border border-black px-5 py-2.5 text-[11px] font-bold uppercase tracking-[0.14em] text-black transition hover:bg-black hover:text-white"
+        className="inline-block border border-black px-5 py-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-black transition hover:bg-black hover:text-white"
       >
         {t("catalog.customCta")}
       </Link>

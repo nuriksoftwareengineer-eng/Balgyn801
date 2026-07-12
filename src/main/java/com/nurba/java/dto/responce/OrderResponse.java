@@ -28,6 +28,8 @@ public class OrderResponse {
     private List<OrderItemResponse> items;
     private DeliveryAddressResponse address;
     private CdekShipmentResponse cdekShipment;
+    /** Tracking number assigned by the carrier. Null until admin sets it on shipment. */
+    private String trackingNumber;
     private String couponCode;
     private BigDecimal discountAmount;
     private LocalDateTime createdAt;

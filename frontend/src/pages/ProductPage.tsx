@@ -60,7 +60,7 @@ function ProductBuyColumn({ product }: { product: Product }) {
       ) : null}
 
       <h1
-        className="mt-3 font-extrabold uppercase text-black"
+        className="mt-3 font-bold uppercase text-black"
         style={{
           fontSize: "clamp(1.75rem, 4vw, 3rem)",
           lineHeight: 1.05,
@@ -167,14 +167,14 @@ function ProductBuyColumn({ product }: { product: Product }) {
           type="button"
           disabled={!canAdd}
           onClick={handleAddToCart}
-          className="flex-1 bg-black py-4 text-[13px] font-bold uppercase tracking-[0.14em] text-white transition hover:bg-zinc-800 disabled:opacity-40 sm:min-w-[200px] sm:flex-none sm:px-8"
+          className="flex-1 bg-black py-4 text-[12px] font-semibold uppercase tracking-[0.16em] text-white transition hover:bg-zinc-800 disabled:opacity-40 sm:min-w-[200px] sm:flex-none sm:px-8"
         >
           {product.inStock ? "В корзину" : "Нет в наличии"}
         </button>
         <button
           type="button"
           onClick={() => navigate("/catalog")}
-          className="border border-[--color-border] px-6 py-4 text-[13px] font-bold uppercase tracking-[0.14em] text-black transition hover:border-black"
+          className="border border-[--color-border] px-6 py-4 text-[12px] font-semibold uppercase tracking-[0.16em] text-black transition hover:border-black"
         >
           К каталогу
         </button>
@@ -201,7 +201,7 @@ export function ProductPage() {
         <button
           type="button"
           onClick={() => navigate("/catalog")}
-          className="mt-6 bg-black px-6 py-3 text-[12px] font-bold uppercase tracking-[0.14em] text-white transition hover:bg-zinc-800"
+          className="mt-6 bg-black px-6 py-3 text-[12px] font-semibold uppercase tracking-[0.16em] text-white transition hover:bg-zinc-800"
         >
           В каталог
         </button>

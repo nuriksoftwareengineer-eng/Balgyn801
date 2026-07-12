@@ -73,13 +73,13 @@ export function PaymentFailedPage() {
           <button
             type="button"
             onClick={handleRetry}
-            className="inline-flex items-center justify-center bg-black px-6 py-3 text-[12px] font-bold uppercase tracking-[0.14em] text-white transition hover:bg-zinc-800"
+            className="inline-flex items-center justify-center bg-black px-6 py-3 text-[12px] font-semibold uppercase tracking-[0.16em] text-white transition hover:bg-zinc-800"
           >
             {t("payment.failed.retry")}
           </button>
           <Link
             to="/catalog"
-            className="inline-flex items-center justify-center border border-[--color-border] bg-white px-6 py-3 text-[12px] font-bold uppercase tracking-[0.14em] text-black transition hover:border-black/60"
+            className="inline-flex items-center justify-center border border-[--color-border] bg-white px-6 py-3 text-[12px] font-semibold uppercase tracking-[0.16em] text-black transition hover:border-black/60"
           >
             {t("payment.failed.toCatalog")}
           </Link>

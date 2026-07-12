@@ -15,4 +15,7 @@ public class UpdateOrderStatusRequest {
 
     @NotNull(message = "Статус обязателен")
     private OrderStatus status;
+
+    /** Optional carrier tracking number. When present, saved to order.trackingNumber. */
+    private String trackingNumber;
 }
