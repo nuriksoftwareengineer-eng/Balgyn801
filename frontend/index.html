@@ -31,9 +31,57 @@
     <meta name="twitter:title" content="Balgyn — Вышивка на одежде, Алматы" />
     <meta name="twitter:description" content="Эксклюзивная вышивка на одежде. Аниме, игры, музыка, спорт." />
     <meta name="twitter:image" content="https://balgyn.kz/android-chrome-512.png" />
+    <style>
+      /* Instant paint shell — visible from HTML parse, before the JS bundle loads.
+         Removed automatically when React mounts (createRoot clears #root on first render).
+         Inline <style> is allowed by the production CSP (style-src 'unsafe-inline'). */
+      #app-skeleton {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 20px;
+        background: #ffffff;
+        font-family: "Montserrat", -apple-system, BlinkMacSystemFont, "Segoe UI",
+          Roboto, Helvetica, Arial, sans-serif;
+      }
+      #app-skeleton .sk-word {
+        font-size: clamp(2rem, 8vw, 3.5rem);
+        font-weight: 700;
+        letter-spacing: -0.04em;
+        text-transform: uppercase;
+        color: #0a0a0a;
+      }
+      #app-skeleton .sk-track {
+        width: 120px;
+        height: 2px;
+        background: #ececec;
+        overflow: hidden;
+      }
+      #app-skeleton .sk-bar {
+        height: 100%;
+        width: 40%;
+        background: #0a0a0a;
+        animation: sk-slide 1.1s ease-in-out infinite;
+      }
+      @keyframes sk-slide {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(320%); }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        #app-skeleton .sk-bar { animation: none; }
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div id="app-skeleton" aria-hidden="true">
+        <div class="sk-word">Balgyn</div>
+        <div class="sk-track"><div class="sk-bar"></div></div>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
