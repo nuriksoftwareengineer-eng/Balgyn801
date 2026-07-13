@@ -3,6 +3,10 @@
 }
 
 {$DOMAIN} {
+    # Compress text assets (JS/CSS/HTML/JSON/SVG). Audit proved responses were served
+    # uncompressed (Content-Length == decoded size); this cuts JS/CSS transfer ~70%.
+    encode zstd gzip
+
     header {
         Strict-Transport-Security "max-age=31536000; includeSubDomains"
         X-Content-Type-Options "nosniff"

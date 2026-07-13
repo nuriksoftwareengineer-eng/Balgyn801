@@ -1,31 +1,29 @@
-import { useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import heroVideo from "@/assets/figma/homepage.MOV";
+import heroVideo from "@/assets/figma/homepage.mp4";
+import heroPoster from "@/assets/figma/homepage-poster.webp";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
 export function Hero() {
   const { t } = useTranslation();
-  const [videoReady, setVideoReady] = useState(false);
 
   return (
     <section className="relative flex min-h-[100svh] w-full flex-col overflow-hidden bg-black text-white">
-      {/* Video */}
+      {/* Video — poster paints the first frame instantly; H.264 MP4 plays in every modern browser */}
       <div className="absolute inset-0 h-full w-full overflow-hidden pointer-events-none">
         <video
           autoPlay
           muted
           loop
           playsInline
-          preload="auto"
+          preload="metadata"
+          poster={heroPoster}
           aria-hidden="true"
-          onCanPlay={() => setVideoReady(true)}
-          className={`absolute left-0 top-0 h-full w-full object-cover transition-opacity duration-[1200ms] ${videoReady ? "opacity-100" : "opacity-0"}`}
+          className="absolute left-0 top-0 h-full w-full object-cover"
         >
           <source src={heroVideo} type="video/mp4" />
-          <source src={heroVideo} type="video/quicktime" />
         </video>
       </div>
       {/* Gradient scrim — heavier at the bottom where the type sits */}
