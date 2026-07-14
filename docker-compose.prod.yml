@@ -108,6 +108,10 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_API_BASE_URL: /api/v1
+        # Measured: the intro splash holds a full-screen overlay for ~3s on every first
+        # page of a session (any route, not just Home). Disabled by default in
+        # production; set to "true" to re-enable.
+        VITE_ENABLE_SPLASH: "false"
     restart: unless-stopped
     depends_on:
       app:

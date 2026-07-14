@@ -1,12 +1,17 @@
 import { useEffect, useState } from "react";
 
 const SPLASH_KEY = "balgyn_splash_seen";
+// Build-time flag (frontend/Dockerfile ARG, wired in docker-compose.prod.yml). Measured:
+// this component holds a full-screen overlay for ~3s on the first page of every session
+// (any route). Disabled by default in production; set VITE_ENABLE_SPLASH=true to restore it.
+const SPLASH_ENABLED = import.meta.env.VITE_ENABLE_SPLASH !== "false";
 
 export function SplashScreen() {
   const [visible, setVisible] = useState(false);
   const [exiting, setExiting] = useState(false);
 
   useEffect(() => {
+    if (!SPLASH_ENABLED) return;
     if (!sessionStorage.getItem(SPLASH_KEY)) {
       setVisible(true);
       sessionStorage.setItem(SPLASH_KEY, "1");

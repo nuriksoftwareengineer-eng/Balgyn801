@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
@@ -8,6 +9,26 @@ const EASE = [0.16, 1, 0.3, 1] as const;
 
 export function Hero() {
   const { t } = useTranslation();
+  // Measured: autoplay makes Chrome fetch the whole file regardless of preload="metadata",
+  // competing with the page's critical JS/CSS/API requests during first paint. The <source>
+  // (and therefore the network request) is withheld until after the first paint so the video
+  // load can never delay it; the poster covers this gap instantly. rAF pair = "after next
+  // paint" (standard pattern); the timeout is a fallback for tabs where rAF doesn't fire.
+  const [videoSourceReady, setVideoSourceReady] = useState(false);
+
+  useEffect(() => {
+    let raf1 = 0;
+    let raf2 = 0;
+    raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(() => setVideoSourceReady(true));
+    });
+    const fallback = setTimeout(() => setVideoSourceReady(true), 300);
+    return () => {
+      cancelAnimationFrame(raf1);
+      cancelAnimationFrame(raf2);
+      clearTimeout(fallback);
+    };
+  }, []);
 
   return (
     <section className="relative flex min-h-[100svh] w-full flex-col overflow-hidden bg-black text-white">
@@ -21,10 +42,12 @@ export function Hero() {
           preload="metadata"
           poster={heroPoster}
           aria-hidden="true"
+          // Setting `src` directly (not a child <source>) is required here: appending a
+          // <source> to an already-mounted <video> does NOT trigger the browser's resource
+          // selection algorithm per spec — only changing `src`/calling .load() does.
+          src={videoSourceReady ? heroVideo : undefined}
           className="absolute left-0 top-0 h-full w-full object-cover"
-        >
-          <source src={heroVideo} type="video/mp4" />
-        </video>
+        />
       </div>
       {/* Gradient scrim — heavier at the bottom where the type sits */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-black/40" />
