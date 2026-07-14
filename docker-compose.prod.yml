@@ -128,6 +128,12 @@ services:
     ports:
       - "80:80"
       - "443:443"
+      # Caddy already advertises Alt-Svc: h3 and serves it once available — the TCP
+      # mapping alone doesn't carry HTTP/3/QUIC, which is UDP. Without this, every
+      # client attempting h3 against this origin silently falls back to HTTP/2, paying
+      # a 2-RTT (TCP+TLS) connection setup instead of QUIC's 1-RTT (0-RTT on repeat
+      # visits) — measurable on the long client<->server path this server sits on.
+      - "443:443/udp"
     environment:
       - DOMAIN=${DOMAIN:?Set DOMAIN (e.g. balgynbol.kz)}
       - CERTBOT_EMAIL=${CERTBOT_EMAIL:?Set CERTBOT_EMAIL}
