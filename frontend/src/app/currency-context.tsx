@@ -2,6 +2,7 @@ import {
   createContext,
   useContext,
   useEffect,
+  useMemo,
   useState,
   type ReactNode,
 } from "react";
@@ -104,10 +105,14 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
     return `${formatted} ₸`;
   }
 
+  const value = useMemo(
+    () => ({ currency, setCurrency, convert, format, symbol: CURRENCY_META[currency].symbol, rates }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- convert/format close over currency+rates, already deps
+    [currency, rates],
+  );
+
   return (
-    <CurrencyContext.Provider
-      value={{ currency, setCurrency, convert, format, symbol: CURRENCY_META[currency].symbol, rates }}
-    >
+    <CurrencyContext.Provider value={value}>
       {children}
     </CurrencyContext.Provider>
   );

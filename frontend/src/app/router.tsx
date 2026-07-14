@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy, memo, Suspense } from "react";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { AdminLayout } from "@/admin/AdminLayout";
 import { RequireAdmin } from "@/admin/RequireAdmin";
@@ -7,18 +7,17 @@ import { AuthShellLayout } from "@/pages/AuthShellLayout";
 import { MainLayout } from "@/pages/MainLayout";
 import { PageLoadFallback } from "@/shared/ui/page-load-fallback";
 import { ErrorBoundary } from "@/shared/ui/error-boundary";
+// Statically imported (not lazy): these are the most common landing/browsing routes.
+// Code-splitting them forces every first visit through a cold Suspense-boundary reveal
+// (fallback → fetch chunk → render) on top of that page's own data fetch. Bundling them
+// (all small chunks — a few KB gzipped) keeps first paint of real content to a single
+// data round trip instead of two. Large, rarely-visited sections (Admin) stay lazy.
+import { HomePage } from "@/pages/HomePage";
+import { CatalogIndexPage } from "@/pages/CatalogIndexPage";
+import { CollectionPage } from "@/pages/CollectionPage";
 
-const HomePage = lazy(() =>
-  import("@/pages/HomePage").then((m) => ({ default: m.HomePage })),
-);
-const CatalogIndexPage = lazy(() =>
-  import("@/pages/CatalogIndexPage").then((m) => ({ default: m.CatalogIndexPage })),
-);
 const CatalogParamPage = lazy(() =>
   import("@/pages/CatalogParamPage").then((m) => ({ default: m.CatalogParamPage })),
-);
-const CollectionPage = lazy(() =>
-  import("@/pages/CollectionPage").then((m) => ({ default: m.CollectionPage })),
 );
 const DesignPage = lazy(() =>
   import("@/pages/DesignPage").then((m) => ({ default: m.DesignPage })),
@@ -195,19 +194,11 @@ const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: (
-          <Suspense fallback={<PageLoadFallback />}>
-            <HomePage />
-          </Suspense>
-        ),
+        element: <HomePage />,
       },
       {
         path: "catalog",
-        element: (
-          <Suspense fallback={<PageLoadFallback />}>
-            <CatalogIndexPage />
-          </Suspense>
-        ),
+        element: <CatalogIndexPage />,
       },
       {
         path: "catalog/:param",
@@ -219,11 +210,7 @@ const router = createBrowserRouter([
       },
       {
         path: "catalog/:groupSlug/:collectionSlug",
-        element: (
-          <Suspense fallback={<PageLoadFallback />}>
-            <CollectionPage />
-          </Suspense>
-        ),
+        element: <CollectionPage />,
       },
       {
         path: "catalog/:groupSlug/:collectionSlug/:designSlug",
@@ -571,6 +558,9 @@ const router = createBrowserRouter([
   },
 ]);
 
-export function AppRouter() {
+// Memoized so unrelated ancestor state changes (e.g. auth/currency resolving after
+// mount) don't force a re-render cascade through the whole route tree — it still
+// reacts to real navigation via RouterProvider's own internal subscription.
+export const AppRouter = memo(function AppRouter() {
   return <RouterProvider router={router} />;
-}
+});

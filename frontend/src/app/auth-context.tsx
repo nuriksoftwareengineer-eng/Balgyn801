@@ -162,6 +162,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const isAdmin = !!user?.roles?.includes("ADMIN");
 
+  // Warms the admin dashboard's lazy chunk as soon as we know the signed-in user is an
+  // admin, instead of only starting that fetch when they first navigate to /admin. The
+  // dashboard bundle is large, so it stays code-split for everyone else — this just gets
+  // it into the cache ahead of time for the one role that actually needs it.
+  useEffect(() => {
+    if (isAdmin) void import("@/admin/AdminDashboardPage");
+  }, [isAdmin]);
+
   const value = useMemo(
     () => ({
       token,
