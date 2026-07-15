@@ -34,7 +34,13 @@
     <style>
       /* Instant paint shell — visible from HTML parse, before the JS bundle loads.
          Removed automatically when React mounts (createRoot clears #root on first render).
-         Inline <style> is allowed by the production CSP (style-src 'unsafe-inline'). */
+         Inline <style> is allowed by the production CSP (style-src 'unsafe-inline').
+         Black to match the brand's original splash identity — html/body background is
+         set here too so there's no gap where the browser's own white default could show
+         through before this block (or the real stylesheet) takes effect. */
+      html, body {
+        background: #000000;
+      }
       #app-skeleton {
         position: fixed;
         inset: 0;
@@ -43,7 +49,7 @@
         align-items: center;
         justify-content: center;
         gap: 20px;
-        background: #ffffff;
+        background: #000000;
         font-family: "Montserrat", -apple-system, BlinkMacSystemFont, "Segoe UI",
           Roboto, Helvetica, Arial, sans-serif;
       }
@@ -52,18 +58,18 @@
         font-weight: 700;
         letter-spacing: -0.04em;
         text-transform: uppercase;
-        color: #0a0a0a;
+        color: #ffffff;
       }
       #app-skeleton .sk-track {
         width: 120px;
         height: 2px;
-        background: #ececec;
+        background: rgba(255, 255, 255, 0.2);
         overflow: hidden;
       }
       #app-skeleton .sk-bar {
         height: 100%;
         width: 40%;
-        background: #0a0a0a;
+        background: #ffffff;
         animation: sk-slide 1.1s ease-in-out infinite;
       }
       @keyframes sk-slide {
