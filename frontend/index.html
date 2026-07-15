@@ -66,18 +66,23 @@
         background: rgba(255, 255, 255, 0.2);
         overflow: hidden;
       }
+      /* One-shot grow, not an infinite loop: the app now often mounts in well under a
+         second, so a looping animation gets torn out of the DOM mid-cycle and reads as a
+         glitch/flash. A single grow-then-hold always looks intentional, whether it's cut
+         off after 50ms (still growing — reads as "starting up") or fully settled. */
       #app-skeleton .sk-bar {
         height: 100%;
-        width: 40%;
+        width: 100%;
         background: #ffffff;
-        animation: sk-slide 1.1s ease-in-out infinite;
+        transform: scaleX(0);
+        transform-origin: left;
+        animation: sk-grow 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
       }
-      @keyframes sk-slide {
-        0% { transform: translateX(-100%); }
-        100% { transform: translateX(320%); }
+      @keyframes sk-grow {
+        to { transform: scaleX(1); }
       }
       @media (prefers-reduced-motion: reduce) {
-        #app-skeleton .sk-bar { animation: none; }
+        #app-skeleton .sk-bar { animation: none; transform: scaleX(1); }
       }
     </style>
   </head>
