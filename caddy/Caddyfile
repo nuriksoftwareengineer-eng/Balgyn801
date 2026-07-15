@@ -22,7 +22,13 @@
     handle /api/* {
         reverse_proxy app:8080
     }
-    handle /media/* {
+    # handle_path (not handle) strips the /media prefix before proxying. MinIO's S3 API
+    # expects the request path to be exactly /{bucket}/{key} -- forwarding /media/{bucket}/{key}
+    # unchanged (as plain `handle` does) makes MinIO read "media" itself as the bucket name,
+    # which doesn't exist, so every public image URL 403'd even though the object was
+    # uploaded fine (the app talks to MinIO directly over the Docker network, bypassing
+    # this route entirely, so uploads always looked like they succeeded).
+    handle_path /media/* {
         reverse_proxy minio:9000
     }
     handle {
