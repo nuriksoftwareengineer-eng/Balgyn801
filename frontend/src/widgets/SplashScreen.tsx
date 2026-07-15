@@ -4,7 +4,10 @@ const SPLASH_KEY = "balgyn_splash_seen";
 // Build-time flag (frontend/Dockerfile ARG, wired in docker-compose.prod.yml).
 const SPLASH_ENABLED = import.meta.env.VITE_ENABLE_SPLASH !== "false";
 
-const SHOW_MS = 900;
+// Long enough for the slowest element in the sequence below (the underline: 0.5s delay
+// + 1.8s grow = 2300ms) to finish naturally before fade-out starts, with a small buffer
+// so it doesn't cut off right at the last frame.
+const SHOW_MS = 2400;
 const FADE_OUT_MS = 600;
 
 export function SplashScreen() {
