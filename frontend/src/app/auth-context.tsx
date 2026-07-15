@@ -11,8 +11,11 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import {
   AUTH_TOKEN_STORAGE_KEY,
+  clearSessionHint,
   clearStoredToken,
+  hasSessionHint,
   readStoredToken,
+  setSessionHint,
   writeStoredToken,
 } from "@/shared/lib/auth-storage";
 import {
@@ -65,6 +68,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
    */
   useEffect(() => {
     if (readStoredToken()) return; // Stored token exists; the token effect handles it.
+    // The refresh cookie is HttpOnly, so we can't check for it directly — but probing
+    // unconditionally means every first-time guest fires a request guaranteed to 400.
+    // The session hint marks "a session existed in this browser"; without it, skip.
+    if (!hasSessionHint()) {
+      startupDone.current = true;
+      setLoading(false);
+      return;
+    }
     refreshCookieAuth()
       .then((res) => {
         writeStoredToken(res.accessToken);
@@ -72,6 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setToken(res.accessToken); // triggers token effect → /me → loading=false
       })
       .catch(() => {
+        clearSessionHint(); // Cookie is gone/expired — don't probe again next load.
         startupDone.current = true;
         setLoading(false); // No session at all — render logged-out state
       });
@@ -83,10 +95,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const res = await refreshCookieAuth();
         writeStoredToken(res.accessToken);
+        setSessionHint();
         setToken(res.accessToken);
         return res.accessToken;
       } catch {
         clearStoredToken();
+        clearSessionHint();
         setToken(null);
         setUser(null);
         return null;
@@ -137,6 +151,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (email: string, password: string) => {
     const res = await loginApi({ email, password });
     writeStoredToken(res.accessToken);
+    setSessionHint();
     setToken(res.accessToken);
   }, []);
 
@@ -149,6 +164,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(() => {
     clearStoredToken();
+    clearSessionHint();
     setToken(null);
     setUser(null);
     // Сервер очищает HttpOnly refresh-cookie; ошибки игнорируем (уже вышли локально).

@@ -39,3 +39,35 @@ export function clearStoredToken(): void {
     /* ignore */
   }
 }
+
+/**
+ * Маркер «в этом браузере была сессия». Refresh-cookie — HttpOnly, JS её не видит,
+ * поэтому без маркера cold-start пробa /auth/refresh-cookie летела бы у КАЖДОГО гостя
+ * и стабильно получала 400 — красная строка в консоли на каждом первом заходе.
+ * Ставится при логине/успешном refresh, снимается при логауте и при неудачной пробе.
+ */
+const SESSION_HINT_KEY = "balgyn_had_session";
+
+export function hasSessionHint(): boolean {
+  try {
+    return localStorage.getItem(SESSION_HINT_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+export function setSessionHint(): void {
+  try {
+    localStorage.setItem(SESSION_HINT_KEY, "1");
+  } catch {
+    /* ignore */
+  }
+}
+
+export function clearSessionHint(): void {
+  try {
+    localStorage.removeItem(SESSION_HINT_KEY);
+  } catch {
+    /* ignore */
+  }
+}
