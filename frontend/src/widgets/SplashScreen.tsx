@@ -1,10 +1,16 @@
 import { useEffect, useState } from "react";
 
 const SPLASH_KEY = "balgyn_splash_seen";
-// Build-time flag (frontend/Dockerfile ARG, wired in docker-compose.prod.yml). Measured:
-// this component holds a full-screen overlay for ~3s on the first page of every session
-// (any route). Disabled by default in production; set VITE_ENABLE_SPLASH=true to restore it.
+// Build-time flag (frontend/Dockerfile ARG, wired in docker-compose.prod.yml).
 const SPLASH_ENABLED = import.meta.env.VITE_ENABLE_SPLASH !== "false";
+
+// Floor, not a fixed hold: on a fast load the splash pads out to this many ms so the
+// entrance animation has time to register, but never adds a wall-clock delay beyond it
+// (the old version held for a flat 2.4s regardless of load speed — that's gone).
+const MIN_VISIBLE_MS = 650;
+// Fade-out transition length, applied after the floor/readiness wait, not counted
+// against it.
+const FADE_OUT_MS = 600;
 
 export function SplashScreen() {
   const [visible, setVisible] = useState(false);
@@ -20,12 +26,20 @@ export function SplashScreen() {
 
   function dismiss() {
     setExiting(true);
-    setTimeout(() => setVisible(false), 600);
+    setTimeout(() => setVisible(false), FADE_OUT_MS);
   }
 
   useEffect(() => {
     if (!visible) return;
-    const id = setTimeout(dismiss, 2400);
+    // "App ready" = this effect running: React has completed its first commit, so the
+    // matched route's real content already exists in the DOM underneath this overlay.
+    // performance.now() here is elapsed time since navigation start (it's a clock
+    // anchored to timeOrigin, not to when this line runs), so it correctly reflects a
+    // slow JS/network load, not just React's own near-instant mount cost. Fast load ->
+    // pad up to the floor; slow load -> dismiss immediately, no added wait.
+    const elapsed = performance.now();
+    const remaining = Math.max(0, MIN_VISIBLE_MS - elapsed);
+    const id = setTimeout(dismiss, remaining);
     return () => clearTimeout(id);
   }, [visible]);
 
