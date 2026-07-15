@@ -10,6 +10,7 @@ import {
 } from "@/shared/api/admin-catalog";
 import { ApiError } from "@/shared/api/http";
 import { Button } from "@/shared/ui/button";
+import { ImageField } from "@/admin/ImageField";
 
 const inputClass =
   "rounded border border-white/20 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-600 outline-none focus:border-white/40";
@@ -144,30 +145,20 @@ export function AdminCategoriesPage() {
               className={`${inputClass} w-32`}
             />
           </label>
-          <label className="flex flex-col gap-1.5">
-            <span className="text-xs text-zinc-400">Cover image URL</span>
-            <input
-              value={coverImageUrl}
-              onChange={(e) => setCoverImageUrl(e.target.value)}
-              placeholder="https://..."
-              className={inputClass}
-            />
-            {coverImageUrl && (
-              <img src={coverImageUrl} alt="cover preview" className="mt-1 h-20 w-full object-cover rounded border border-white/10" />
-            )}
-          </label>
-          <label className="flex flex-col gap-1.5">
-            <span className="text-xs text-zinc-400">Banner image URL</span>
-            <input
-              value={bannerImageUrl}
-              onChange={(e) => setBannerImageUrl(e.target.value)}
-              placeholder="https://..."
-              className={inputClass}
-            />
-            {bannerImageUrl && (
-              <img src={bannerImageUrl} alt="banner preview" className="mt-1 h-12 w-full object-cover rounded border border-white/10" />
-            )}
-          </label>
+          <ImageField
+            label="Обложка"
+            value={coverImageUrl}
+            onChange={setCoverImageUrl}
+            token={token}
+            onError={setFormError}
+          />
+          <ImageField
+            label="Баннер"
+            value={bannerImageUrl}
+            onChange={setBannerImageUrl}
+            token={token}
+            onError={setFormError}
+          />
 
           {formError && <p className="text-xs text-red-400">{formError}</p>}
 

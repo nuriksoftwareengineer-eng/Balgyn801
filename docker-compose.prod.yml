@@ -30,8 +30,11 @@ services:
       - CDEK_WEBHOOK_TOKEN=${CDEK_WEBHOOK_TOKEN:?Set CDEK_WEBHOOK_TOKEN in .env.prod}
       - CDEK_SENDER_CITY=${CDEK_SENDER_CITY:-270}
       - CDEK_DEFAULT_TARIFF=${CDEK_DEFAULT_TARIFF:-136}
-      - CDEK_PROVIDER=mock
-      - APP_SEED_CATALOG=true
+      - CDEK_PROVIDER=${CDEK_PROVIDER:-mock}
+      # Never auto-seed demo catalog in production. The seeder only fires when
+      # catalog_groups is empty — exactly the state after the pre-launch data reset —
+      # so leaving this true would silently restore all demo content on next restart.
+      - APP_SEED_CATALOG=false
       - FRONTEND_BASE_URL=${FRONTEND_BASE_URL:?Set FRONTEND_BASE_URL (e.g. https://balgyn.kz)}
       - FREEDOMPAY_MERCHANT_ID=${FREEDOMPAY_MERCHANT_ID:?Set FREEDOMPAY_MERCHANT_ID}
       - FREEDOMPAY_SECRET_KEY=${FREEDOMPAY_SECRET_KEY:?Set FREEDOMPAY_SECRET_KEY}
