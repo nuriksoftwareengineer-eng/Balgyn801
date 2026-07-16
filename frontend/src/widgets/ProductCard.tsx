@@ -2,7 +2,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useCart } from "@/app/use-cart";
 import type { Product } from "@/shared/api/client";
-import { formatMoney } from "@/shared/lib/format-money";
+import { Price } from "@/shared/ui/price";
 import { cn } from "@/shared/lib/cn";
 import { Button } from "@/components/ui/button";
 import { ProductImage } from "@/widgets/ProductImage";
@@ -34,7 +34,7 @@ export function ProductCard({ product }: { product: Product }) {
 
         <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
           <span className="text-base font-bold text-black">
-            {formatMoney(product.price)} ₸
+            <Price kzt={product.price} />
           </span>
           <span
             className={cn(

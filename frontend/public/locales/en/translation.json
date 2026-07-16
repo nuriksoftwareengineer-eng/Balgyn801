@@ -272,7 +272,7 @@
       "noMethods": "No delivery methods available for the selected country.",
       "availableIn": "Available only in:",
       "free": "Free",
-      "fromPrice": "from {{price}} ₸",
+      "fromPrice": "from {{price}}",
       "onAgreement": "on agreement",
       "pickupDesc": "After placing your order, we will contact you to arrange pickup time and location. Delivery is free.",
       "cdekDesc": "Enter your city and select a CDEK pickup point. Delivery time is calculated automatically.",

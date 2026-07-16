@@ -28,7 +28,8 @@ import type {
   PaymentProvider,
 } from "@/shared/api/types";
 import { ApiError } from "@/shared/api/http";
-import { formatMoney } from "@/shared/lib/format-money";
+import { Price } from "@/shared/ui/price";
+import { useCurrency } from "@/app/currency-context";
 import { cn } from "@/shared/lib/cn";
 import { Container } from "@/shared/ui/container";
 import {
@@ -278,7 +279,7 @@ function SummarySidebar({
               <div className="shrink-0 text-right">
                 <p className="m-0 text-[0.6rem] text-[--color-muted]">×{l.qty}</p>
                 <p className="m-0 text-xs font-semibold text-black">
-                  {formatMoney(l.price * l.qty)} ₸
+                  <Price kzt={l.price * l.qty} />
                 </p>
               </div>
             </li>
@@ -288,7 +289,7 @@ function SummarySidebar({
         <div className="mt-4 flex flex-col gap-2 border-t border-[--color-border] pt-4">
           <div className="flex justify-between text-sm">
             <span className="text-[--color-muted]">{t("cart.summary.items")}</span>
-            <span className="font-medium text-black">{formatMoney(subtotal)} ₸</span>
+            <span className="font-medium text-black"><Price kzt={subtotal} /></span>
           </div>
 
           {deliveryType === "CDEK" ? (
@@ -305,7 +306,7 @@ function SummarySidebar({
             <div className="flex justify-between text-sm">
               <span className="text-[--color-muted]">{deliveryLabel}</span>
               <span className="font-medium text-black">
-                {formatMoney(selectedMethod.estimatedFeeKzt)} ₸
+                <Price kzt={selectedMethod.estimatedFeeKzt} />
               </span>
             </div>
           ) : deliveryLabel ? (
@@ -318,7 +319,7 @@ function SummarySidebar({
           <div className="flex justify-between border-t border-[--color-border] pt-2">
             <span className="text-sm font-semibold text-black">{t("cart.total")}</span>
             <span className="text-base font-semibold text-black">
-              {formatMoney(grandTotal)} ₸
+              <Price kzt={grandTotal} />
             </span>
           </div>
         </div>
@@ -431,16 +432,16 @@ function OrderSuccess({
             <>
               <div className="flex justify-between">
                 <span className="text-[--color-muted]">{t("cart.summary.items")}</span>
-                <strong className="text-black">{formatMoney(goodsTotal)} ₸</strong>
+                <strong className="text-black"><Price kzt={goodsTotal} /></strong>
               </div>
               <div className="flex justify-between">
                 <span className="text-[--color-muted]">{t("cart.order.delivery")}</span>
-                <strong className="text-black">{formatMoney(fee)} ₸</strong>
+                <strong className="text-black"><Price kzt={fee} /></strong>
               </div>
               <div className="flex justify-between border-t border-emerald-200 pt-2">
                 <span className="font-semibold text-black">{t("cart.total")}</span>
                 <strong className="text-lg text-black">
-                  {formatMoney(order.totalPrice)} ₸
+                  <Price kzt={order.totalPrice} />
                 </strong>
               </div>
             </>
@@ -449,7 +450,7 @@ function OrderSuccess({
               <div className="flex justify-between">
                 <span className="text-[--color-muted]">{t("cart.order.amount")}</span>
                 <strong className="text-black">
-                  {formatMoney(order.totalPrice)} ₸
+                  <Price kzt={order.totalPrice} />
                 </strong>
               </div>
               {order.deliveryType === "CDEK" ? (
@@ -607,7 +608,7 @@ function RecoveryBanner({
         </p>
         {amount > 0 && (
           <p className="mt-1 text-sm font-medium text-black">
-            {formatMoney(amount)} ₸
+            <Price kzt={amount} />
           </p>
         )}
         <p className="mt-3 text-sm text-amber-700">
@@ -666,6 +667,7 @@ function RecoveryBanner({
 
 export function CartPage() {
   const { t } = useTranslation();
+  const { format } = useCurrency();
 
   const STEP_LABELS = [
     t("cart.checkoutFlow.steps.contacts"),
@@ -1338,7 +1340,7 @@ export function CartPage() {
                             : "text-[--color-muted]",
                         )}
                       >
-                        {t("cart.form.fromPrice", { price: formatMoney(method.estimatedFeeKzt) })}
+                        {t("cart.form.fromPrice", { price: format(method.estimatedFeeKzt) })}
                       </p>
                     ) : (
                       <p
@@ -1548,7 +1550,7 @@ export function CartPage() {
                             <span className="text-sm text-black">
                               {t("cart.form.cdekCost")}{" "}
                               <span className="font-semibold">
-                                {formatMoney(cdekTariff.deliveryPrice)} ₸
+                                <Price kzt={cdekTariff.deliveryPrice} />
                               </span>
                             </span>
                             <span className="text-[0.65rem] uppercase tracking-[0.08em] text-[--color-muted]">
@@ -1798,7 +1800,7 @@ export function CartPage() {
                     <dt className="text-[--color-muted]">{t("cart.form.cdekDeliveryLabel")}</dt>
                     <dd className="m-0 text-right text-[--color-muted]">
                       {cdekTariff
-                        ? `${formatMoney(cdekTariff.deliveryPrice)} ₸ · ${t("cart.form.cdekAtReceipt")}`
+                        ? <><Price kzt={cdekTariff.deliveryPrice} /> · {t("cart.form.cdekAtReceipt")}</>
                         : t("cart.form.cdekAtReceipt")}
                     </dd>
                   </div>
@@ -1813,7 +1815,7 @@ export function CartPage() {
                   <div className="flex justify-between gap-4">
                     <dt className="text-[--color-muted]">{t("cart.form.costLabel")}</dt>
                     <dd className="m-0 font-medium text-black">
-                      {formatMoney(selectedMethod.estimatedFeeKzt)} ₸
+                      <Price kzt={selectedMethod.estimatedFeeKzt} />
                     </dd>
                   </div>
                 ) : (
@@ -1858,7 +1860,7 @@ export function CartPage() {
                       ×{l.qty}
                     </span>
                     <span className="shrink-0 font-semibold text-black">
-                      {formatMoney(l.price * l.qty)} ₸
+                      <Price kzt={l.price * l.qty} />
                     </span>
                   </li>
                 ))}
@@ -1867,7 +1869,7 @@ export function CartPage() {
                 <div className="flex justify-between">
                   <span className="text-[--color-muted]">{t("cart.summary.items")}</span>
                   <span className="font-medium text-black">
-                    {formatMoney(subtotal)} ₸
+                    <Price kzt={subtotal} />
                   </span>
                 </div>
                 {deliveryType === "CDEK" ? (
@@ -1879,7 +1881,7 @@ export function CartPage() {
                 <div className="flex justify-between border-t border-[--color-border] pt-2">
                   <span className="font-semibold text-black">{t("cart.total")}</span>
                   <span className="text-base font-semibold text-black">
-                    {formatMoney(grandTotal)} ₸
+                    <Price kzt={grandTotal} />
                   </span>
                 </div>
               </div>
@@ -2038,10 +2040,10 @@ export function CartPage() {
                         </p>
                       ) : null}
                       <p className="mt-1 text-sm text-[--color-muted]">
-                        {formatMoney(line.price)} ₸ × {line.qty}{" "}
+                        <Price kzt={line.price} /> × {line.qty}{" "}
                         <span className="text-[--color-border]">·</span>{" "}
                         <strong className="text-black">
-                          {formatMoney(line.price * line.qty)} ₸
+                          <Price kzt={line.price * line.qty} />
                         </strong>
                       </p>
                     </div>
@@ -2083,7 +2085,7 @@ export function CartPage() {
                   <div className="flex items-center justify-between gap-4">
                     <div>
                       <p className="text-[0.6rem] font-semibold uppercase tracking-[0.1em] text-emerald-600">{t("cart.coupon.applied", "Промокод применён")}</p>
-                      <p className="mt-0.5 font-mono text-sm font-semibold text-black">{appliedCoupon.code} — -{formatMoney(appliedCoupon.discountAmount)} ₸</p>
+                      <p className="mt-0.5 font-mono text-sm font-semibold text-black">{appliedCoupon.code} — -<Price kzt={appliedCoupon.discountAmount} /></p>
                     </div>
                     <button type="button" onClick={() => { setAppliedCoupon(null); setCouponInput(""); }}
                       className="shrink-0 text-[0.65rem] uppercase tracking-[0.1em] text-[--color-muted] transition hover:text-[--color-danger]">
@@ -2115,11 +2117,11 @@ export function CartPage() {
                   </p>
                   {appliedCoupon && (
                     <p className="m-0 mt-0.5 text-xs text-emerald-600">
-                      {t("cart.coupon.discount", "Скидка")}: -{formatMoney(appliedCoupon.discountAmount)} ₸
+                      {t("cart.coupon.discount", "Скидка")}: -<Price kzt={appliedCoupon.discountAmount} />
                     </p>
                   )}
                   <p className="mt-1 text-2xl font-semibold text-black">
-                    {formatMoney(appliedCoupon ? Math.max(0, subtotal - appliedCoupon.discountAmount) : subtotal)} ₸
+                    <Price kzt={appliedCoupon ? Math.max(0, subtotal - appliedCoupon.discountAmount) : subtotal} />
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
@@ -2174,7 +2176,7 @@ export function CartPage() {
           </h1>
           <p className="mt-2 text-[13px] text-[--color-muted]">
             {t("cart.goods", { count: totalQty })}
-            {" "}· {formatMoney(subtotal)} ₸
+            {" "}· <Price kzt={subtotal} />
           </p>
         </div>
 

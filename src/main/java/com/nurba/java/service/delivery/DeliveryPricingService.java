@@ -23,7 +23,8 @@ public interface DeliveryPricingService {
      * @throws com.nurba.java.exception.BusinessRuleException if the country is unknown/inactive or
      *                                                        the method is not allowed for its zone
      */
-    DeliveryQuote quote(DeliveryType method, String countryIso2, DeliveryAddressRequest address, BigDecimal weightKg);
+    DeliveryQuote quote(DeliveryType method, String countryIso2, DeliveryAddressRequest address, BigDecimal weightKg,
+                        com.nurba.java.enums.IntlShipKind intlKind);
 
     /**
      * Returns the delivery methods available for a given destination country.

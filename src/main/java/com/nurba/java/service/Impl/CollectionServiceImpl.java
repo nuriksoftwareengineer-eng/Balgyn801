@@ -65,6 +65,8 @@ public class CollectionServiceImpl implements CollectionService {
         CatalogGroup group = groupRepository.findById(request.getGroupId())
                 .orElseThrow(() -> new NotFoundException("Catalog group not found: " + request.getGroupId()));
         entity.setName(request.getName());
+        entity.setNameKk(request.getNameKk());
+        entity.setNameEn(request.getNameEn());
         entity.setSlug(request.getSlug());
         entity.setDescription(request.getDescription());
         entity.setCoverImageUrl(request.getCoverImageUrl());

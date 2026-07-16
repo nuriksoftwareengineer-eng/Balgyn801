@@ -92,7 +92,7 @@ public class CatalogStorefrontServiceImpl implements CatalogStorefrontService {
                 designRepository.findByCollection_IdAndStatusOrderByCreatedAtDesc(
                         collection.getId(), DesignStatus.PUBLISHED)
                         .stream()
-                        .map(designMapper::toResponse)
+                        .map(this::toResponseWithPrice)
                         .toList();
 
         CollectionDetailResponse response = new CollectionDetailResponse();
@@ -117,7 +117,7 @@ public class CatalogStorefrontServiceImpl implements CatalogStorefrontService {
         List<Design> designs = (collectionId != null)
                 ? designRepository.findByCollection_IdAndStatusOrderByCreatedAtDesc(collectionId, DesignStatus.PUBLISHED)
                 : designRepository.findAllByStatusOrderByCreatedAtDesc(DesignStatus.PUBLISHED);
-        return designs.stream().map(designMapper::toResponse).toList();
+        return designs.stream().map(this::toResponseWithPrice).toList();
     }
 
     @Override
@@ -178,7 +178,7 @@ public class CatalogStorefrontServiceImpl implements CatalogStorefrontService {
     public List<DesignResponse> getPopular(int limit) {
         return designRepository.findTopByViewCount(PageRequest.of(0, limit))
                 .stream()
-                .map(designMapper::toResponse)
+                .map(this::toResponseWithPrice)
                 .toList();
     }
 
@@ -187,7 +187,7 @@ public class CatalogStorefrontServiceImpl implements CatalogStorefrontService {
         LocalDateTime since = LocalDateTime.now().minusDays(30);
         return designRepository.findNewArrivals(since, PageRequest.of(0, limit))
                 .stream()
-                .map(designMapper::toResponse)
+                .map(this::toResponseWithPrice)
                 .toList();
     }
 
@@ -198,7 +198,7 @@ public class CatalogStorefrontServiceImpl implements CatalogStorefrontService {
         List<DesignResponse> recs = designRepository
                 .findRecommendations(design.getCollection().getId(), designId, PageRequest.of(0, limit))
                 .stream()
-                .map(designMapper::toResponse)
+                .map(this::toResponseWithPrice)
                 .toList();
         if (recs.size() < limit) {
             // fallback: fill with popular
@@ -213,5 +213,20 @@ public class CatalogStorefrontServiceImpl implements CatalogStorefrontService {
             }
         }
         return recs;
+    }
+
+    /** Карточкам каталога нужна цена «от»: минимальная KZT-цена по активным вариантам.
+     *  Конвертация в выбранную валюту выполняется на фронте (CurrencyContext). */
+    private DesignResponse toResponseWithPrice(Design design) {
+        DesignResponse response = designMapper.toResponse(design);
+        response.setMinPriceKzt(design.getGarments().stream()
+                .filter(g -> Boolean.TRUE.equals(g.getActive()))
+                .flatMap(g -> g.getPrices().stream())
+                .filter(price -> price.getCurrency() == com.nurba.java.enums.Currency.KZT)
+                .map(com.nurba.java.domain.DesignGarmentPrice::getAmount)
+                .filter(java.util.Objects::nonNull)
+                .min(java.util.Comparator.naturalOrder())
+                .orElse(null));
+        return response;
     }
 }

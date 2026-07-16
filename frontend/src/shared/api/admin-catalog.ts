@@ -11,6 +11,8 @@ import { apiFetch } from "@/shared/api/http";
 export interface AdminGroup {
   id: number;
   name: string;
+  nameKk?: string | null;
+  nameEn?: string | null;
   slug: string;
   sortOrder: number | null;
   active: boolean;
@@ -20,6 +22,8 @@ export interface AdminGroup {
 
 export interface AdminGroupRequest {
   name: string;
+  nameKk?: string | null;
+  nameEn?: string | null;
   slug: string;
   sortOrder?: number;
   coverImageUrl?: string | null;
@@ -31,6 +35,8 @@ export interface AdminCollection {
   groupId: number;
   groupName: string;
   name: string;
+  nameKk?: string | null;
+  nameEn?: string | null;
   slug: string;
   description: string | null;
   coverImageUrl: string | null;
@@ -42,6 +48,8 @@ export interface AdminCollection {
 export interface AdminCollectionRequest {
   groupId: number;
   name: string;
+  nameKk?: string | null;
+  nameEn?: string | null;
   slug: string;
   description?: string | null;
   coverImageUrl?: string | null;

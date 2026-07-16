@@ -167,7 +167,8 @@ public class OrderServiceImpl implements OrderService {
         // The backend computes the fee, zone, and (for international) USD + rate. Nothing here
         // comes from the client — removing the only delivery-cost manipulation vector.
         DeliveryQuote quote = deliveryPricingService.quote(
-                request.getDeliveryType(), request.getCountryIso2(), addrReq, weightKg);
+                request.getDeliveryType(), request.getCountryIso2(), addrReq, weightKg,
+                request.getIntlShippingKind());
         BigDecimal deliveryFee = quote.feeKzt();
 
         // CDEK: доставка оплачивается при получении в ПВЗ — не включаем в сумму заказа на сайте

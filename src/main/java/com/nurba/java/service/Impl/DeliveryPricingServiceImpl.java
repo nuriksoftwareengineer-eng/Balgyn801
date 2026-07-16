@@ -62,7 +62,8 @@ public class DeliveryPricingServiceImpl implements DeliveryPricingService {
     public DeliveryQuote quote(DeliveryType method,
                                String countryIso2,
                                DeliveryAddressRequest address,
-                               BigDecimal weightKg) {
+                               BigDecimal weightKg,
+                               com.nurba.java.enums.IntlShipKind intlKind) {
         if (method == null) {
             throw new BusinessRuleException("Тип доставки обязателен");
         }
@@ -84,7 +85,7 @@ public class DeliveryPricingServiceImpl implements DeliveryPricingService {
         return switch (zone) {
             case KAZAKHSTAN -> kazakhstanQuote(method, address, weight);
             case CIS        -> cisQuote(address, weight);
-            case INTERNATIONAL -> internationalQuote(weight);
+            case INTERNATIONAL -> internationalQuote(countryIso2, intlKind, weight);
         };
     }
 
@@ -130,7 +131,8 @@ public class DeliveryPricingServiceImpl implements DeliveryPricingService {
                     false,
                     false,
                     null,
-                    null   // weight-dependent, shown as variable on frontend
+                    // Flat KZ rate (delivery_settings), same as courier — not weight-based
+                    deliverySettingService.kzDeliveryFlatKzt().setScale(2, RoundingMode.HALF_UP)
             ));
         }
         if (allowed.contains(DeliveryType.CDEK)) {
@@ -212,8 +214,9 @@ public class DeliveryPricingServiceImpl implements DeliveryPricingService {
                 yield new DeliveryQuote(fee, ShippingZone.KAZAKHSTAN, weight, null, null, null);
             }
             case POSTAL -> {
-                BigDecimal fee = shippingTariffService.baseFeeKzt(TariffKind.POSTAL, weight)
-                        .setScale(2, RoundingMode.HALF_UP);
+                // Kazpost within KZ is a flat rate (delivery_settings.KZ_DELIVERY_FLAT_KZT),
+                // not weight-based: goods + flat fee = total.
+                BigDecimal fee = deliverySettingService.kzDeliveryFlatKzt().setScale(2, RoundingMode.HALF_UP);
                 yield new DeliveryQuote(fee, ShippingZone.KAZAKHSTAN, weight, null, null, null);
             }
             case CDEK -> {
@@ -242,8 +245,8 @@ public class DeliveryPricingServiceImpl implements DeliveryPricingService {
         return new DeliveryQuote(fee, ShippingZone.CIS, weight, cityCode, null, null);
     }
 
-    private DeliveryQuote internationalQuote(BigDecimal weight) {
-        InternationalShippingQuote q = internationalShippingService.quote(weight);
+    private DeliveryQuote internationalQuote(String countryIso2, com.nurba.java.enums.IntlShipKind intlKind, BigDecimal weight) {
+        InternationalShippingQuote q = internationalShippingService.quote(countryIso2, intlKind);
         return new DeliveryQuote(
                 q.feeKzt(), ShippingZone.INTERNATIONAL, weight, null, q.feeUsd(), q.kztPerUsd());
     }

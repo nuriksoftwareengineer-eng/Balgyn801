@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { Plus } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { Product } from "@/shared/api/types";
-import { formatMoney } from "@/shared/lib/format-money";
+import { Price } from "@/shared/ui/price";
 
 /** Карточка товара в стиле дизайна BALGYN. Ведёт на страницу товара (выбор размера/цвета там). */
 export function DesignProductCard({
@@ -64,7 +64,7 @@ export function DesignProductCard({
           ) : null}
         </div>
         <p className="whitespace-nowrap text-[13px] font-medium">
-          {formatMoney(product.price)} ₸
+          <Price kzt={product.price} />
         </p>
       </div>
     </Link>

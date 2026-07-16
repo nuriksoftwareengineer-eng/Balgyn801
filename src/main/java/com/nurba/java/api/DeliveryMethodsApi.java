@@ -1,6 +1,8 @@
 package com.nurba.java.api;
 
 import com.nurba.java.dto.delivery.DeliveryMethodResponse;
+import com.nurba.java.dto.delivery.IntlQuoteResponse;
+import com.nurba.java.enums.IntlShipKind;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,4 +23,12 @@ public interface DeliveryMethodsApi {
     )
     @GetMapping("/methods")
     List<DeliveryMethodResponse> availableMethods(@RequestParam String countryIso2);
+
+    @Operation(
+        summary = "Стоимость международной доставки",
+        description = "страна → тарифная зона → цена за тип перевозки (AIR/GROUND). "
+                    + "Цены берутся из импортированных таблиц тарифов на бэкенде."
+    )
+    @GetMapping("/intl-quote")
+    IntlQuoteResponse intlQuote(@RequestParam String countryIso2, @RequestParam IntlShipKind kind);
 }

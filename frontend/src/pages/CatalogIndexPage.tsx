@@ -11,7 +11,7 @@ export function CatalogIndexPage() {
   const { data: groups, isLoading, error } = useCatalogGroups();
 
   useSeoMeta({
-    title: `${t("nav.catalog")} — Balgyn`,
+    title: t("nav.catalog"),
     description: t("catalog.metaDesc", "Коллекции вышивки Balgyn"),
   });
 

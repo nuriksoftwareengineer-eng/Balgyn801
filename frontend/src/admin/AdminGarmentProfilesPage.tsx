@@ -40,14 +40,19 @@ export function AdminGarmentProfilesPage() {
   const [editing, setEditing] = useState<GarmentProfile | null>(null);
   const [form, setForm] = useState<GarmentProfileRequest>(emptyForm());
   const [error, setError] = useState<string | null>(null);
+  // Explicit flag: deriving "open" from form.name !== "" meant the create form
+  // could never appear (a fresh form starts with an empty name).
+  const [formOpen, setFormOpen] = useState(false);
 
   function startCreate() {
     setEditing(null);
     setForm(emptyForm());
     setError(null);
+    setFormOpen(true);
   }
 
   function startEdit(p: GarmentProfile) {
+    setFormOpen(true);
     setEditing(p);
     setForm({
       name: p.name,
@@ -67,6 +72,7 @@ export function AdminGarmentProfilesPage() {
     setEditing(null);
     setForm(emptyForm());
     setError(null);
+    setFormOpen(false);
   }
 
   function set<K extends keyof GarmentProfileRequest>(key: K, value: GarmentProfileRequest[K]) {
@@ -91,7 +97,7 @@ export function AdminGarmentProfilesPage() {
     onError: (e) => setError(e instanceof ApiError ? e.message : "Не удалось удалить"),
   });
 
-  const isFormOpen = editing !== null || form.name !== "";
+  const isFormOpen = formOpen;
 
   return (
     <div>

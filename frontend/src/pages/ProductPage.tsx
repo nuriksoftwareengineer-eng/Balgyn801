@@ -5,7 +5,7 @@ import { useCart } from "@/app/use-cart";
 import { useCartDrawer } from "@/app/cart-drawer-context";
 import { useProduct } from "@/shared/api/queries";
 import type { Product } from "@/shared/api/types";
-import { formatMoney } from "@/shared/lib/format-money";
+import { Price } from "@/shared/ui/price";
 import { cn } from "@/shared/lib/cn";
 import { Container } from "@/shared/ui/container";
 import { ProductImage } from "@/widgets/ProductImage";
@@ -79,7 +79,7 @@ function ProductBuyColumn({ product }: { product: Product }) {
       {/* Price + stock */}
       <div className="mt-8 flex flex-wrap items-baseline gap-4">
         <span className="text-2xl font-semibold text-black">
-          {formatMoney(product.price)} ₸
+          <Price kzt={product.price} />
         </span>
         <span
           className={cn(

@@ -7,13 +7,14 @@ import { getSizeCharts } from "@/shared/api/backend-api";
 import {
   dedupeColors,
   dedupeSizes,
+  sortSizes,
   garmentLabel,
   localizeName,
   kztPrice,
 } from "@/shared/types/catalog";
 import { useSeoMeta } from "@/shared/hooks/useSeoMeta";
 import { useCart } from "@/app/use-cart";
-import { formatMoney } from "@/shared/lib/format-money";
+import { useCurrency } from "@/app/currency-context";
 import { cn } from "@/shared/lib/cn";
 import { Container } from "@/shared/ui/container";
 import { RecommendedSection } from "@/widgets/catalog/RecommendedSection";
@@ -142,6 +143,7 @@ export function DesignPage() {
   }>();
   const navigate = useNavigate();
   const { addDesignItem } = useCart();
+  const { format } = useCurrency();
 
   const { data: design, isLoading, error } = useCatalogDesign(designSlug);
 
@@ -162,7 +164,7 @@ export function DesignPage() {
   });
 
   useSeoMeta({
-    title: design ? `${design.name} — Balgyn` : "Дизайн — Balgyn",
+    title: design ? localizeName(design, i18n.language) : t("nav.catalog"),
     description: design?.description ?? undefined,
     canonical:
       design
@@ -193,7 +195,7 @@ export function DesignPage() {
   );
 
   const availableSizes = useMemo(() => {
-    const all = dedupeSizes(selectedGarment?.sizes ?? []);
+    const all = sortSizes(dedupeSizes(selectedGarment?.sizes ?? []));
     // If no stockMap provided (API omits it), show all sizes unchanged
     if (!selectedGarment?.stockMap || selectedColorId == null) return all;
     return all.filter((s) => (stockForColor[s.id] ?? 0) > 0);
@@ -520,7 +522,7 @@ export function DesignPage() {
                               "ml-2 text-xs",
                               selectedGarmentId === g.id ? "text-white/60" : "text-[--color-muted]",
                             )}>
-                              {formatMoney(price)} ₸
+                              {format(price)}
                             </span>
                           ) : null}
                         </button>
@@ -587,7 +589,7 @@ export function DesignPage() {
                 <div className="border-t border-[--color-border] pt-5">
                   {displayPrice != null && (
                     <p className="mb-5 text-3xl font-bold tracking-[-0.02em] text-black">
-                      {formatMoney(displayPrice)} ₸
+                      {format(displayPrice)}
                     </p>
                   )}
                   <button
