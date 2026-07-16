@@ -55,6 +55,9 @@ public class CreateOrderRequest {
     @Pattern(regexp = "[A-Za-z]{2}", message = "countryIso2 должен быть двухбуквенным ISO-кодом страны")
     private String countryIso2;
 
+    /** Тип международной перевозки (обязателен при deliveryType=INTERNATIONAL): AIR или GROUND. */
+    private com.nurba.java.enums.IntlShipKind intlShippingKind;
+
     /** Код ПВЗ СДЭК (если выбран пункт выдачи). Сохраняется в снапшот адреса. */
     @Size(max = 50)
     private String pvzCode;

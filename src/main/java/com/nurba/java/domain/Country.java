@@ -46,6 +46,13 @@ public class Country {
     @Column(name = "shipping_zone", length = 20, nullable = false)
     private ShippingZone shippingZone;
 
+    /**
+     * Тарифная зона международной доставки (таблица «страна → зона» из тарифов Казпочты).
+     * NULL — тарифы для страны ещё не импортированы, международная доставка недоступна.
+     */
+    @Column(name = "intl_zone", length = 20)
+    private String intlZone;
+
     @Column(nullable = false)
     private Boolean active = true;
 }

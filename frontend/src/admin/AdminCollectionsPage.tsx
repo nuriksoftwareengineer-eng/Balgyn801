@@ -35,6 +35,8 @@ export function AdminCollectionsPage() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [groupId, setGroupId] = useState<string>("");
   const [name, setName] = useState("");
+  const [nameKk, setNameKk] = useState("");
+  const [nameEn, setNameEn] = useState("");
   const [slug, setSlug] = useState("");
   const [slugTouched, setSlugTouched] = useState(false);
   const [description, setDescription] = useState("");
@@ -47,6 +49,8 @@ export function AdminCollectionsPage() {
     setEditingId(null);
     setGroupId("");
     setName("");
+    setNameKk("");
+    setNameEn("");
     setSlug("");
     setSlugTouched(false);
     setDescription("");
@@ -60,6 +64,8 @@ export function AdminCollectionsPage() {
     setEditingId(c.id);
     setGroupId(String(c.groupId));
     setName(c.name);
+    setNameKk(c.nameKk ?? "");
+    setNameEn(c.nameEn ?? "");
     setSlug(c.slug);
     setSlugTouched(true);
     setDescription(c.description ?? "");
@@ -75,6 +81,8 @@ export function AdminCollectionsPage() {
       const body = {
         groupId: Number(groupId),
         name: name.trim(),
+        nameKk: nameKk.trim() || null,
+        nameEn: nameEn.trim() || null,
         slug: (slug.trim() || slugify(name)).trim(),
         description: description.trim() || null,
         coverImageUrl: coverImageUrl || null,
@@ -139,13 +147,31 @@ export function AdminCollectionsPage() {
             />
           </label>
           <label className="flex flex-col gap-1.5">
-            <span className="text-xs text-zinc-400">Название *</span>
+            <span className="text-xs text-zinc-400">Название (RU) *</span>
             <input
               value={name}
               onChange={(e) => {
                 setName(e.target.value);
                 if (!slugTouched) setSlug(slugify(e.target.value));
               }}
+              placeholder="Берсерк"
+              className={inputClass}
+            />
+          </label>
+          <label className="flex flex-col gap-1.5">
+            <span className="text-xs text-zinc-400">Название (KZ)</span>
+            <input
+              value={nameKk}
+              onChange={(e) => setNameKk(e.target.value)}
+              placeholder="Берсерк (қаз)"
+              className={inputClass}
+            />
+          </label>
+          <label className="flex flex-col gap-1.5">
+            <span className="text-xs text-zinc-400">Название (EN)</span>
+            <input
+              value={nameEn}
+              onChange={(e) => setNameEn(e.target.value)}
               placeholder="Berserk"
               className={inputClass}
             />

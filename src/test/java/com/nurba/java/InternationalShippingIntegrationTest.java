@@ -11,11 +11,13 @@ import com.nurba.java.domain.DesignGarment;
 import com.nurba.java.domain.DesignGarmentPrice;
 import com.nurba.java.domain.GarmentProfile;
 import com.nurba.java.domain.GarmentTypeWeight;
+import com.nurba.java.domain.IntlZoneTariff;
 import com.nurba.java.domain.Inventory;
 import com.nurba.java.domain.Order;
 import com.nurba.java.domain.Size;
 import com.nurba.java.enums.Currency;
 import com.nurba.java.enums.GarmentType;
+import com.nurba.java.enums.IntlShipKind;
 import com.nurba.java.enums.ShippingZone;
 import com.nurba.java.repositories.GarmentProfileRepository;
 import com.nurba.java.repositories.GarmentTypeWeightRepository;
@@ -30,6 +32,7 @@ import com.nurba.java.repositories.DeliveryAddressRepository;
 import com.nurba.java.repositories.DesignGarmentPriceRepository;
 import com.nurba.java.repositories.DesignGarmentRepository;
 import com.nurba.java.repositories.DesignRepository;
+import com.nurba.java.repositories.IntlZoneTariffRepository;
 import com.nurba.java.repositories.InventoryRepository;
 import com.nurba.java.repositories.OrderHistoryRepository;
 import com.nurba.java.repositories.OrderItemRepository;
@@ -77,6 +80,7 @@ class InternationalShippingIntegrationTest {
     @Autowired private DesignGarmentPriceRepository designGarmentPriceRepository;
     @Autowired private InventoryRepository inventoryRepository;
     @Autowired private CountryRepository countryRepository;
+    @Autowired private IntlZoneTariffRepository intlZoneTariffRepository;
     @Autowired private GarmentProfileRepository garmentProfileRepository;
     @Autowired private GarmentTypeWeightRepository garmentTypeWeightRepository;
     @Autowired private ExchangeRateRepository exchangeRateRepository;
@@ -100,7 +104,11 @@ class InternationalShippingIntegrationTest {
         cleanAll();
         buildFixture();
         countryRepository.save(country("RU", "Россия", "Russia", ShippingZone.CIS));
-        countryRepository.save(country("US", "США", "United States", ShippingZone.INTERNATIONAL));
+        Country us = country("US", "США", "United States", ShippingZone.INTERNATIONAL);
+        us.setIntlZone("ZONE_TEST");
+        countryRepository.save(us);
+        // Zone tariff: страна → зона → цена. Flat, weight-independent.
+        intlZoneTariffRepository.save(new IntlZoneTariff(null, "ZONE_TEST", IntlShipKind.AIR, new BigDecimal("6400.00")));
 
         // Seed deterministic inputs so the fee is independent of any ambient reference data
         // left in the shared in-memory DB by other test classes.
@@ -132,6 +140,7 @@ class InternationalShippingIntegrationTest {
         colorRepository.deleteAll();
         sizeRepository.deleteAll();
         countryRepository.deleteAllInBatch();
+        intlZoneTariffRepository.deleteAllInBatch();
         garmentTypeWeightRepository.deleteAll();
         exchangeRateRepository.deleteAll();
         garmentProfileRepository.deleteAll();
@@ -217,7 +226,7 @@ class InternationalShippingIntegrationTest {
     private String body(String method, String iso2) {
         return """
                 { "customerName": "T", "customerPhone": "+77000000000",
-                  "deliveryType": "%s", "countryIso2": "%s",
+                  "deliveryType": "%s", "countryIso2": "%s", "intlShippingKind": "AIR",
                   "items": [ { "designGarmentId": %d, "colorId": %d, "sizeId": %d, "currency": "KZT", "quantity": 1 } ],
                   "address": { "city": "City", "street": "St 1", "apartment": "—",
                     "postalCode": "00000", "recipientName": "T", "recipientPhone": "+77000000000" } }
@@ -228,8 +237,8 @@ class InternationalShippingIntegrationTest {
 
     @Test
     void international_computesFee_andSnapshotsUsdAndRate() throws Exception {
-        // HOODIE = 1.000 kg → AIR bracket upto 1.0 = 4000 KZT base.
-        // Bootstrap rate 480, markup 5 USD → feeKzt = 4000 + 5*480 = 6400; feeUsd = 4000/480 + 5 = 13.33.
+        // Новая модель: страна US → intl_zone ZONE_TEST → тариф AIR 6400 KZT (flat, без веса).
+        // Rate 480 → feeUsd = 6400/480 = 13.33.
         MvcResult res = mockMvc.perform(post("/api/v1/order")
                         .contentType(MediaType.APPLICATION_JSON).content(body("INTERNATIONAL", "US")))
                 .andExpect(status().isOk())

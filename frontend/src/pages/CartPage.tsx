@@ -9,7 +9,9 @@ import { isLegacyLine, isDesignLine } from "@/app/cart-context";
 import {
   calculateCdekTariffByOrder,
   createOrder,
+  getDeliveryCountries,
   getDeliveryMethods,
+  getIntlQuote,
   initPayment,
   listCdekDeliveryPoints,
   searchCdekCities,
@@ -28,7 +30,8 @@ import type {
   PaymentProvider,
 } from "@/shared/api/types";
 import { ApiError } from "@/shared/api/http";
-import { formatMoney } from "@/shared/lib/format-money";
+import { Price } from "@/shared/ui/price";
+import { useCurrency } from "@/app/currency-context";
 import { cn } from "@/shared/lib/cn";
 import { Container } from "@/shared/ui/container";
 import {
@@ -237,19 +240,24 @@ function SummarySidebar({
   subtotal,
   deliveryType,
   selectedMethod,
+  intlFeeKzt,
 }: {
   lines: SidebarLine[];
   subtotal: number;
   deliveryType: DeliveryType | null;
   selectedMethod: DeliveryMethodResponse | null;
+  intlFeeKzt?: number | null;
 }) {
   const { t } = useTranslation();
   // CDEK: delivery paid at pickup point — total is items only.
+  // INTERNATIONAL: fee is the backend zone-tariff quote passed in as a prop.
   // Other methods: add the estimated delivery fee if known.
   const deliveryFeeForTotal =
-    deliveryType !== "CDEK" && selectedMethod?.estimatedFeeKzt != null
-      ? selectedMethod.estimatedFeeKzt
-      : 0;
+    deliveryType === "INTERNATIONAL"
+      ? (intlFeeKzt ?? 0)
+      : deliveryType !== "CDEK" && selectedMethod?.estimatedFeeKzt != null
+        ? selectedMethod.estimatedFeeKzt
+        : 0;
   const grandTotal = subtotal + deliveryFeeForTotal;
 
   const deliveryLabel =
@@ -278,7 +286,7 @@ function SummarySidebar({
               <div className="shrink-0 text-right">
                 <p className="m-0 text-[0.6rem] text-[--color-muted]">×{l.qty}</p>
                 <p className="m-0 text-xs font-semibold text-black">
-                  {formatMoney(l.price * l.qty)} ₸
+                  <Price kzt={l.price * l.qty} />
                 </p>
               </div>
             </li>
@@ -288,7 +296,7 @@ function SummarySidebar({
         <div className="mt-4 flex flex-col gap-2 border-t border-[--color-border] pt-4">
           <div className="flex justify-between text-sm">
             <span className="text-[--color-muted]">{t("cart.summary.items")}</span>
-            <span className="font-medium text-black">{formatMoney(subtotal)} ₸</span>
+            <span className="font-medium text-black"><Price kzt={subtotal} /></span>
           </div>
 
           {deliveryType === "CDEK" ? (
@@ -305,7 +313,7 @@ function SummarySidebar({
             <div className="flex justify-between text-sm">
               <span className="text-[--color-muted]">{deliveryLabel}</span>
               <span className="font-medium text-black">
-                {formatMoney(selectedMethod.estimatedFeeKzt)} ₸
+                <Price kzt={selectedMethod.estimatedFeeKzt} />
               </span>
             </div>
           ) : deliveryLabel ? (
@@ -318,7 +326,7 @@ function SummarySidebar({
           <div className="flex justify-between border-t border-[--color-border] pt-2">
             <span className="text-sm font-semibold text-black">{t("cart.total")}</span>
             <span className="text-base font-semibold text-black">
-              {formatMoney(grandTotal)} ₸
+              <Price kzt={grandTotal} />
             </span>
           </div>
         </div>
@@ -431,16 +439,16 @@ function OrderSuccess({
             <>
               <div className="flex justify-between">
                 <span className="text-[--color-muted]">{t("cart.summary.items")}</span>
-                <strong className="text-black">{formatMoney(goodsTotal)} ₸</strong>
+                <strong className="text-black"><Price kzt={goodsTotal} /></strong>
               </div>
               <div className="flex justify-between">
                 <span className="text-[--color-muted]">{t("cart.order.delivery")}</span>
-                <strong className="text-black">{formatMoney(fee)} ₸</strong>
+                <strong className="text-black"><Price kzt={fee} /></strong>
               </div>
               <div className="flex justify-between border-t border-emerald-200 pt-2">
                 <span className="font-semibold text-black">{t("cart.total")}</span>
                 <strong className="text-lg text-black">
-                  {formatMoney(order.totalPrice)} ₸
+                  <Price kzt={order.totalPrice} />
                 </strong>
               </div>
             </>
@@ -449,7 +457,7 @@ function OrderSuccess({
               <div className="flex justify-between">
                 <span className="text-[--color-muted]">{t("cart.order.amount")}</span>
                 <strong className="text-black">
-                  {formatMoney(order.totalPrice)} ₸
+                  <Price kzt={order.totalPrice} />
                 </strong>
               </div>
               {order.deliveryType === "CDEK" ? (
@@ -607,7 +615,7 @@ function RecoveryBanner({
         </p>
         {amount > 0 && (
           <p className="mt-1 text-sm font-medium text-black">
-            {formatMoney(amount)} ₸
+            <Price kzt={amount} />
           </p>
         )}
         <p className="mt-3 text-sm text-amber-700">
@@ -665,7 +673,8 @@ function RecoveryBanner({
 // ── CartPage ───────────────────────────────────────────────────────────────────
 
 export function CartPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const { format } = useCurrency();
 
   const STEP_LABELS = [
     t("cart.checkoutFlow.steps.contacts"),
@@ -678,7 +687,7 @@ export function CartPage() {
   const DELIVERY_REGIONS = [
     { iso2: "KZ", label: t("cart.regions.KZ"), hint: t("cart.regions.KZ_hint") },
     { iso2: "RU", label: t("cart.regions.RU"), hint: t("cart.regions.RU_hint") },
-    { iso2: "US", label: t("cart.regions.US"), hint: t("cart.regions.US_hint") },
+    { iso2: "OTHER", label: t("cart.regions.OTHER"), hint: t("cart.regions.OTHER_hint") },
   ];
 
   const navigate = useNavigate();
@@ -701,6 +710,10 @@ export function CartPage() {
 
   // ── Step 2: Country ──────────────────────────────────────────────────────────
   const [countryIso2, setCountryIso2] = useState("KZ");
+  // «Другие страны»: выбранный регион-псевдокод, поиск и тип перевозки
+  const [regionChoice, setRegionChoice] = useState("KZ");
+  const [countrySearch, setCountrySearch] = useState("");
+  const [intlKind, setIntlKind] = useState<"AIR" | "GROUND" | null>(null);
 
   // ── Step 3: Delivery type ────────────────────────────────────────────────────
   const [deliveryType, setDeliveryType] = useState<DeliveryType>("PICKUP");
@@ -761,6 +774,25 @@ export function CartPage() {
     staleTime: 5 * 60 * 1000,
   });
 
+  // ── Международная доставка: страны + расчёт ──────────────────────────────────
+  const countriesQuery = useQuery({
+    queryKey: ["delivery", "countries"],
+    queryFn: getDeliveryCountries,
+    enabled: phase === "checkout" && regionChoice === "OTHER",
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const intlQuoteQuery = useQuery({
+    queryKey: ["delivery", "intl-quote", countryIso2, intlKind],
+    queryFn: () => getIntlQuote(countryIso2, intlKind!),
+    enabled:
+      phase === "checkout" &&
+      regionChoice === "OTHER" &&
+      countryIso2.length > 0 &&
+      intlKind != null,
+    staleTime: 5 * 60 * 1000,
+  });
+
   // ── CDEK queries ─────────────────────────────────────────────────────────────
   const debouncedCityQuery = useDebouncedValue(cdekCitySearch.trim(), 400);
 
@@ -793,9 +825,11 @@ export function CartPage() {
   // CDEK: delivery paid at pickup point — order total is items only.
   // Other methods: add the estimated delivery fee if known.
   const deliveryFeeForTotal =
-    deliveryType !== "CDEK" && selectedMethod?.estimatedFeeKzt != null
-      ? selectedMethod.estimatedFeeKzt
-      : 0;
+    deliveryType === "INTERNATIONAL"
+      ? (intlQuoteQuery.data?.priceKzt ?? 0)
+      : deliveryType !== "CDEK" && selectedMethod?.estimatedFeeKzt != null
+        ? selectedMethod.estimatedFeeKzt
+        : 0;
   const grandTotal = subtotal + deliveryFeeForTotal;
 
   // ── Effects ───────────────────────────────────────────────────────────────────
@@ -954,8 +988,11 @@ export function CartPage() {
           customerName.trim().length > 0 && customerPhone.trim().length > 0
         );
       case 2:
+        return (
+          countryIso2.length > 0 && (regionChoice !== "OTHER" || intlKind != null)
+        );
       case 3:
-        return true;
+        return deliveryType !== "INTERNATIONAL" || intlKind != null;
       case 4:
         if (!requiresAddress) return true;
         if (selectedMethod?.requiresCitySearch) {
@@ -1094,6 +1131,7 @@ export function CartPage() {
       deliveryType,
       comment: comment.trim() || null,
       countryIso2: countryIso2ForOrder,
+      intlShippingKind: deliveryType === "INTERNATIONAL" ? intlKind : null,
       pvzCode,
       couponCode: appliedCoupon?.code ?? null,
       items: lines.map((l) =>
@@ -1242,10 +1280,14 @@ export function CartPage() {
               <button
                 key={r.iso2}
                 type="button"
-                onClick={() => setCountryIso2(r.iso2)}
+                onClick={() => {
+                  setRegionChoice(r.iso2);
+                  setIntlKind(null);
+                  setCountryIso2(r.iso2 === "OTHER" ? "" : r.iso2);
+                }}
                 className={cn(
                   "flex items-center justify-between border px-5 py-4 text-left transition-colors duration-150",
-                  countryIso2 === r.iso2
+                  regionChoice === r.iso2
                     ? "border-black bg-black text-white"
                     : "border-[--color-border] bg-white hover:border-zinc-400",
                 )}
@@ -1255,7 +1297,7 @@ export function CartPage() {
                   <p
                     className={cn(
                       "m-0 mt-0.5 text-xs",
-                      countryIso2 === r.iso2
+                      regionChoice === r.iso2
                         ? "text-white/70"
                         : "text-[--color-muted]",
                     )}
@@ -1263,13 +1305,105 @@ export function CartPage() {
                     {r.hint}
                   </p>
                 </div>
-                {countryIso2 === r.iso2 && (
+                {regionChoice === r.iso2 && (
                   <span className="ml-4 shrink-0">
                     <CheckIcon size={12} />
                   </span>
                 )}
               </button>
             ))}
+
+            {regionChoice === "OTHER" && (
+              <div className="mt-2 flex flex-col gap-2">
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-black">
+                  {t("cart.intl.country")}
+                </p>
+                <input
+                  value={countrySearch}
+                  onChange={(e) => setCountrySearch(e.target.value)}
+                  placeholder={t("cart.intl.searchCountry")}
+                  className="border border-[--color-border] px-4 py-3 text-sm outline-none focus:border-black"
+                />
+                <div className="max-h-56 overflow-y-auto border border-[--color-border]">
+                  {(countriesQuery.data ?? [])
+                    .filter((c) => {
+                      const q = countrySearch.trim().toLowerCase();
+                      if (!q) return true;
+                      return (
+                        c.nameRu.toLowerCase().includes(q) ||
+                        c.nameEn.toLowerCase().includes(q)
+                      );
+                    })
+                    .map((c) => (
+                      <button
+                        key={c.iso2}
+                        type="button"
+                        onClick={() => setCountryIso2(c.iso2)}
+                        className={cn(
+                          "flex w-full items-center justify-between px-4 py-2.5 text-left text-sm transition-colors",
+                          countryIso2 === c.iso2
+                            ? "bg-black text-white"
+                            : "bg-white hover:bg-[--color-surface]",
+                        )}
+                      >
+                        <span>{i18n.language.startsWith("en") ? c.nameEn : c.nameRu}</span>
+                        {countryIso2 === c.iso2 && <CheckIcon size={10} />}
+                      </button>
+                    ))}
+                  {countriesQuery.isFetching && (
+                    <p className="px-4 py-2.5 text-xs text-[--color-muted]">…</p>
+                  )}
+                </div>
+                {countryIso2 && (
+                  <div className="mt-3 flex flex-col gap-2">
+                    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-black">
+                      {t("cart.intl.chooseKind")}
+                    </p>
+                    {(["AIR", "GROUND"] as const).map((k) => (
+                      <button
+                        key={k}
+                        type="button"
+                        onClick={() => setIntlKind(k)}
+                        className={cn(
+                          "flex items-center justify-between border px-5 py-4 text-left transition-colors",
+                          intlKind === k
+                            ? "border-black bg-black text-white"
+                            : "border-[--color-border] bg-white hover:border-zinc-400",
+                        )}
+                      >
+                        <div>
+                          <p className="m-0 text-sm font-semibold">
+                            {k === "AIR" ? t("cart.intl.air") : t("cart.intl.ground")}
+                          </p>
+                          <p
+                            className={cn(
+                              "m-0 mt-0.5 text-xs",
+                              intlKind === k ? "text-white/70" : "text-[--color-muted]",
+                            )}
+                          >
+                            {k === "AIR" ? t("cart.intl.airDays") : t("cart.intl.groundDays")}
+                          </p>
+                        </div>
+                        {intlKind === k && <CheckIcon size={12} />}
+                      </button>
+                    ))}
+                    {intlKind != null && (
+                      <p className="text-sm font-medium text-black">
+                        {intlQuoteQuery.isFetching ? (
+                          "…"
+                        ) : intlQuoteQuery.error ? (
+                          <span className="text-red-600">
+                            {(intlQuoteQuery.error as Error).message}
+                          </span>
+                        ) : intlQuoteQuery.data ? (
+                          <Price kzt={intlQuoteQuery.data.priceKzt} />
+                        ) : null}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         );
 
@@ -1338,7 +1472,7 @@ export function CartPage() {
                             : "text-[--color-muted]",
                         )}
                       >
-                        {t("cart.form.fromPrice", { price: formatMoney(method.estimatedFeeKzt) })}
+                        {t("cart.form.fromPrice", { price: format(method.estimatedFeeKzt) })}
                       </p>
                     ) : (
                       <p
@@ -1548,7 +1682,7 @@ export function CartPage() {
                             <span className="text-sm text-black">
                               {t("cart.form.cdekCost")}{" "}
                               <span className="font-semibold">
-                                {formatMoney(cdekTariff.deliveryPrice)} ₸
+                                <Price kzt={cdekTariff.deliveryPrice} />
                               </span>
                             </span>
                             <span className="text-[0.65rem] uppercase tracking-[0.08em] text-[--color-muted]">
@@ -1798,7 +1932,7 @@ export function CartPage() {
                     <dt className="text-[--color-muted]">{t("cart.form.cdekDeliveryLabel")}</dt>
                     <dd className="m-0 text-right text-[--color-muted]">
                       {cdekTariff
-                        ? `${formatMoney(cdekTariff.deliveryPrice)} ₸ · ${t("cart.form.cdekAtReceipt")}`
+                        ? <><Price kzt={cdekTariff.deliveryPrice} /> · {t("cart.form.cdekAtReceipt")}</>
                         : t("cart.form.cdekAtReceipt")}
                     </dd>
                   </div>
@@ -1813,7 +1947,7 @@ export function CartPage() {
                   <div className="flex justify-between gap-4">
                     <dt className="text-[--color-muted]">{t("cart.form.costLabel")}</dt>
                     <dd className="m-0 font-medium text-black">
-                      {formatMoney(selectedMethod.estimatedFeeKzt)} ₸
+                      <Price kzt={selectedMethod.estimatedFeeKzt} />
                     </dd>
                   </div>
                 ) : (
@@ -1858,7 +1992,7 @@ export function CartPage() {
                       ×{l.qty}
                     </span>
                     <span className="shrink-0 font-semibold text-black">
-                      {formatMoney(l.price * l.qty)} ₸
+                      <Price kzt={l.price * l.qty} />
                     </span>
                   </li>
                 ))}
@@ -1867,7 +2001,7 @@ export function CartPage() {
                 <div className="flex justify-between">
                   <span className="text-[--color-muted]">{t("cart.summary.items")}</span>
                   <span className="font-medium text-black">
-                    {formatMoney(subtotal)} ₸
+                    <Price kzt={subtotal} />
                   </span>
                 </div>
                 {deliveryType === "CDEK" ? (
@@ -1879,7 +2013,7 @@ export function CartPage() {
                 <div className="flex justify-between border-t border-[--color-border] pt-2">
                   <span className="font-semibold text-black">{t("cart.total")}</span>
                   <span className="text-base font-semibold text-black">
-                    {formatMoney(grandTotal)} ₸
+                    <Price kzt={grandTotal} />
                   </span>
                 </div>
               </div>
@@ -2038,10 +2172,10 @@ export function CartPage() {
                         </p>
                       ) : null}
                       <p className="mt-1 text-sm text-[--color-muted]">
-                        {formatMoney(line.price)} ₸ × {line.qty}{" "}
+                        <Price kzt={line.price} /> × {line.qty}{" "}
                         <span className="text-[--color-border]">·</span>{" "}
                         <strong className="text-black">
-                          {formatMoney(line.price * line.qty)} ₸
+                          <Price kzt={line.price * line.qty} />
                         </strong>
                       </p>
                     </div>
@@ -2083,7 +2217,7 @@ export function CartPage() {
                   <div className="flex items-center justify-between gap-4">
                     <div>
                       <p className="text-[0.6rem] font-semibold uppercase tracking-[0.1em] text-emerald-600">{t("cart.coupon.applied", "Промокод применён")}</p>
-                      <p className="mt-0.5 font-mono text-sm font-semibold text-black">{appliedCoupon.code} — -{formatMoney(appliedCoupon.discountAmount)} ₸</p>
+                      <p className="mt-0.5 font-mono text-sm font-semibold text-black">{appliedCoupon.code} — -<Price kzt={appliedCoupon.discountAmount} /></p>
                     </div>
                     <button type="button" onClick={() => { setAppliedCoupon(null); setCouponInput(""); }}
                       className="shrink-0 text-[0.65rem] uppercase tracking-[0.1em] text-[--color-muted] transition hover:text-[--color-danger]">
@@ -2115,11 +2249,11 @@ export function CartPage() {
                   </p>
                   {appliedCoupon && (
                     <p className="m-0 mt-0.5 text-xs text-emerald-600">
-                      {t("cart.coupon.discount", "Скидка")}: -{formatMoney(appliedCoupon.discountAmount)} ₸
+                      {t("cart.coupon.discount", "Скидка")}: -<Price kzt={appliedCoupon.discountAmount} />
                     </p>
                   )}
                   <p className="mt-1 text-2xl font-semibold text-black">
-                    {formatMoney(appliedCoupon ? Math.max(0, subtotal - appliedCoupon.discountAmount) : subtotal)} ₸
+                    <Price kzt={appliedCoupon ? Math.max(0, subtotal - appliedCoupon.discountAmount) : subtotal} />
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
@@ -2174,7 +2308,7 @@ export function CartPage() {
           </h1>
           <p className="mt-2 text-[13px] text-[--color-muted]">
             {t("cart.goods", { count: totalQty })}
-            {" "}· {formatMoney(subtotal)} ₸
+            {" "}· <Price kzt={subtotal} />
           </p>
         </div>
 
@@ -2252,6 +2386,7 @@ export function CartPage() {
               subtotal={subtotal}
               deliveryType={deliveryType}
               selectedMethod={selectedMethod}
+              intlFeeKzt={intlQuoteQuery.data?.priceKzt ?? null}
             />
           </div>
         </div>

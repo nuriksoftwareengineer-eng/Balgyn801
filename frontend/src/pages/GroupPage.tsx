@@ -14,7 +14,7 @@ export function GroupPage() {
   const { data: group, isLoading, error } = useCatalogGroup(groupSlug);
 
   useSeoMeta({
-    title: group ? `${group.name} — Balgyn` : "Каталог — Balgyn",
+    title: group ? localizeName(group, i18n.language) : t("nav.catalog"),
     canonical: group ? `${window.location.origin}/catalog/${groupSlug}` : undefined,
   });
 

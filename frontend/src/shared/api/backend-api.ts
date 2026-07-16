@@ -800,3 +800,31 @@ export async function getNewArrivals(limit = 8): Promise<DesignResponse[]> {
 export async function getRecommendations(designId: number, limit = 6): Promise<DesignResponse[]> {
   return apiFetch<DesignResponse[]>(`/catalog/recommendations?designId=${designId}&limit=${limit}`);
 }
+
+// ─── Международная доставка ──────────────────────────────────────────────────
+
+export interface DeliveryCountry {
+  iso2: string;
+  nameRu: string;
+  nameEn: string;
+}
+
+export interface IntlQuote {
+  priceKzt: number;
+  priceUsd: number;
+}
+
+/** Активные страны доставки (для выпадающего списка «Другие страны»). */
+export async function getDeliveryCountries(): Promise<DeliveryCountry[]> {
+  return apiFetch<DeliveryCountry[]>("/catalog/countries");
+}
+
+/** Стоимость международной доставки: страна → зона → цена (Авиа/Наземная). */
+export async function getIntlQuote(
+  countryIso2: string,
+  kind: "AIR" | "GROUND",
+): Promise<IntlQuote> {
+  return apiFetch<IntlQuote>(
+    `/delivery/intl-quote?countryIso2=${encodeURIComponent(countryIso2)}&kind=${kind}`,
+  );
+}

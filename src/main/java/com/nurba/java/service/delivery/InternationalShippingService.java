@@ -1,14 +1,17 @@
 package com.nurba.java.service.delivery;
 
-import java.math.BigDecimal;
+import com.nurba.java.enums.IntlShipKind;
 
 /**
- * Computes international shipping cost. Exposed to the customer as a single "International Shipping"
- * method; internally it always uses the AIR tariff plus a fixed USD markup converted at the cached
- * rate. Air/zone/carrier terminology never leaves this layer.
+ * Стоимость международной доставки: страна → тарифная зона (countries.intl_zone) →
+ * цена за тип перевозки (intl_zone_tariffs). Цены только из импортированных таблиц
+ * тарифов; вес в расчёте не участвует.
  */
 public interface InternationalShippingService {
 
-    /** @param weightKg backend-computed order weight */
-    InternationalShippingQuote quote(BigDecimal weightKg);
+    /**
+     * @param countryIso2 страна назначения (ISO2)
+     * @param kind        Авиа или Наземная
+     */
+    InternationalShippingQuote quote(String countryIso2, IntlShipKind kind);
 }

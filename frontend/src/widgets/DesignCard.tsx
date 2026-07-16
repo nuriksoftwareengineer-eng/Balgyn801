@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import type { DesignSummary } from "@/shared/types/catalog";
 import { localizeName } from "@/shared/types/catalog";
 import { useWishlist } from "@/app/wishlist-context";
+import { Price } from "@/shared/ui/price";
 
 interface DesignCardProps {
   design: DesignSummary & { id?: number };
@@ -70,6 +71,11 @@ export function DesignCard({ design, groupSlug, collectionSlug, isNewArrival }: 
         <p className="truncate text-[13px] font-medium tracking-[0.01em] text-black">
           {localName}
         </p>
+        {design.minPriceKzt != null && (
+          <p className="mt-1 text-[13px] font-semibold text-black">
+            <Price kzt={design.minPriceKzt} />
+          </p>
+        )}
         {design.description ? (
           <p className="mt-1 line-clamp-1 text-[12px] text-[--color-muted]">
             {design.description}

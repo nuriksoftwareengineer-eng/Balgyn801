@@ -34,4 +34,8 @@ public class DesignResponse {
     @JsonProperty("isNewArrival")
     private boolean isNewArrival;
     private int viewCount;
+
+    /** Минимальная цена в KZT по активным вариантам одежды — для карточек каталога.
+     *  null, если у дизайна нет ни одной KZT-цены. Конвертация валют — на фронте. */
+    private java.math.BigDecimal minPriceKzt;
 }

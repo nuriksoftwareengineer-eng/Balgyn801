@@ -15,7 +15,7 @@ export function CollectionPage() {
   const { data: collection, isLoading, error } = useCatalogCollection(collectionSlug);
 
   useSeoMeta({
-    title: collection ? `${collection.name} — Balgyn` : "Коллекция — Balgyn",
+    title: collection ? localizeName(collection, i18n.language) : t("nav.catalog"),
     canonical:
       collection
         ? `${window.location.origin}/catalog/${groupSlug}/${collectionSlug}`

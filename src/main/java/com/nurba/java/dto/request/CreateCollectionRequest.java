@@ -13,6 +13,12 @@ public class CreateCollectionRequest {
     @NotBlank
     private String name;
 
+    /** Название на казахском (необязательное; публичный сайт падает обратно на name). */
+    private String nameKk;
+
+    /** Название на английском (необязательное; публичный сайт падает обратно на name). */
+    private String nameEn;
+
     @NotBlank
     private String slug;
 

@@ -36,6 +36,8 @@ export function AdminCategoriesPage() {
 
   const [editingId, setEditingId] = useState<number | null>(null);
   const [name, setName] = useState("");
+  const [nameKk, setNameKk] = useState("");
+  const [nameEn, setNameEn] = useState("");
   const [slug, setSlug] = useState("");
   const [slugTouched, setSlugTouched] = useState(false);
   const [sortOrder, setSortOrder] = useState("0");
@@ -46,6 +48,8 @@ export function AdminCategoriesPage() {
   function resetForm() {
     setEditingId(null);
     setName("");
+    setNameKk("");
+    setNameEn("");
     setSlug("");
     setSlugTouched(false);
     setSortOrder("0");
@@ -57,6 +61,8 @@ export function AdminCategoriesPage() {
   function startEdit(g: AdminGroup) {
     setEditingId(g.id);
     setName(g.name);
+    setNameKk(g.nameKk ?? "");
+    setNameEn(g.nameEn ?? "");
     setSlug(g.slug);
     setSlugTouched(true);
     setSortOrder(String(g.sortOrder ?? 0));
@@ -69,6 +75,8 @@ export function AdminCategoriesPage() {
     mutationFn: () => {
       const body = {
         name: name.trim(),
+        nameKk: nameKk.trim() || null,
+        nameEn: nameEn.trim() || null,
         slug: (slug.trim() || slugify(name)).trim(),
         sortOrder: Number.parseInt(sortOrder, 10) || 0,
         coverImageUrl: coverImageUrl.trim() || null,
@@ -113,13 +121,31 @@ export function AdminCategoriesPage() {
         </h2>
         <div className="flex flex-col gap-4">
           <label className="flex flex-col gap-1.5">
-            <span className="text-xs text-zinc-400">Название *</span>
+            <span className="text-xs text-zinc-400">Название (RU) *</span>
             <input
               value={name}
               onChange={(e) => {
                 setName(e.target.value);
                 if (!slugTouched) setSlug(slugify(e.target.value));
               }}
+              placeholder="Аниме"
+              className={inputClass}
+            />
+          </label>
+          <label className="flex flex-col gap-1.5">
+            <span className="text-xs text-zinc-400">Название (KZ)</span>
+            <input
+              value={nameKk}
+              onChange={(e) => setNameKk(e.target.value)}
+              placeholder="Аниме (қаз)"
+              className={inputClass}
+            />
+          </label>
+          <label className="flex flex-col gap-1.5">
+            <span className="text-xs text-zinc-400">Название (EN)</span>
+            <input
+              value={nameEn}
+              onChange={(e) => setNameEn(e.target.value)}
               placeholder="Anime"
               className={inputClass}
             />

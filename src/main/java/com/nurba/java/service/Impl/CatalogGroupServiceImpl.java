@@ -57,6 +57,8 @@ public class CatalogGroupServiceImpl implements CatalogGroupService {
     public CatalogGroupResponse update(Long id, CreateCatalogGroupRequest request) {
         CatalogGroup entity = findOrThrow(id);
         entity.setName(request.getName());
+        entity.setNameKk(request.getNameKk());
+        entity.setNameEn(request.getNameEn());
         entity.setSlug(request.getSlug());
         if (request.getSortOrder() != null) {
             entity.setSortOrder(request.getSortOrder());

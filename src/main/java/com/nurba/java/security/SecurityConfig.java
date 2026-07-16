@@ -145,6 +145,7 @@ public class SecurityConfig {
                             .requestMatchers(HttpMethod.POST, "/api/v1/custom-design").permitAll()
 
                             .requestMatchers(HttpMethod.GET, "/api/v1/delivery/methods").permitAll()
+                            .requestMatchers(HttpMethod.GET, "/api/v1/delivery/intl-quote").permitAll()
                             .requestMatchers(HttpMethod.GET, "/api/v1/delivery/cdek/**").permitAll()
                             .requestMatchers(HttpMethod.POST, "/api/v1/delivery/cdek/calculate").permitAll()
                             .requestMatchers(HttpMethod.POST, "/api/v1/delivery/cdek/calculate-order").permitAll()

@@ -272,7 +272,7 @@
       "noMethods": "No delivery methods available for the selected country.",
       "availableIn": "Available only in:",
       "free": "Free",
-      "fromPrice": "from {{price}} ₸",
+      "fromPrice": "from {{price}}",
       "onAgreement": "on agreement",
       "pickupDesc": "After placing your order, we will contact you to arrange pickup time and location. Delivery is free.",
       "cdekDesc": "Enter your city and select a CDEK pickup point. Delivery time is calculated automatically.",
@@ -320,7 +320,9 @@
       "RU": "Russia / CIS",
       "RU_hint": "Russia, Belarus and other CIS countries",
       "US": "Other countries",
-      "US_hint": "International delivery worldwide"
+      "US_hint": "International delivery worldwide",
+      "OTHER": "Other countries",
+      "OTHER_hint": "International shipping via Kazpost"
     },
     "errors": {
       "fillRequired": "Please fill in all required fields",
@@ -332,6 +334,15 @@
       "paymentFailed": "Failed to initiate payment",
       "paypalError": "PayPal did not return a confirmation link. Please try again later.",
       "paymentUrlError": "Payment URL not received. Please try again later."
+    },
+    "intl": {
+      "country": "Country",
+      "searchCountry": "Search country…",
+      "chooseKind": "Shipping type",
+      "air": "Air",
+      "ground": "Ground",
+      "airDays": "7–14 days",
+      "groundDays": "14–30 days"
     }
   },
   "design": {

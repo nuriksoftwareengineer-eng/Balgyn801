@@ -46,6 +46,8 @@ export interface DesignSummary {
   groupNameEn?: string | null;
   groupSlug: string;
   active: boolean;
+  /** Минимальная KZT-цена активных вариантов — «цена от» на карточках. */
+  minPriceKzt?: number | null;
 }
 
 export interface GarmentPrice {
@@ -118,6 +120,19 @@ export function dedupeSizes(sizes: SizeInfo[]): SizeInfo[] {
     if (seen.has(s.label)) return false;
     seen.add(s.label);
     return true;
+  });
+}
+
+/** Canonical garment size order. Sizes are labels in the DB (sort_order unset),
+ *  so a plain string sort puts XL before M — this fixed list is authoritative.
+ *  Unknown labels sink to the end, keeping their relative order. */
+const SIZE_ORDER = ["XXXS", "XXS", "XS", "S", "M", "L", "XL", "XXL", "XXXL", "4XL", "5XL"];
+
+export function sortSizes(sizes: SizeInfo[]): SizeInfo[] {
+  return [...sizes].sort((a, b) => {
+    const ia = SIZE_ORDER.indexOf(a.label.trim().toUpperCase());
+    const ib = SIZE_ORDER.indexOf(b.label.trim().toUpperCase());
+    return (ia === -1 ? SIZE_ORDER.length : ia) - (ib === -1 ? SIZE_ORDER.length : ib);
   });
 }
 
