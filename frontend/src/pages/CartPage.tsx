@@ -782,9 +782,25 @@ export function CartPage() {
     staleTime: 10 * 60 * 1000,
   });
 
+  // ── Международная доставка: позиции корзины (для расчёта веса на бэкенде) ────
+  // linesSig/intlQuoteItems перенесены сюда (выше intlQuoteQuery, которая на них
+  // ссылается) — иначе const, объявленная ниже по коду, недоступна на момент вызова.
+  const linesSig = useMemo(
+    () => lines.map((l) => `${l.lineKey}:${l.qty}`).join("|"),
+    [lines],
+  );
+
+  const intlQuoteItems = useMemo(
+    () =>
+      lines
+        .filter(isDesignLine)
+        .map((l) => ({ designGarmentId: l.designGarmentId, quantity: l.qty })),
+    [lines],
+  );
+
   const intlQuoteQuery = useQuery({
-    queryKey: ["delivery", "intl-quote", countryIso2, intlKind],
-    queryFn: () => getIntlQuote(countryIso2, intlKind!),
+    queryKey: ["delivery", "intl-quote", countryIso2, intlKind, linesSig],
+    queryFn: () => getIntlQuote(countryIso2, intlKind!, intlQuoteItems),
     enabled:
       phase === "checkout" &&
       regionChoice === "OTHER" &&
@@ -809,10 +825,6 @@ export function CartPage() {
   });
 
   // ── Derived ───────────────────────────────────────────────────────────────────
-  const linesSig = useMemo(
-    () => lines.map((l) => `${l.lineKey}:${l.qty}`).join("|"),
-    [lines],
-  );
 
   const selectedMethod =
     deliveryMethodsQuery.data?.find((m) => m.type === deliveryType) ?? null;

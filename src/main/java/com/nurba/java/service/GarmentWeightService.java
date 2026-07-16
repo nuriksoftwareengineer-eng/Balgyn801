@@ -7,6 +7,7 @@ import com.nurba.java.enums.GarmentType;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Admin management and lookup of garment-type weights, plus order-weight calculation.
@@ -26,4 +27,11 @@ public interface GarmentWeightService {
 
     /** Total shippable weight (kg) of an order: SUM(garment weight × quantity) over design items. */
     BigDecimal calculateOrderWeight(List<OrderItem> items);
+
+    /**
+     * Same computation as {@link #calculateOrderWeight}, but from (designGarmentId → quantity)
+     * pairs instead of persisted {@link OrderItem} rows — used for pre-checkout delivery quotes,
+     * where no order exists yet. Unknown designGarmentId throws; missing/zero quantity is skipped.
+     */
+    BigDecimal calculateWeightForDesignGarments(Map<Long, Integer> quantityByDesignGarmentId);
 }

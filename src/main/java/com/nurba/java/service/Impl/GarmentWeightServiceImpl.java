@@ -1,10 +1,13 @@
 package com.nurba.java.service.Impl;
 
+import com.nurba.java.domain.DesignGarment;
 import com.nurba.java.domain.GarmentTypeWeight;
 import com.nurba.java.domain.OrderItem;
 import com.nurba.java.dto.request.UpdateGarmentWeightRequest;
 import com.nurba.java.dto.responce.GarmentWeightResponse;
 import com.nurba.java.enums.GarmentType;
+import com.nurba.java.exception.BusinessRuleException;
+import com.nurba.java.repositories.DesignGarmentRepository;
 import com.nurba.java.repositories.GarmentTypeWeightRepository;
 import com.nurba.java.service.GarmentWeightService;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +20,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -26,6 +30,7 @@ public class GarmentWeightServiceImpl implements GarmentWeightService {
     private static final int WEIGHT_SCALE = 3;
 
     private final GarmentTypeWeightRepository repository;
+    private final DesignGarmentRepository designGarmentRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -78,6 +83,29 @@ public class GarmentWeightServiceImpl implements GarmentWeightService {
                 continue;
             }
             BigDecimal unit = item.getDesignGarment().getGarmentProfile().getWeightKg();
+            total = total.add(unit.multiply(BigDecimal.valueOf(qty)));
+        }
+        return total.setScale(WEIGHT_SCALE, RoundingMode.HALF_UP);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public BigDecimal calculateWeightForDesignGarments(Map<Long, Integer> quantityByDesignGarmentId) {
+        if (quantityByDesignGarmentId == null || quantityByDesignGarmentId.isEmpty()) {
+            return BigDecimal.ZERO.setScale(WEIGHT_SCALE, RoundingMode.HALF_UP);
+        }
+        BigDecimal total = BigDecimal.ZERO;
+        for (Map.Entry<Long, Integer> entry : quantityByDesignGarmentId.entrySet()) {
+            int qty = entry.getValue() == null ? 0 : entry.getValue();
+            if (qty <= 0) {
+                continue;
+            }
+            DesignGarment garment = designGarmentRepository.findById(entry.getKey())
+                    .orElseThrow(() -> new BusinessRuleException("Вариант товара не найден: " + entry.getKey()));
+            if (garment.getGarmentProfile() == null) {
+                continue;
+            }
+            BigDecimal unit = garment.getGarmentProfile().getWeightKg();
             total = total.add(unit.multiply(BigDecimal.valueOf(qty)));
         }
         return total.setScale(WEIGHT_SCALE, RoundingMode.HALF_UP);

@@ -1,11 +1,14 @@
 package com.nurba.java.api;
 
 import com.nurba.java.dto.delivery.DeliveryMethodResponse;
+import com.nurba.java.dto.delivery.IntlQuoteRequest;
 import com.nurba.java.dto.delivery.IntlQuoteResponse;
-import com.nurba.java.enums.IntlShipKind;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
@@ -26,9 +29,10 @@ public interface DeliveryMethodsApi {
 
     @Operation(
         summary = "Стоимость международной доставки",
-        description = "страна → тарифная зона → цена за тип перевозки (AIR/GROUND). "
-                    + "Цены берутся из импортированных таблиц тарифов на бэкенде."
+        description = "страна → тарифная зона → официальный тариф Казпочты по весу и типу перевозки "
+                    + "(AIR/GROUND). Вес считается на бэкенде из переданных позиций корзины — "
+                    + "клиент вес не передаёт. POST, так как тело содержит список позиций."
     )
-    @GetMapping("/intl-quote")
-    IntlQuoteResponse intlQuote(@RequestParam String countryIso2, @RequestParam IntlShipKind kind);
+    @PostMapping("/intl-quote")
+    IntlQuoteResponse intlQuote(@Valid @RequestBody IntlQuoteRequest request);
 }

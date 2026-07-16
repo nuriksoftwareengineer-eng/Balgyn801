@@ -60,8 +60,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * Phase 6 — international shipping (single customer-facing method, AIR internally) and CIS postal.
- * Verifies the fee is computed server-side and the USD amount + exchange rate are snapshotted.
+ * International shipping (country → zone → official Kazpost weight-bracket tariff, AIR/GROUND)
+ * and CIS zone-matrix rejection. Verifies the fee is computed server-side, weight is resolved
+ * from order items (not client-supplied), and the USD amount + exchange rate are snapshotted.
  */
 @SpringBootTest
 @ActiveProfiles("test")
@@ -105,10 +106,11 @@ class InternationalShippingIntegrationTest {
         buildFixture();
         countryRepository.save(country("RU", "Россия", "Russia", ShippingZone.CIS));
         Country us = country("US", "США", "United States", ShippingZone.INTERNATIONAL);
-        us.setIntlZone("ZONE_TEST");
+        us.setIntlZone("1");
         countryRepository.save(us);
-        // Zone tariff: страна → зона → цена. Flat, weight-independent.
-        intlZoneTariffRepository.save(new IntlZoneTariff(null, "ZONE_TEST", IntlShipKind.AIR, new BigDecimal("6400.00")));
+        // Реальные официальные тарифы Казпочты, зона 1, Авиа (см. V48__intl_zone_tariffs_weight_brackets.sql).
+        // Используем настоящие числа (не выдуманные), чтобы тест заодно проверял правильность импорта.
+        seedZone1AirTariffs();
 
         // Seed deterministic inputs so the fee is independent of any ambient reference data
         // left in the shared in-memory DB by other test classes.
@@ -213,6 +215,27 @@ class InternationalShippingIntegrationTest {
         inventoryRepository.save(inv);
     }
 
+    /** Зона 1, Авиа — реальные пороги из официальной тарифной таблицы Казпочты. */
+    private void seedZone1AirTariffs() {
+        saveBracket("2.000", "13050.00");
+        saveBracket("3.000", "16650.00");
+        saveBracket("4.000", "19950.00");
+        saveBracket("5.000", "23400.00");
+        saveBracket("6.000", "26850.00");
+        saveBracket("7.000", "30300.00");
+        saveBracket("8.000", "33600.00");
+        saveBracket("9.000", "37050.00");
+        saveBracket("10.000", "40350.00");
+        // Надбавка «+1 кг» свыше 10 кг.
+        intlZoneTariffRepository.save(
+                new IntlZoneTariff(null, "1", IntlShipKind.AIR, new BigDecimal("999.000"), new BigDecimal("3375.00"), true));
+    }
+
+    private void saveBracket(String uptoKg, String priceKzt) {
+        intlZoneTariffRepository.save(new IntlZoneTariff(
+                null, "1", IntlShipKind.AIR, new BigDecimal(uptoKg), new BigDecimal(priceKzt), false));
+    }
+
     private Country country(String iso2, String ru, String en, ShippingZone zone) {
         Country c = new Country();
         c.setIso2(iso2);
@@ -237,21 +260,38 @@ class InternationalShippingIntegrationTest {
 
     @Test
     void international_computesFee_andSnapshotsUsdAndRate() throws Exception {
-        // Новая модель: страна US → intl_zone ZONE_TEST → тариф AIR 6400 KZT (flat, без веса).
-        // Rate 480 → feeUsd = 6400/480 = 13.33.
+        // HOODIE = 1.000 kg × qty 1 → US → зона "1" → официальный тариф Авиа «до 2 кг» = 13050 KZT.
+        // Rate 480 → feeUsd = 13050/480 = 27.1875 → 27.19 (HALF_UP).
         MvcResult res = mockMvc.perform(post("/api/v1/order")
                         .contentType(MediaType.APPLICATION_JSON).content(body("INTERNATIONAL", "US")))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.deliveryFee").value(6400.0))
-                .andExpect(jsonPath("$.totalPrice").value(18400.0))
+                .andExpect(jsonPath("$.deliveryFee").value(13050.0))
+                .andExpect(jsonPath("$.totalPrice").value(25050.0))
                 .andReturn();
 
         long orderId = objectMapper.readTree(res.getResponse().getContentAsString()).get("id").asLong();
         Order order = orderRepository.findById(orderId).orElseThrow();
         assertThat(order.getShippingZone()).isEqualTo(ShippingZone.INTERNATIONAL);
         assertThat(order.getTotalWeightKg()).isEqualByComparingTo("1.000");
-        assertThat(order.getDeliveryFeeUsd()).isEqualByComparingTo("13.33");
+        assertThat(order.getDeliveryFeeUsd()).isEqualByComparingTo("27.19");
         assertThat(order.getExchangeRateKztUsd()).isEqualByComparingTo("480.0000");
+    }
+
+    @Test
+    void intlQuote_overTenKg_addsPerKgIncrement() throws Exception {
+        // 11 kg (свыше макс. порога 10 кг) → зона "1" Авиа: цена@10кг (40350) + 1×надбавка (3375)
+        // = 43725 KZT. Прямой вызов /delivery/intl-quote — до создания заказа, вес считается
+        // из designGarmentId+quantity (GarmentWeightService.calculateWeightForDesignGarments).
+        String requestBody = """
+                { "countryIso2": "US", "kind": "AIR",
+                  "items": [ { "designGarmentId": %d, "quantity": 11 } ] }
+                """.formatted(garmentId);
+
+        mockMvc.perform(post("/api/v1/delivery/intl-quote")
+                        .contentType(MediaType.APPLICATION_JSON).content(requestBody))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.priceKzt").value(43725.0))
+                .andExpect(jsonPath("$.priceUsd").value(91.09));
     }
 
     @Test

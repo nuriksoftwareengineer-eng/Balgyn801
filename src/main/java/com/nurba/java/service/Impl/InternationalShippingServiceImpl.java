@@ -11,14 +11,16 @@ import com.nurba.java.service.delivery.InternationalShippingQuote;
 import com.nurba.java.service.delivery.InternationalShippingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.List;
 
 /**
- * страна → тарифная зона (countries.intl_zone) → цена (intl_zone_tariffs, Авиа/Наземная).
- * Цены берутся ТОЛЬКО из импортированных таблиц тарифов — никаких захардкоженных значений
- * и никакой зависимости от веса.
+ * страна → тарифная зона (countries.intl_zone, "1".."5") → официальный тариф Казпочты
+ * (intl_zone_tariffs: весовые пороги до 10 кг + надбавка за каждый доп. кг свыше 10 кг).
+ * Цены только из импортированной тарифной таблицы — в коде не хардкодятся.
  */
 @Service
 @RequiredArgsConstructor
@@ -29,7 +31,8 @@ public class InternationalShippingServiceImpl implements InternationalShippingSe
     private final ExchangeRateService exchangeRateService;
 
     @Override
-    public InternationalShippingQuote quote(String countryIso2, IntlShipKind kind) {
+    @Transactional(readOnly = true)
+    public InternationalShippingQuote quote(String countryIso2, IntlShipKind kind, BigDecimal weightKg) {
         if (kind == null) {
             throw new BusinessRuleException("Выберите тип международной доставки: Авиа или Наземная");
         }
@@ -37,18 +40,44 @@ public class InternationalShippingServiceImpl implements InternationalShippingSe
         String zone = country.getIntlZone();
         if (zone == null || zone.isBlank()) {
             throw new BusinessRuleException(
-                    "Доставка в страну " + country.getNameRu() + " пока недоступна — тарифы не заданы");
+                    "Доставка в страну " + country.getNameRu() + " пока недоступна — тарифная зона не задана");
         }
-        IntlZoneTariff tariff = tariffRepository.findByZoneAndKind(zone, kind)
-                .orElseThrow(() -> new BusinessRuleException(
-                        "Тариф для зоны " + zone + " (" + kind + ") не задан"));
 
-        BigDecimal feeKzt = tariff.getPriceKzt().setScale(2, RoundingMode.HALF_UP);
+        BigDecimal weight = weightKg == null ? BigDecimal.ZERO : weightKg;
+        BigDecimal feeKzt = resolvePrice(zone, kind, weight).setScale(2, RoundingMode.HALF_UP);
 
         // Cached rate (never a live call) — checkout keeps working even if the provider is down.
         BigDecimal rate = exchangeRateService.kztPerUsd();
         BigDecimal feeUsd = feeKzt.divide(rate, 2, RoundingMode.HALF_UP);
 
         return new InternationalShippingQuote(feeKzt, feeUsd, rate.setScale(4, RoundingMode.HALF_UP));
+    }
+
+    /**
+     * Тариф зоны/типа перевозки для заданного веса: первый весовой порог,
+     * в который вес укладывается; если вес превышает максимальный заданный порог —
+     * цена на максимальном пороге плюс надбавка за каждый дополнительный кг (округление вверх).
+     */
+    private BigDecimal resolvePrice(String zone, IntlShipKind kind, BigDecimal weightKg) {
+        List<IntlZoneTariff> brackets =
+                tariffRepository.findByZoneAndKindAndIncrementFalseOrderByUptoKgAsc(zone, kind);
+        if (brackets.isEmpty()) {
+            throw new BusinessRuleException("Тариф для зоны " + zone + " (" + kind + ") не задан");
+        }
+        for (IntlZoneTariff bracket : brackets) {
+            if (weightKg.compareTo(bracket.getUptoKg()) <= 0) {
+                return bracket.getPriceKzt();
+            }
+        }
+
+        IntlZoneTariff maxBracket = brackets.get(brackets.size() - 1);
+        IntlZoneTariff increment = tariffRepository.findByZoneAndKindAndIncrementTrue(zone, kind)
+                .orElseThrow(() -> new BusinessRuleException(
+                        "Надбавка за вес свыше " + maxBracket.getUptoKg() + " кг для зоны " + zone
+                                + " (" + kind + ") не задана"));
+
+        BigDecimal overKg = weightKg.subtract(maxBracket.getUptoKg());
+        int extraWholeKg = overKg.setScale(0, RoundingMode.CEILING).intValueExact();
+        return maxBracket.getPriceKzt().add(increment.getPriceKzt().multiply(BigDecimal.valueOf(extraWholeKg)));
     }
 }

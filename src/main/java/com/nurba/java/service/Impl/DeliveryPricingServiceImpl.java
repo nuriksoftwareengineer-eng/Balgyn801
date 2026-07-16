@@ -246,7 +246,7 @@ public class DeliveryPricingServiceImpl implements DeliveryPricingService {
     }
 
     private DeliveryQuote internationalQuote(String countryIso2, com.nurba.java.enums.IntlShipKind intlKind, BigDecimal weight) {
-        InternationalShippingQuote q = internationalShippingService.quote(countryIso2, intlKind);
+        InternationalShippingQuote q = internationalShippingService.quote(countryIso2, intlKind, weight);
         return new DeliveryQuote(
                 q.feeKzt(), ShippingZone.INTERNATIONAL, weight, null, q.feeUsd(), q.kztPerUsd());
     }
