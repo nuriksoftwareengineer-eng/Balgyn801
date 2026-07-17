@@ -20,4 +20,9 @@ jobs:
             cd ~/Balgyn801
             git pull origin main
             docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+            # caddy uses the stock caddy:2-alpine image with Caddyfile bind-mounted read-only —
+            # `up -d` never recreates that container for a Caddyfile-only change (image/service
+            # definition didn't change), so it would keep serving the old config indefinitely.
+            # Hot-reload picks up the new file with zero downtime; harmless no-op if unchanged.
+            docker compose -f docker-compose.prod.yml --env-file .env.prod exec -T caddy caddy reload --config /etc/caddy/Caddyfile
             docker compose -f docker-compose.prod.yml --env-file .env.prod ps
