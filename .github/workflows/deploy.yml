@@ -20,9 +20,34 @@ jobs:
             cd ~/Balgyn801
             git pull origin main
             docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
-            # caddy uses the stock caddy:2-alpine image with Caddyfile bind-mounted read-only —
-            # `up -d` never recreates that container for a Caddyfile-only change (image/service
-            # definition didn't change), so it would keep serving the old config indefinitely.
-            # Hot-reload picks up the new file with zero downtime; harmless no-op if unchanged.
-            docker compose -f docker-compose.prod.yml --env-file .env.prod exec -T caddy caddy reload --config /etc/caddy/Caddyfile
+            # caddy runs the stock caddy:2-alpine image with Caddyfile bind-mounted read-only.
+            # Compose only recreates a container when its own image/service definition changes,
+            # so "up -d" leaves an already-running caddy container untouched even though the
+            # bind-mounted file content on disk changed - it would keep serving whatever config
+            # it loaded at its last start indefinitely. Force-recreating just this one service
+            # (not its deps) guarantees a fresh "caddy run" that re-reads the current Caddyfile,
+            # with only a brief reverse-proxy blip instead of relying on an in-place reload.
+            docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --force-recreate --no-deps caddy
             docker compose -f docker-compose.prod.yml --env-file .env.prod ps
+
+            # Self-verify: fail this deploy loudly (red X in Actions) instead of reporting
+            # success while Caddy is silently still serving a stale config - that's exactly
+            # what happened on the previous two deploys and was invisible without this check.
+            DOMAIN=$(grep -E '^DOMAIN=' .env.prod | tail -1 | cut -d= -f2-)
+            ok=""
+            for i in 1 2 3 4 5; do
+              if curl -fsS "https://${DOMAIN}/" -D - -o /dev/null | grep -qi "frame-ancestors https://web.telegram.org"; then
+                ok=1
+                break
+              fi
+              sleep 2
+            done
+            if [ -z "$ok" ]; then
+              echo "DEPLOY CHECK FAILED: https://${DOMAIN}/ is not serving the expected Telegram frame-ancestors CSP after recreating caddy." >&2
+              echo "--- caddy logs (last 80 lines) ---" >&2
+              docker compose -f docker-compose.prod.yml --env-file .env.prod logs --tail=80 caddy >&2
+              echo "--- headers actually served ---" >&2
+              curl -fsS "https://${DOMAIN}/" -D - -o /dev/null >&2
+              exit 1
+            fi
+            echo "Deploy check passed: Caddy is serving the expected Telegram CSP."
