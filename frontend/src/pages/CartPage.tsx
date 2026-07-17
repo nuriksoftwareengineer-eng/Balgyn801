@@ -241,12 +241,16 @@ function SummarySidebar({
   deliveryType,
   selectedMethod,
   intlFeeKzt,
+  intlQuoteLoading,
+  intlQuoteErrorMessage,
 }: {
   lines: SidebarLine[];
   subtotal: number;
   deliveryType: DeliveryType | null;
   selectedMethod: DeliveryMethodResponse | null;
   intlFeeKzt?: number | null;
+  intlQuoteLoading?: boolean;
+  intlQuoteErrorMessage?: string | null;
 }) {
   const { t } = useTranslation();
   // CDEK: delivery paid at pickup point — total is items only.
@@ -303,6 +307,19 @@ function SummarySidebar({
             <div className="flex justify-between text-sm">
               <span className="text-[--color-muted]">{t("cart.summary.cdekDelivery")}</span>
               <span className="text-[--color-muted]">{t("cart.summary.atReceipt")}</span>
+            </div>
+          ) : deliveryType === "INTERNATIONAL" ? (
+            <div className="flex justify-between gap-4 text-sm">
+              <span className="text-[--color-muted]">{deliveryLabel}</span>
+              {intlQuoteLoading ? (
+                <span className="text-[--color-muted]">…</span>
+              ) : intlQuoteErrorMessage ? (
+                <span className="text-right text-red-600">{intlQuoteErrorMessage}</span>
+              ) : intlFeeKzt != null ? (
+                <span className="font-medium text-black"><Price kzt={intlFeeKzt} /></span>
+              ) : (
+                <span className="text-[--color-muted]">…</span>
+              )}
             </div>
           ) : selectedMethod?.estimatedFeeKzt === 0 ? (
             <div className="flex justify-between text-sm">
@@ -1453,7 +1470,26 @@ export function CartPage() {
                 >
                   <div>
                     <p className="m-0 text-sm font-semibold">{method.labelRu}</p>
-                    {method.cityRestriction ? (
+                    {method.type === "INTERNATIONAL" ? (
+                      <p
+                        className={cn(
+                          "m-0 mt-0.5 text-xs",
+                          deliveryType === method.type
+                            ? "text-white/70"
+                            : intlQuoteQuery.error
+                              ? "text-red-600"
+                              : "text-[--color-muted]",
+                        )}
+                      >
+                        {intlQuoteQuery.isFetching
+                          ? "…"
+                          : intlQuoteQuery.error
+                            ? (intlQuoteQuery.error as Error).message
+                            : intlQuoteQuery.data
+                              ? format(intlQuoteQuery.data.priceKzt)
+                              : "…"}
+                      </p>
+                    ) : method.cityRestriction ? (
                       <p
                         className={cn(
                           "m-0 mt-0.5 text-xs",
@@ -1756,8 +1792,8 @@ export function CartPage() {
                   {t("cart.form.availableIn")}{" "}
                   <strong>{selectedMethod.cityRestriction}</strong>.
                 </>
-              ) : null}{" "}
-              {t("cart.form.onAgreement")}
+              ) : null}
+              {deliveryType !== "INTERNATIONAL" && <> {t("cart.form.onAgreement")}</>}
             </p>
             <label className="flex flex-col gap-1.5">
               <FieldLabel>{t("cart.form.cityLabel")}</FieldLabel>
@@ -1946,6 +1982,19 @@ export function CartPage() {
                       {cdekTariff
                         ? <><Price kzt={cdekTariff.deliveryPrice} /> · {t("cart.form.cdekAtReceipt")}</>
                         : t("cart.form.cdekAtReceipt")}
+                    </dd>
+                  </div>
+                ) : deliveryType === "INTERNATIONAL" ? (
+                  <div className="flex justify-between gap-4">
+                    <dt className="text-[--color-muted]">{t("cart.form.costLabel")}</dt>
+                    <dd className={cn("m-0", intlQuoteQuery.error ? "text-right text-red-600" : "font-medium text-black")}>
+                      {intlQuoteQuery.isFetching
+                        ? "…"
+                        : intlQuoteQuery.error
+                          ? (intlQuoteQuery.error as Error).message
+                          : intlQuoteQuery.data
+                            ? <Price kzt={intlQuoteQuery.data.priceKzt} />
+                            : "…"}
                     </dd>
                   </div>
                 ) : selectedMethod?.estimatedFeeKzt === 0 ? (
@@ -2399,6 +2448,10 @@ export function CartPage() {
               deliveryType={deliveryType}
               selectedMethod={selectedMethod}
               intlFeeKzt={intlQuoteQuery.data?.priceKzt ?? null}
+              intlQuoteLoading={intlQuoteQuery.isFetching}
+              intlQuoteErrorMessage={
+                intlQuoteQuery.error ? (intlQuoteQuery.error as Error).message : null
+              }
             />
           </div>
         </div>
