@@ -4,6 +4,7 @@ import { AuthProvider } from "@/app/auth-context";
 import { CartDrawerProvider } from "@/app/cart-drawer-context";
 import { CartProvider } from "@/app/cart-provider";
 import { CurrencyProvider } from "@/app/currency-context";
+import { TelegramProvider } from "@/app/telegram-provider";
 import { WishlistProvider } from "@/app/wishlist-context";
 
 export function Providers({ children }: { children: ReactNode }) {
@@ -22,13 +23,15 @@ export function Providers({ children }: { children: ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <WishlistProvider>
-          <CurrencyProvider>
-            <CartDrawerProvider>
-              <CartProvider>{children}</CartProvider>
-            </CartDrawerProvider>
-          </CurrencyProvider>
-        </WishlistProvider>
+        <TelegramProvider>
+          <WishlistProvider>
+            <CurrencyProvider>
+              <CartDrawerProvider>
+                <CartProvider>{children}</CartProvider>
+              </CartDrawerProvider>
+            </CurrencyProvider>
+          </WishlistProvider>
+        </TelegramProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

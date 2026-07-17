@@ -14,4 +14,6 @@ import java.util.List;
 public class AuthMeResponse {
     private String email;
     private List<String> roles;
+    private boolean telegramConnected;
+    private String telegramUsername;
 }

@@ -16,6 +16,7 @@ import { useSeoMeta } from "@/shared/hooks/useSeoMeta";
 import { useCart } from "@/app/use-cart";
 import { useCurrency } from "@/app/currency-context";
 import { cn } from "@/shared/lib/cn";
+import { haptic } from "@/shared/lib/telegram";
 import { Container } from "@/shared/ui/container";
 import { Toast } from "@/shared/ui/toast";
 import { RecommendedSection } from "@/widgets/catalog/RecommendedSection";
@@ -275,6 +276,7 @@ export function DesignPage() {
 
     setAdded(true);
     setToastMessage(t("cart.addedToCart", { title: design.name }));
+    haptic("success");
   }
 
   // ── Loading / error states ────────────────────────────────────────────────

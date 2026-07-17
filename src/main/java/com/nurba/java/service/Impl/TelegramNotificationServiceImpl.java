@@ -1,5 +1,6 @@
 package com.nurba.java.service.Impl;
 
+import com.nurba.java.domain.AppUser;
 import com.nurba.java.domain.DeliveryAddress;
 import com.nurba.java.domain.Order;
 import com.nurba.java.enums.DeliveryType;
@@ -174,15 +175,51 @@ public class TelegramNotificationServiceImpl implements TelegramNotificationServ
         send("⚠️ <b>Ошибка [" + context + "]</b>\n" + message);
     }
 
+    // ─── Customer-facing events ──────────────────────────────────────────────────
+
+    @Override
+    @Async
+    public void notifyCustomerOrderStatus(Order order) {
+        if (!enabled) return;
+        AppUser user = order.getAppUser();
+        if (user == null || user.getTelegramId() == null) return;
+
+        String text = customerStatusMessage(order);
+        if (text == null) return;
+
+        send(String.valueOf(user.getTelegramId()), text);
+    }
+
+    private static String customerStatusMessage(Order order) {
+        String orderRef = "Заказ #" + order.getId();
+        return switch (order.getStatus()) {
+            case CONFIRMED -> "✅ <b>" + orderRef + " принят</b>\nМы начинаем работу над вашим заказом.";
+            case IN_PRODUCTION -> "🧵 <b>" + orderRef + " в производстве</b>\nВышиваем и шьём ваш заказ.";
+            case READY -> "📦 <b>" + orderRef + " готов к отправке</b>";
+            case SHIPPED -> {
+                String tracking = order.getTrackingNumber();
+                yield "🚚 <b>" + orderRef + " отправлен</b>"
+                        + (tracking != null && !tracking.isBlank() ? "\nТрек-номер: " + tracking : "");
+            }
+            case DELIVERED -> "🎉 <b>" + orderRef + " доставлен</b>\nСпасибо за покупку!";
+            case CANCELLED -> "❌ <b>" + orderRef + " отменён</b>";
+            default -> null;
+        };
+    }
+
     // ─── Internal ────────────────────────────────────────────────────────────────
 
     private void send(String text) {
-        if (botToken == null || botToken.isBlank() || chatId == null || chatId.isBlank()) return;
+        send(chatId, text);
+    }
+
+    private void send(String targetChatId, String text) {
+        if (botToken == null || botToken.isBlank() || targetChatId == null || targetChatId.isBlank()) return;
         try {
             String url = "https://api.telegram.org/bot" + botToken + "/sendMessage";
             restClient.post()
                     .uri(url)
-                    .body(Map.of("chat_id", chatId, "text", text, "parse_mode", "HTML"))
+                    .body(Map.of("chat_id", targetChatId, "text", text, "parse_mode", "HTML"))
                     .retrieve()
                     .toBodilessEntity();
         } catch (Exception e) {

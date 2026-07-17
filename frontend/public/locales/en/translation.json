@@ -55,6 +55,13 @@
       "title": "My CDEK Shipments",
       "noShipments": "No active CDEK shipments",
       "viewAll": "All orders →"
+    },
+    "telegram": {
+      "title": "Telegram",
+      "connected": "Connected with Telegram{{username}}",
+      "connect": "Connect Telegram",
+      "connecting": "Connecting…",
+      "connectFailed": "Failed to connect Telegram"
     }
   },
   "payment": {

@@ -55,6 +55,13 @@
       "title": "Мои отправления СДЭК",
       "noShipments": "Активных отправлений СДЭК нет",
       "viewAll": "Все заказы →"
+    },
+    "telegram": {
+      "title": "Telegram",
+      "connected": "Подключено к Telegram{{username}}",
+      "connect": "Подключить Telegram",
+      "connecting": "Подключаем…",
+      "connectFailed": "Не удалось подключить Telegram"
     }
   },
   "payment": {

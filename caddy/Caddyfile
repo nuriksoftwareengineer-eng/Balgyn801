@@ -10,9 +10,14 @@
     header {
         Strict-Transport-Security "max-age=31536000; includeSubDomains"
         X-Content-Type-Options "nosniff"
-        X-Frame-Options "SAMEORIGIN"
         Referrer-Policy "strict-origin-when-cross-origin"
-        Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self'; frame-ancestors 'none';"
+        # No X-Frame-Options here: it has no multi-origin syntax, and CSP frame-ancestors
+        # (below) is what actually needs to allow Telegram's webview to iframe the site —
+        # keeping a conflicting SAMEORIGIN alongside would be redundant, not protective.
+        # frame-ancestors allows Telegram's own webview origins to iframe the Mini App.
+        # (@telegram-apps/sdk talks to the native app over its own bridge, not the official
+        # telegram-web-app.js script, so script-src needs no telegram.org allowance.)
+        Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self'; frame-ancestors https://web.telegram.org https://telegram.org;"
     }
 
     request_body {

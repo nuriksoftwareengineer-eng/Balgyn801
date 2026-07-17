@@ -1,16 +1,22 @@
-import { Outlet, useLocation } from "react-router-dom";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useCartDrawer } from "@/app/cart-drawer-context";
 import { ScrollToTop } from "@/app/ScrollToTop";
+import { useTelegramBackButton } from "@/shared/lib/telegram/hooks";
 import { CartDrawer } from "@/widgets/CartDrawer";
 import { SiteFooter } from "@/widgets/SiteFooter";
 import { SiteNavbar } from "@/widgets/SiteNavbar";
 
 export function MainLayout() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { open, closeDrawer } = useCartDrawer();
   // На главной hero уходит под прозрачную шапку; на остальных страницах
   // добавляем отступ под фиксированную шапку.
   const isHome = location.pathname === "/";
+
+  // Inside Telegram, replace browser back-navigation chrome with the native Back Button on
+  // every page except home (mirrors typical top-level/back-stack UX in Mini Apps).
+  useTelegramBackButton(!isHome, () => navigate(-1));
 
   return (
     <div className="flex min-h-screen flex-col bg-white text-black antialiased">

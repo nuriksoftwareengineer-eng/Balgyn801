@@ -407,6 +407,10 @@ public class OrderServiceImpl implements OrderService {
         orderRepository.save(order);
         recordHistory(order, next);
 
+        // Customer-facing Telegram DM — no-ops internally for statuses with no customer
+        // message (e.g. NEW) and for users without a linked telegram_id.
+        telegramNotificationService.notifyCustomerOrderStatus(order);
+
         if (next == OrderStatus.SHIPPED) {
             if (order.getAppUser() != null) {
                 emailService.sendOrderShippedEmail(order.getAppUser().getEmail(), order, null);

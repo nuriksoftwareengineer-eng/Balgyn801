@@ -1,14 +1,19 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/app/auth-context";
 import { getMyOrders } from "@/shared/api/backend-api";
+import { ApiError } from "@/shared/api/http";
 import { Container } from "@/shared/ui/container";
+import * as telegram from "@/shared/lib/telegram";
 import type { OrderResponse } from "@/shared/api/types";
 
 export function ProfilePage() {
   const { t } = useTranslation();
-  const { user, logout, token } = useAuth();
+  const { user, logout, token, linkTelegram } = useAuth();
+  const [connecting, setConnecting] = useState(false);
+  const [connectError, setConnectError] = useState<string | null>(null);
 
   const { data: orders } = useQuery<OrderResponse[], Error>({
     queryKey: ["my-orders-profile", token],
@@ -18,6 +23,20 @@ export function ProfilePage() {
   });
 
   if (!user) return null;
+
+  async function handleConnectTelegram() {
+    const initData = telegram.getInitData();
+    if (!initData) return;
+    setConnecting(true);
+    setConnectError(null);
+    try {
+      await linkTelegram(initData);
+    } catch (e) {
+      setConnectError(e instanceof ApiError ? e.message : t("profile.telegram.connectFailed"));
+    } finally {
+      setConnecting(false);
+    }
+  }
 
   const isAdmin = user.roles?.includes("ADMIN");
 
@@ -47,6 +66,38 @@ export function ProfilePage() {
               </dt>
               <dd className="text-[15px] text-black">{user.email}</dd>
             </div>
+
+            {user.telegramConnected ? (
+              <div>
+                <dt className="mb-1.5 text-[10px] uppercase tracking-[0.2em] text-[--color-muted]">
+                  {t("profile.telegram.title")}
+                </dt>
+                <dd className="text-[15px] text-black">
+                  {t("profile.telegram.connected", {
+                    username: user.telegramUsername ? ` (@${user.telegramUsername})` : "",
+                  })}
+                </dd>
+              </div>
+            ) : telegram.isTelegram() ? (
+              <div>
+                <dt className="mb-1.5 text-[10px] uppercase tracking-[0.2em] text-[--color-muted]">
+                  {t("profile.telegram.title")}
+                </dt>
+                <dd>
+                  <button
+                    type="button"
+                    onClick={handleConnectTelegram}
+                    disabled={connecting}
+                    className="text-[13px] font-semibold uppercase tracking-[0.1em] text-black underline underline-offset-4 transition-opacity hover:opacity-60 disabled:opacity-40"
+                  >
+                    {connecting ? t("profile.telegram.connecting") : t("profile.telegram.connect")}
+                  </button>
+                  {connectError && (
+                    <p className="mt-1.5 text-[12px] text-[--color-danger]">{connectError}</p>
+                  )}
+                </dd>
+              </div>
+            ) : null}
           </dl>
 
           {/* Actions */}

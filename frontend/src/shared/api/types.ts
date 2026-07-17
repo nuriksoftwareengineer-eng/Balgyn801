@@ -45,6 +45,8 @@ export type AuthResponse = {
 export type AuthMeResponse = {
   email: string;
   roles: string[];
+  telegramConnected: boolean;
+  telegramUsername?: string | null;
 };
 
 export type LoginRequest = {
@@ -55,6 +57,11 @@ export type LoginRequest = {
 export type RegisterRequest = {
   email: string;
   password: string;
+};
+
+/** POST `/auth/telegram` и `/auth/telegram/link` — сырой initData из Telegram Mini App SDK. */
+export type TelegramLoginRequest = {
+  initData: string;
 };
 
 export type RefreshTokenRequest = {

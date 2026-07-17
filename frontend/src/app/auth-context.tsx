@@ -20,7 +20,9 @@ import {
 } from "@/shared/lib/auth-storage";
 import {
   getMe,
+  linkTelegram as linkTelegramApi,
   login as loginApi,
+  loginTelegram as loginTelegramApi,
   logoutAuth,
   refreshCookieAuth,
   register as registerApi,
@@ -34,6 +36,10 @@ type AuthContextValue = {
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string) => Promise<void>;
+  /** Silent Telegram login/registration from Mini App initData. */
+  loginWithTelegram: (initData: string) => Promise<void>;
+  /** Links a verified Telegram identity to the currently authenticated user. */
+  linkTelegram: (initData: string) => Promise<AuthMeResponse>;
   logout: () => void;
   isAdmin: boolean;
 };
@@ -155,6 +161,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setToken(res.accessToken);
   }, []);
 
+  const loginWithTelegram = useCallback(async (initData: string) => {
+    const res = await loginTelegramApi({ initData });
+    writeStoredToken(res.accessToken);
+    setSessionHint();
+    setToken(res.accessToken);
+  }, []);
+
+  const linkTelegram = useCallback(
+    async (initData: string) => {
+      if (!token) throw new Error("linkTelegram requires an authenticated session");
+      const me = await linkTelegramApi({ initData }, token);
+      setUser(me);
+      return me;
+    },
+    [token],
+  );
+
   const register = useCallback(async (email: string, password: string) => {
     // Регистрация НЕ выполняет автоматический вход. Бэкенд возвращает токены,
     // но мы их намеренно игнорируем: пользователь должен явно войти на /login.
@@ -193,10 +216,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loading,
       login,
       register,
+      loginWithTelegram,
+      linkTelegram,
       logout,
       isAdmin,
     }),
-    [token, user, loading, login, register, logout, isAdmin],
+    [token, user, loading, login, register, loginWithTelegram, linkTelegram, logout, isAdmin],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

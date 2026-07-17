@@ -33,6 +33,7 @@ import type {
   RefreshTokenRequest,
   RegisterRequest,
   SetExchangeRateRequest,
+  TelegramLoginRequest,
   UpdateOrderStatusRequest,
   WishlistItemResponse,
 } from "@/shared/api/types";
@@ -141,6 +142,27 @@ export async function login(body: LoginRequest): Promise<AuthResponse> {
     method: "POST",
     body: JSON.stringify(body),
     credentials: "include",
+  });
+}
+
+/** Вход/регистрация через Telegram Mini App initData. */
+export async function loginTelegram(body: TelegramLoginRequest): Promise<AuthResponse> {
+  return apiFetch<AuthResponse>("/auth/telegram", {
+    method: "POST",
+    body: JSON.stringify(body),
+    credentials: "include",
+  });
+}
+
+/** Привязать Telegram-аккаунт к уже аутентифицированному пользователю. */
+export async function linkTelegram(
+  body: TelegramLoginRequest,
+  token: string,
+): Promise<AuthMeResponse> {
+  return apiFetch<AuthMeResponse>("/auth/telegram/link", {
+    method: "POST",
+    body: JSON.stringify(body),
+    token,
   });
 }
 

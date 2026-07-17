@@ -1,5 +1,6 @@
 package com.nurba.java.domain;
 
+import com.nurba.java.enums.AuthProvider;
 import com.nurba.java.enums.Role;
 import jakarta.persistence.*;
 import lombok.*;
@@ -41,4 +42,17 @@ public class AppUser {
     @Column(nullable = false)
     @Builder.Default
     private int tokenVersion = 0;
+
+    // ── Telegram identity (nullable — populated on Telegram signup or later linking) ──
+    private Long telegramId;
+    private String telegramUsername;
+    private String telegramFirstName;
+    private String telegramLastName;
+    private String telegramPhotoUrl;
+
+    /** How the account was originally created. Not a login gate — see AuthProvider. */
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @Builder.Default
+    private AuthProvider provider = AuthProvider.LOCAL;
 }

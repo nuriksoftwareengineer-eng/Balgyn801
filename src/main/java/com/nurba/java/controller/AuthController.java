@@ -5,6 +5,7 @@ import com.nurba.java.dto.request.AdminEmailRequest;
 import com.nurba.java.dto.request.LoginRequest;
 import com.nurba.java.dto.request.RefreshTokenRequest;
 import com.nurba.java.dto.request.RegisterRequest;
+import com.nurba.java.dto.request.TelegramLoginRequest;
 import com.nurba.java.dto.responce.AuthMeResponse;
 import com.nurba.java.dto.responce.AuthResponse;
 import com.nurba.java.exception.BusinessRuleException;
@@ -44,6 +45,18 @@ public class AuthController implements AuthApi {
         AuthResponse auth = authService.login(request);
         setRefreshCookie(response, auth.getRefreshToken());
         return cookieResponse(auth);
+    }
+
+    @Override
+    public AuthResponse loginTelegram(TelegramLoginRequest request, HttpServletResponse response) {
+        AuthResponse auth = authService.loginWithTelegram(request);
+        setRefreshCookie(response, auth.getRefreshToken());
+        return cookieResponse(auth);
+    }
+
+    @Override
+    public AuthMeResponse linkTelegram(TelegramLoginRequest request, Authentication authentication) {
+        return authService.linkTelegram(authentication.getName(), request);
     }
 
     @Override

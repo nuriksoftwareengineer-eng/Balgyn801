@@ -55,6 +55,13 @@
       "title": "Менің СДЭК жөнелтілімдерім",
       "noShipments": "Белсенді СДЭК жөнелтілімдері жоқ",
       "viewAll": "Барлық тапсырыстар →"
+    },
+    "telegram": {
+      "title": "Telegram",
+      "connected": "Telegram-ға қосылған{{username}}",
+      "connect": "Telegram қосу",
+      "connecting": "Қосылуда…",
+      "connectFailed": "Telegram қосылмады"
     }
   },
   "payment": {

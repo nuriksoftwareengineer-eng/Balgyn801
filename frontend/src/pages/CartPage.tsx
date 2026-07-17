@@ -41,6 +41,8 @@ import {
   saveLastPayment,
   type PendingPaymentRecord,
 } from "@/shared/lib/pending-payment";
+import { haptic } from "@/shared/lib/telegram";
+import { useTelegramMainButton } from "@/shared/lib/telegram/hooks";
 
 // DELIVERY_LABELS, DELIVERY_REGIONS, and STEP_LABELS are built inside the component via t()
 
@@ -1077,6 +1079,7 @@ export function CartPage() {
   const orderMutation = useMutation({
     mutationFn: (body: CreateOrderRequest) => createOrder(body, token),
     onSuccess: (order) => {
+      haptic("success");
       setFormError(null);
       setPaymentError(null);
       setPaymentBusy(false);
@@ -1106,6 +1109,7 @@ export function CartPage() {
       setCouponInput("");
     },
     onError: (err: unknown) => {
+      haptic("error");
       setFormError(
         err instanceof ApiError ? err.message : t("cart.errors.orderFailed"),
       );
@@ -1174,6 +1178,23 @@ export function CartPage() {
 
     orderMutation.mutate(payload);
   }
+
+  // Mirrors the on-screen Continue/Submit button inside Telegram's native Main Button.
+  // Hidden entirely while browsing the cart (phase === "cart") or outside Telegram.
+  useTelegramMainButton(
+    phase === "checkout"
+      ? step < 5
+        ? { text: t("cart.checkoutFlow.continue"), onClick: handleNext }
+        : {
+            text: orderMutation.isPending
+              ? t("cart.checkoutFlow.submitting")
+              : t("cart.checkoutFlow.submit"),
+            onClick: handleSubmitOrder,
+            isEnabled: !orderMutation.isPending,
+            isLoaderVisible: orderMutation.isPending,
+          }
+      : null,
+  );
 
   async function handleApplyCoupon() {
     const code = couponInput.trim();
@@ -2208,7 +2229,10 @@ export function CartPage() {
                     </div>
                     <button
                       type="button"
-                      onClick={() => removeLine(line.lineKey)}
+                      onClick={() => {
+                        haptic("light");
+                        removeLine(line.lineKey);
+                      }}
                       className="text-[0.65rem] uppercase tracking-[0.1em] text-[--color-muted] transition hover:text-[--color-danger]"
                     >
                       {t("cart.remove")}

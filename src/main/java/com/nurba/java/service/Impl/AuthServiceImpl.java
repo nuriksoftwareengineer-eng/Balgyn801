@@ -4,9 +4,11 @@ import com.nurba.java.domain.AppUser;
 import com.nurba.java.dto.request.LoginRequest;
 import com.nurba.java.dto.request.RefreshTokenRequest;
 import com.nurba.java.dto.request.RegisterRequest;
+import com.nurba.java.dto.request.TelegramLoginRequest;
 import com.nurba.java.dto.responce.AdminUserResponse;
 import com.nurba.java.dto.responce.AuthMeResponse;
 import com.nurba.java.dto.responce.AuthResponse;
+import com.nurba.java.enums.AuthProvider;
 import com.nurba.java.enums.Role;
 import com.nurba.java.exception.BusinessRuleException;
 import com.nurba.java.exception.NotFoundException;
@@ -15,6 +17,8 @@ import com.nurba.java.repositories.AppUserRepository;
 import com.nurba.java.repositories.RefreshTokenRepository;
 import com.nurba.java.security.JwtProperties;
 import com.nurba.java.security.JwtService;
+import com.nurba.java.security.TelegramInitDataVerifier;
+import com.nurba.java.security.TelegramUserData;
 import com.nurba.java.service.AuthService;
 import com.nurba.java.service.EmailService;
 import com.nurba.java.service.TelegramNotificationService;
@@ -48,6 +52,7 @@ public class AuthServiceImpl implements AuthService {
     private final AuthenticationManager authenticationManager;
     private final EmailService emailService;
     private final TelegramNotificationService telegramNotificationService;
+    private final TelegramInitDataVerifier telegramInitDataVerifier;
 
     @Override
     @Transactional
@@ -87,6 +92,59 @@ public class AuthServiceImpl implements AuthService {
                 .orElseThrow(() -> new NotFoundException("Пользователь не найден"));
 
         return issueTokens(user);
+    }
+
+    @Override
+    @Transactional
+    public AuthResponse loginWithTelegram(TelegramLoginRequest request) {
+        TelegramUserData tgUser = telegramInitDataVerifier.verify(request.getInitData());
+
+        AppUser user = appUserRepository.findByTelegramId(tgUser.telegramId()).orElse(null);
+        boolean isNewUser = user == null;
+        if (isNewUser) {
+            user = AppUser.builder()
+                    .email("tg_" + tgUser.telegramId() + "@telegram.balgynbol.kz")
+                    .passwordHash(passwordEncoder.encode(UUID.randomUUID().toString()))
+                    .roles(EnumSet.of(Role.USER))
+                    .createdAt(Instant.now())
+                    .provider(AuthProvider.TELEGRAM)
+                    .build();
+        }
+        applyTelegramFields(user, tgUser);
+        appUserRepository.save(user);
+
+        if (isNewUser) {
+            telegramNotificationService.notifyNewUser(user.getEmail());
+        }
+        return issueTokens(user);
+    }
+
+    @Override
+    @Transactional
+    public AuthMeResponse linkTelegram(String currentUserEmail, TelegramLoginRequest request) {
+        TelegramUserData tgUser = telegramInitDataVerifier.verify(request.getInitData());
+
+        AppUser currentUser = appUserRepository.findByEmailIgnoreCase(normalize(currentUserEmail))
+                .orElseThrow(() -> new NotFoundException("Пользователь не найден"));
+
+        appUserRepository.findByTelegramId(tgUser.telegramId()).ifPresent(existing -> {
+            if (!existing.getId().equals(currentUser.getId())) {
+                throw new BusinessRuleException("Этот Telegram-аккаунт уже привязан к другому пользователю");
+            }
+        });
+
+        applyTelegramFields(currentUser, tgUser);
+        appUserRepository.save(currentUser);
+        return toMeResponse(currentUser);
+    }
+
+    private static AppUser applyTelegramFields(AppUser user, TelegramUserData tg) {
+        user.setTelegramId(tg.telegramId());
+        user.setTelegramUsername(tg.username());
+        user.setTelegramFirstName(tg.firstName());
+        user.setTelegramLastName(tg.lastName());
+        user.setTelegramPhotoUrl(tg.photoUrl());
+        return user;
     }
 
     @Override
@@ -246,6 +304,8 @@ public class AuthServiceImpl implements AuthService {
         return AuthMeResponse.builder()
                 .email(user.getEmail())
                 .roles(roles)
+                .telegramConnected(user.getTelegramId() != null)
+                .telegramUsername(user.getTelegramUsername())
                 .build();
     }
 }

@@ -15,6 +15,8 @@ public interface AppUserRepository extends JpaRepository<AppUser, Long> {
 
     boolean existsByEmailIgnoreCase(String email);
 
+    Optional<AppUser> findByTelegramId(Long telegramId);
+
     @Query("SELECT u FROM AppUser u WHERE LOWER(u.email) LIKE LOWER(CONCAT('%', :q, '%'))")
     Page<AppUser> searchByEmail(@Param("q") String q, Pageable pageable);
 }
