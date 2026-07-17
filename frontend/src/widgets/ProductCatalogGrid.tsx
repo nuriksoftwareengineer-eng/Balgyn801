@@ -1,5 +1,6 @@
 import { motion, useReducedMotion } from "framer-motion";
 import { useProducts } from "@/shared/api/queries";
+import { ApiError } from "@/shared/api/http";
 import { ProductCard } from "@/widgets/ProductCard";
 
 type GridVariant = "default" | "catalog";
@@ -69,7 +70,7 @@ export function ProductCatalogGrid({
   if (isError) {
     return (
       <div className="py-12 text-center text-sm font-semibold text-[--color-danger]">
-        {error instanceof Error ? error.message : "Ошибка загрузки"}
+        {error instanceof ApiError ? error.message : "Ошибка загрузки"}
       </div>
     );
   }

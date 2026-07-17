@@ -79,13 +79,19 @@ async function apiFetchInternal<T>(
     } catch {
       body = undefined;
     }
+    // The backend's own `detail` (ProblemDetail) is already a curated, user-safe message for
+    // every properly-handled error — payment/provider failures included, see
+    // RestExceptionHandler. This fallback only fires for responses that never reached that
+    // handler at all (a raw infra-level failure, e.g. the reverse proxy itself erroring), so it
+    // must never show the raw HTTP status number — that's exactly the "Request failed with
+    // status code 400" class of message this exists to prevent.
     const detail =
       typeof body === "object" &&
       body !== null &&
       "detail" in body &&
       typeof (body as { detail: unknown }).detail === "string"
         ? (body as { detail: string }).detail
-        : `Запрос завершился с кодом ${response.status}`;
+        : "Не удалось выполнить запрос. Попробуйте ещё раз.";
     throw new ApiError(detail, response.status, body);
   }
 

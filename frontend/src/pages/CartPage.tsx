@@ -43,6 +43,7 @@ import {
 } from "@/shared/lib/pending-payment";
 import { haptic } from "@/shared/lib/telegram";
 import { useTelegramMainButton } from "@/shared/lib/telegram/hooks";
+import { PhoneInput, isValidPhoneNumber } from "@/shared/ui/phone-input";
 
 // DELIVERY_LABELS, DELIVERY_REGIONS, and STEP_LABELS are built inside the component via t()
 
@@ -1009,7 +1010,7 @@ export function CartPage() {
     switch (step) {
       case 1:
         return (
-          customerName.trim().length > 0 && customerPhone.trim().length > 0
+          customerName.trim().length > 0 && isValidPhoneNumber(customerPhone)
         );
       case 2:
         return countryIso2.length > 0;
@@ -1023,16 +1024,14 @@ export function CartPage() {
             !!selectedPoint &&
             !cdekCalcPending &&
             cdekRecipientName.trim().length > 0 &&
-            cdekRecipientPhone.trim().length > 0
+            isValidPhoneNumber(cdekRecipientPhone)
           );
         }
-        return [
-          addrCity,
-          addrStreet,
-          addrApartment,
-          addrRecipientName,
-          addrRecipientPhone,
-        ].every((f) => f.trim().length > 0);
+        return (
+          [addrCity, addrStreet, addrApartment, addrRecipientName].every(
+            (f) => f.trim().length > 0,
+          ) && isValidPhoneNumber(addrRecipientPhone)
+        );
       case 5:
         return true;
       default:
@@ -1236,12 +1235,12 @@ export function CartPage() {
         returnUrl,
         cancelUrl,
       });
-      if (!payment.paymentUrl)
-        throw new Error(t("cart.errors.paymentUrlError"));
       const paymentUrl = payment.paymentUrl;
       // Defense-in-depth: only follow absolute http(s) gateway URLs — never javascript:/data:.
-      if (!/^https?:\/\//i.test(paymentUrl))
-        throw new Error(t("cart.errors.paymentUrlError"));
+      if (!paymentUrl || !/^https?:\/\//i.test(paymentUrl)) {
+        setPaymentError(t("cart.errors.paymentUrlError"));
+        return;
+      }
       saveLastPayment({
         orderId: oid,
         totalPrice: override?.amount ?? completedOrder?.totalPrice ?? 0,
@@ -1251,12 +1250,11 @@ export function CartPage() {
 
       window.location.href = paymentUrl;
     } catch (err: unknown) {
+      // Only ApiError carries a backend-curated, user-safe message (see RestExceptionHandler).
+      // Anything else — a network failure, a thrown TypeError, etc. — must never surface its
+      // raw text (e.g. the browser's own "Failed to fetch") to the customer.
       setPaymentError(
-        err instanceof ApiError
-          ? err.message
-          : err instanceof Error
-            ? err.message
-            : t("cart.errors.paymentFailed"),
+        err instanceof ApiError ? err.message : t("cart.errors.paymentFailed"),
       );
     } finally {
       setPaymentBusy(false);
@@ -1286,14 +1284,10 @@ export function CartPage() {
             </label>
             <label className="flex flex-col gap-1.5">
               <FieldLabel>{t("cart.form.phone")}</FieldLabel>
-              <input
+              <PhoneInput
                 required
-                type="tel"
-                autoComplete="tel"
-                placeholder="+7 …"
                 value={customerPhone}
-                onChange={(e) => setCustomerPhone(e.target.value)}
-                className={inputClass}
+                onChange={setCustomerPhone}
               />
             </label>
             <label className="flex flex-col gap-1.5">
@@ -1747,13 +1741,10 @@ export function CartPage() {
                   </label>
                   <label className="flex flex-col gap-1.5">
                     <FieldLabel>{t("cart.form.recipientPhone")}</FieldLabel>
-                    <input
+                    <PhoneInput
                       required
-                      type="tel"
-                      autoComplete="tel"
                       value={cdekRecipientPhone}
-                      onChange={(e) => setCdekRecipientPhone(e.target.value)}
-                      className={inputClass}
+                      onChange={setCdekRecipientPhone}
                     />
                   </label>
                 </div>
@@ -1829,13 +1820,10 @@ export function CartPage() {
               </label>
               <label className="flex flex-col gap-1.5">
                 <FieldLabel>{t("cart.form.recipientPhone")}</FieldLabel>
-                <input
+                <PhoneInput
                   required
-                  type="tel"
-                  autoComplete="tel"
                   value={addrRecipientPhone}
-                  onChange={(e) => setAddrRecipientPhone(e.target.value)}
-                  className={inputClass}
+                  onChange={setAddrRecipientPhone}
                 />
               </label>
             </div>

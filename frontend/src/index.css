@@ -91,6 +91,13 @@ body {
   100% { transform: scale(1); }
 }
 
+/* ─── Phone input (react-phone-number-input) — match the site's ink/white palette ── */
+.PhoneInput {
+  --PhoneInput-color--focus: var(--color-ink);
+  --PhoneInputCountryFlag-borderColor--focus: var(--color-ink);
+  --PhoneInputCountrySelectArrow-color--focus: var(--color-ink);
+}
+
 /* ─── Focus accessibility ────────────────────────────────────────────────── */
 :focus-visible {
   outline: 2px solid currentColor;

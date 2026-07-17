@@ -9,6 +9,7 @@ import com.nurba.java.exception.BusinessRuleException;
 import com.nurba.java.payment.FreedomPayHttpClient;
 import com.nurba.java.payment.FreedomPayInitResult;
 import com.nurba.java.payment.FreedomPaySignature;
+import com.nurba.java.payment.PaymentProviderException;
 import com.nurba.java.payment.gateway.GatewayCallbackResult;
 import com.nurba.java.payment.gateway.GatewayInitResult;
 import com.nurba.java.payment.gateway.PaymentGateway;
@@ -38,8 +39,8 @@ public class FreedomPayGateway implements PaymentGateway {
                 order.getId(), amount, "Order #" + order.getId());
 
         if (!result.success()) {
-            throw new BusinessRuleException(
-                    "Freedom Pay отказал в инициализации оплаты: "
+            throw new PaymentProviderException(
+                    "Freedom Pay init_payment.php failed for order #" + order.getId() + ": "
                     + (result.errorDescription() != null ? result.errorDescription() : "unknown error"));
         }
 

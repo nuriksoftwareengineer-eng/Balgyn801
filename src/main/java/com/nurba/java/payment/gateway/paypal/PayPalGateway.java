@@ -4,8 +4,8 @@ import com.nurba.java.domain.Order;
 import com.nurba.java.dto.request.PaymentInitRequest;
 import com.nurba.java.enums.PaymentProvider;
 import com.nurba.java.enums.PaymentStatus;
-import com.nurba.java.exception.BusinessRuleException;
 import com.nurba.java.payment.PayPalOrdersClient;
+import com.nurba.java.payment.PaymentProviderException;
 import com.nurba.java.payment.dto.PayPalCaptureResponse;
 import com.nurba.java.payment.dto.PayPalCreateOrderResponse;
 import com.nurba.java.payment.gateway.GatewayCallbackResult;
@@ -59,8 +59,8 @@ public class PayPalGateway implements PaymentGateway {
 
         String approvalUrl = ppOrder.approvalUrl();
         if (approvalUrl == null) {
-            throw new BusinessRuleException(
-                    "PayPal не вернул ссылку на подтверждение оплаты");
+            throw new PaymentProviderException(
+                    "PayPal did not return an approval URL for order " + ppOrder.id());
         }
 
         String cancelToken = generateCancelToken(ppOrder.id());

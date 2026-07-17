@@ -1,6 +1,6 @@
 package com.nurba.java.exception;
 
-import com.nurba.java.payment.PayPalApiException;
+import com.nurba.java.payment.PaymentProviderException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -79,14 +79,19 @@ public class RestExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(detail);
     }
 
-    @ExceptionHandler(PayPalApiException.class)
-    public ResponseEntity<ProblemDetail> handlePayPalApi(PayPalApiException ex) {
-        // Log the full cause + stacktrace. Without this the 502 was completely silent in the
-        // logs (only the controller's "create-order request" INFO line appeared), making the
-        // real PayPal failure impossible to diagnose.
-        log.error("[PayPal] API call failed → responding 502 BAD_GATEWAY: {}", ex.getMessage(), ex);
+    /**
+     * A payment provider's own API (FreedomPay, PayPal, VTB) rejected, failed, or was
+     * unreachable. The real cause — provider error codes, HTTP bodies, signature mismatches —
+     * is logged here in full and MUST NOT reach the client: it can expose provider/account
+     * internals and is meaningless to a customer anyway. The client always gets the same
+     * generic, translated message regardless of which provider or failure mode caused it.
+     */
+    @ExceptionHandler(PaymentProviderException.class)
+    public ResponseEntity<ProblemDetail> handlePaymentProviderError(PaymentProviderException ex) {
+        log.error("[Payment] Provider call failed → responding 502 BAD_GATEWAY: {}", ex.getMessage(), ex);
         ProblemDetail detail = ProblemDetail.forStatusAndDetail(
-                HttpStatus.BAD_GATEWAY, "PayPal API error: " + ex.getMessage());
+                HttpStatus.BAD_GATEWAY,
+                "Платёжный сервис временно недоступен. Попробуйте ещё раз позже или выберите другой способ оплаты.");
         detail.setTitle("Payment Provider Error");
         return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(detail);
     }

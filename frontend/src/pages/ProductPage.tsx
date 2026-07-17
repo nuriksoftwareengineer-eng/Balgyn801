@@ -4,6 +4,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { useCart } from "@/app/use-cart";
 import { useCartDrawer } from "@/app/cart-drawer-context";
 import { useProduct } from "@/shared/api/queries";
+import { ApiError } from "@/shared/api/http";
 import type { Product } from "@/shared/api/types";
 import { Price } from "@/shared/ui/price";
 import { cn } from "@/shared/lib/cn";
@@ -240,7 +241,7 @@ export function ProductPage() {
     return (
       <Container className="py-16">
         <p className="font-medium text-[--color-danger]">
-          {error instanceof Error ? error.message : "Не удалось загрузить товар"}
+          {error instanceof ApiError ? error.message : "Не удалось загрузить товар"}
         </p>
         <Link
           to="/catalog"

@@ -3,6 +3,7 @@ package com.nurba.java.payment.vtb;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nurba.java.config.VtbProperties;
 import com.nurba.java.exception.BusinessRuleException;
+import com.nurba.java.payment.PaymentProviderException;
 import com.nurba.java.payment.vtb.dto.VtbOrderStatusResponse;
 import com.nurba.java.payment.vtb.dto.VtbRegisterRequest;
 import com.nurba.java.payment.vtb.dto.VtbRegisterResponse;
@@ -67,16 +68,16 @@ public class VtbHttpClient {
             log.info("[VTB] register.do response: {}", json);
             VtbRegisterResponse response = objectMapper.readValue(json, VtbRegisterResponse.class);
             if (!response.isSuccess()) {
-                throw new BusinessRuleException(
+                throw new PaymentProviderException(
                         "VTB register.do failed: errorCode=" + response.errorCode()
                         + " message=" + response.errorMessage());
             }
             return response;
-        } catch (BusinessRuleException e) {
+        } catch (PaymentProviderException e) {
             throw e;
         } catch (Exception e) {
             log.error("[VTB] register.do error: {}", e.getMessage(), e);
-            throw new BusinessRuleException("VTB payment registration failed: " + e.getMessage());
+            throw new PaymentProviderException("VTB payment registration failed: " + e.getMessage(), e);
         }
     }
 
@@ -97,16 +98,16 @@ public class VtbHttpClient {
             log.info("[VTB] getOrderStatusExtended.do response: {}", json);
             VtbOrderStatusResponse response = objectMapper.readValue(json, VtbOrderStatusResponse.class);
             if (!response.isSuccess()) {
-                throw new BusinessRuleException(
+                throw new PaymentProviderException(
                         "VTB getOrderStatus failed: errorCode=" + response.errorCode()
                         + " message=" + response.errorMessage());
             }
             return response;
-        } catch (BusinessRuleException e) {
+        } catch (PaymentProviderException e) {
             throw e;
         } catch (Exception e) {
             log.error("[VTB] getOrderStatusExtended.do error for orderId={}: {}", vtbOrderId, e.getMessage(), e);
-            throw new BusinessRuleException("VTB status check failed: " + e.getMessage());
+            throw new PaymentProviderException("VTB status check failed: " + e.getMessage(), e);
         }
     }
 
