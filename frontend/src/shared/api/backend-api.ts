@@ -825,17 +825,16 @@ export async function getDeliveryCountries(): Promise<DeliveryCountry[]> {
 }
 
 /**
- * Стоимость международной доставки: страна → зона → официальный тариф Казпочты по весу
- * и типу перевозки (Авиа/Наземная). Вес считается на бэкенде из переданных позиций —
- * мы не вычисляем и не передаём вес с фронтенда.
+ * Стоимость международной доставки: страна → зона → официальный тариф Казпочты по весу.
+ * Всегда авиаперевозка (AIR) — единственный способ международной доставки. Вес считается
+ * на бэкенде из переданных позиций — мы не вычисляем и не передаём вес с фронтенда.
  */
 export async function getIntlQuote(
   countryIso2: string,
-  kind: "AIR" | "GROUND",
   items: IntlQuoteItem[],
 ): Promise<IntlQuote> {
   return apiFetch<IntlQuote>("/delivery/intl-quote", {
     method: "POST",
-    body: JSON.stringify({ countryIso2, kind, items }),
+    body: JSON.stringify({ countryIso2, items }),
   });
 }

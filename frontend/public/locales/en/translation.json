@@ -338,11 +338,8 @@
     "intl": {
       "country": "Country",
       "searchCountry": "Search country…",
-      "chooseKind": "Shipping type",
       "air": "Air",
-      "ground": "Ground",
-      "airDays": "7–14 days",
-      "groundDays": "14–30 days"
+      "airDays": "7–14 business days"
     }
   },
   "design": {
@@ -779,6 +776,15 @@
         "desc": "Production in Kazakhstan. We create local jobs and take pride in our roots."
       }
     },
+    "gallery": {
+      "heading": "Production",
+      "productionFloor": "Production floor",
+      "embroideryProcess": "Embroidery process",
+      "equipment": "Equipment",
+      "finishedGoods": "Finished pieces",
+      "packaging": "Order packaging",
+      "team": "Team"
+    },
     "custom": {
       "heading": "Custom Design",
       "desc": "Bring your idea, logo, or sketch — we'll turn it into embroidery. We work with corporate orders, team uniforms, and personalized gifts.",
@@ -826,7 +832,11 @@
     "q12": "How can I contact you?",
     "a12": "Instagram: @balgyn.bol · Telegram: @balgyn.bol · WhatsApp: +7 708 193 75 10 · Email: balgyn.studio@gmail.com. Mon–Fri, 10:00–18:00 (GMT+5).",
     "q13": "What is the easiest way to track my order with CDEK?",
-    "a13": "The best way is to download the official CDEK app. Sign in with the same phone number you used when placing your order — your shipment will appear automatically. The app provides: current status and route, push notifications on status changes, QR codes for pickup, and delivery history."
+    "a13": "The best way is to download the official CDEK app. Sign in with the same phone number you used when placing your order — your shipment will appear automatically. The app provides: current status and route, push notifications on status changes, QR codes for pickup, and delivery history.",
+    "cta": {
+      "heading": "Didn't find your answer?",
+      "desc": "Reach out however's easiest for you."
+    }
   },
   "tracking": {
     "historyTitle": "Status history",

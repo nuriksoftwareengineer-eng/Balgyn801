@@ -29,6 +29,9 @@ export const TELEGRAM_CHANNEL_URL = "https://t.me/balgyncatalog";
 /** WhatsApp номер магазина. */
 export const WHATSAPP_URL = "https://wa.me/77081937510";
 
+/** Instagram магазина. */
+export const INSTAGRAM_URL = "https://instagram.com/balgyn.bol";
+
 /** Телефон магазина (для отображения / mailto-tel). */
 export const CONTACT_PHONE = "+7 708 193 75 10";
 export const CONTACT_PHONE_HREF = "+77081937510";

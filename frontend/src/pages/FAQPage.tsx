@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Container } from "@/shared/ui/container";
 import {
   CONTACT_EMAIL,
+  INSTAGRAM_URL,
   STORE_TELEGRAM_URL,
   WHATSAPP_URL,
 } from "@/shared/constants/store-content";
@@ -94,6 +95,42 @@ export function FAQPage() {
           ))}
         </div>
 
+        {/* Contact CTA */}
+        <div className="mt-14 border-t border-[--color-border] pt-10 text-center">
+          <h2 className="text-xl font-semibold uppercase tracking-[-0.01em] text-black md:text-2xl">
+            {t("faq.cta.heading")}
+          </h2>
+          <p className="mt-2 text-[14px] text-[--color-muted]">
+            {t("faq.cta.desc")}
+          </p>
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+            <a
+              href={WHATSAPP_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex h-11 items-center justify-center border border-[--color-border] bg-white px-6 text-[12px] font-semibold uppercase tracking-[0.16em] text-black transition hover:border-black"
+            >
+              WhatsApp
+            </a>
+            <a
+              href={STORE_TELEGRAM_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex h-11 items-center justify-center border border-[--color-border] bg-white px-6 text-[12px] font-semibold uppercase tracking-[0.16em] text-black transition hover:border-black"
+            >
+              Telegram
+            </a>
+            <a
+              href={INSTAGRAM_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex h-11 items-center justify-center border border-[--color-border] bg-white px-6 text-[12px] font-semibold uppercase tracking-[0.16em] text-black transition hover:border-black"
+            >
+              Instagram
+            </a>
+          </div>
+        </div>
+
         <div className="mt-12 border-t border-[--color-border] pt-8">
           <p className="mb-4 text-xs text-[--color-muted]">
             {t("contactsPage.contactsHeading")}
@@ -101,7 +138,7 @@ export function FAQPage() {
           <div className="grid grid-cols-2 gap-x-6 gap-y-4 text-[14px] sm:grid-cols-4">
             <div>
               <p className="mb-1 text-xs text-[--color-muted]">Instagram</p>
-              <a href="https://instagram.com/balgyn.bol" target="_blank" rel="noopener noreferrer" className="text-zinc-800 hover:text-black">
+              <a href={INSTAGRAM_URL} target="_blank" rel="noopener noreferrer" className="text-zinc-800 hover:text-black">
                 @balgyn.bol
               </a>
             </div>

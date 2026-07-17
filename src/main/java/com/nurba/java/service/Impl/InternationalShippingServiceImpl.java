@@ -21,6 +21,10 @@ import java.util.List;
  * страна → тарифная зона (countries.intl_zone, "1".."5") → официальный тариф Казпочты
  * (intl_zone_tariffs: весовые пороги до 10 кг + надбавка за каждый доп. кг свыше 10 кг).
  * Цены только из импортированной тарифной таблицы — в коде не хардкодятся.
+ * <p>
+ * Всегда AIR — единственный способ международной доставки, предлагаемый покупателю
+ * (GROUND-тарифы остаются в БД нетронутыми на случай, если это решение пересмотрят,
+ * но эта служба их больше не запрашивает).
  */
 @Service
 @RequiredArgsConstructor
@@ -32,10 +36,7 @@ public class InternationalShippingServiceImpl implements InternationalShippingSe
 
     @Override
     @Transactional(readOnly = true)
-    public InternationalShippingQuote quote(String countryIso2, IntlShipKind kind, BigDecimal weightKg) {
-        if (kind == null) {
-            throw new BusinessRuleException("Выберите тип международной доставки: Авиа или Наземная");
-        }
+    public InternationalShippingQuote quote(String countryIso2, BigDecimal weightKg) {
         Country country = countryService.requireActiveByIso2(countryIso2);
         String zone = country.getIntlZone();
         if (zone == null || zone.isBlank()) {
@@ -44,7 +45,7 @@ public class InternationalShippingServiceImpl implements InternationalShippingSe
         }
 
         BigDecimal weight = weightKg == null ? BigDecimal.ZERO : weightKg;
-        BigDecimal feeKzt = resolvePrice(zone, kind, weight).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal feeKzt = resolvePrice(zone, weight).setScale(2, RoundingMode.HALF_UP);
 
         // Cached rate (never a live call) — checkout keeps working even if the provider is down.
         BigDecimal rate = exchangeRateService.kztPerUsd();
@@ -54,15 +55,15 @@ public class InternationalShippingServiceImpl implements InternationalShippingSe
     }
 
     /**
-     * Тариф зоны/типа перевозки для заданного веса: первый весовой порог,
-     * в который вес укладывается; если вес превышает максимальный заданный порог —
-     * цена на максимальном пороге плюс надбавка за каждый дополнительный кг (округление вверх).
+     * Тариф зоны для заданного веса (всегда AIR): первый весовой порог, в который вес
+     * укладывается; если вес превышает максимальный заданный порог — цена на максимальном
+     * пороге плюс надбавка за каждый дополнительный кг (округление вверх).
      */
-    private BigDecimal resolvePrice(String zone, IntlShipKind kind, BigDecimal weightKg) {
+    private BigDecimal resolvePrice(String zone, BigDecimal weightKg) {
         List<IntlZoneTariff> brackets =
-                tariffRepository.findByZoneAndKindAndIncrementFalseOrderByUptoKgAsc(zone, kind);
+                tariffRepository.findByZoneAndKindAndIncrementFalseOrderByUptoKgAsc(zone, IntlShipKind.AIR);
         if (brackets.isEmpty()) {
-            throw new BusinessRuleException("Тариф для зоны " + zone + " (" + kind + ") не задан");
+            throw new BusinessRuleException("Тариф для зоны " + zone + " (AIR) не задан");
         }
         for (IntlZoneTariff bracket : brackets) {
             if (weightKg.compareTo(bracket.getUptoKg()) <= 0) {
@@ -71,10 +72,10 @@ public class InternationalShippingServiceImpl implements InternationalShippingSe
         }
 
         IntlZoneTariff maxBracket = brackets.get(brackets.size() - 1);
-        IntlZoneTariff increment = tariffRepository.findByZoneAndKindAndIncrementTrue(zone, kind)
+        IntlZoneTariff increment = tariffRepository.findByZoneAndKindAndIncrementTrue(zone, IntlShipKind.AIR)
                 .orElseThrow(() -> new BusinessRuleException(
                         "Надбавка за вес свыше " + maxBracket.getUptoKg() + " кг для зоны " + zone
-                                + " (" + kind + ") не задана"));
+                                + " (AIR) не задана"));
 
         BigDecimal overKg = weightKg.subtract(maxBracket.getUptoKg());
         int extraWholeKg = overKg.setScale(0, RoundingMode.CEILING).intValueExact();

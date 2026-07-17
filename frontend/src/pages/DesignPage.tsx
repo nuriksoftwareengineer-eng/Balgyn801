@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useCatalogDesign } from "@/shared/api/catalog-api";
 import { getSizeCharts } from "@/shared/api/backend-api";
@@ -17,6 +17,7 @@ import { useCart } from "@/app/use-cart";
 import { useCurrency } from "@/app/currency-context";
 import { cn } from "@/shared/lib/cn";
 import { Container } from "@/shared/ui/container";
+import { Toast } from "@/shared/ui/toast";
 import { RecommendedSection } from "@/widgets/catalog/RecommendedSection";
 
 // ── Lightbox ──────────────────────────────────────────────────────────────────
@@ -141,7 +142,6 @@ export function DesignPage() {
     collectionSlug: string;
     designSlug: string;
   }>();
-  const navigate = useNavigate();
   const { addDesignItem } = useCart();
   const { format } = useCurrency();
 
@@ -152,6 +152,7 @@ export function DesignPage() {
   const [selectedColorId, setSelectedColorId] = useState<number | null>(null);
   const [selectedSizeId, setSelectedSizeId] = useState<number | null>(null);
   const [added, setAdded] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [chartOpen, setChartOpen] = useState(false);
   const [activeChartType, setActiveChartType] = useState<string | null>(null);
   const [galleryIndex, setGalleryIndex] = useState(0);
@@ -273,7 +274,7 @@ export function DesignPage() {
     });
 
     setAdded(true);
-    navigate("/cart", { state: { justAdded: design.name } });
+    setToastMessage(t("cart.addedToCart", { title: design.name }));
   }
 
   // ── Loading / error states ────────────────────────────────────────────────
@@ -619,6 +620,8 @@ export function DesignPage() {
       </Container>
 
       {design && <RecommendedSection designId={design.id} />}
+
+      <Toast message={toastMessage} onDismiss={() => setToastMessage(null)} />
     </>
   );
 }

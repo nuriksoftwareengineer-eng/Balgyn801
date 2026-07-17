@@ -718,7 +718,6 @@ export function CartPage() {
   const [phase, setPhase] = useState<"cart" | "checkout">("cart");
   const [step, setStep] = useState(1);
   const [formError, setFormError] = useState<string | null>(null);
-  const [justAddedTitle, setJustAddedTitle] = useState<string | null>(null);
 
   // ── Step 1: Contacts ─────────────────────────────────────────────────────────
   const [customerName, setCustomerName] = useState("");
@@ -727,10 +726,10 @@ export function CartPage() {
 
   // ── Step 2: Country ──────────────────────────────────────────────────────────
   const [countryIso2, setCountryIso2] = useState("KZ");
-  // «Другие страны»: выбранный регион-псевдокод, поиск и тип перевозки
+  // «Другие страны»: выбранный регион-псевдокод и поиск. Международная доставка — всегда
+  // авиа (единственный способ), выбор типа перевозки покупателю не предлагается.
   const [regionChoice, setRegionChoice] = useState("KZ");
   const [countrySearch, setCountrySearch] = useState("");
-  const [intlKind, setIntlKind] = useState<"AIR" | "GROUND" | null>(null);
 
   // ── Step 3: Delivery type ────────────────────────────────────────────────────
   const [deliveryType, setDeliveryType] = useState<DeliveryType>("PICKUP");
@@ -816,13 +815,12 @@ export function CartPage() {
   );
 
   const intlQuoteQuery = useQuery({
-    queryKey: ["delivery", "intl-quote", countryIso2, intlKind, linesSig],
-    queryFn: () => getIntlQuote(countryIso2, intlKind!, intlQuoteItems),
+    queryKey: ["delivery", "intl-quote", countryIso2, linesSig],
+    queryFn: () => getIntlQuote(countryIso2, intlQuoteItems),
     enabled:
       phase === "checkout" &&
       regionChoice === "OTHER" &&
-      countryIso2.length > 0 &&
-      intlKind != null,
+      countryIso2.length > 0,
     staleTime: 5 * 60 * 1000,
   });
 
@@ -865,14 +863,9 @@ export function CartPage() {
 
   useEffect(() => {
     const st = location.state as {
-      justAdded?: string;
       retryOrderId?: number;
       retryAmount?: number;
     } | null;
-
-    if (st?.justAdded) {
-      setJustAddedTitle(st.justAdded);
-    }
 
     // Restore pending record from OrderHistory "Pay" button or payment cancelled/failed pages
     if (st?.retryOrderId && !completedOrder) {
@@ -887,7 +880,7 @@ export function CartPage() {
       setRecoveryProvider("FREEDOM_PAY");
     }
 
-    if (st?.justAdded || st?.retryOrderId) {
+    if (st?.retryOrderId) {
       navigate(location.pathname, { replace: true, state: {} });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1017,11 +1010,9 @@ export function CartPage() {
           customerName.trim().length > 0 && customerPhone.trim().length > 0
         );
       case 2:
-        return (
-          countryIso2.length > 0 && (regionChoice !== "OTHER" || intlKind != null)
-        );
+        return countryIso2.length > 0;
       case 3:
-        return deliveryType !== "INTERNATIONAL" || intlKind != null;
+        return true;
       case 4:
         if (!requiresAddress) return true;
         if (selectedMethod?.requiresCitySearch) {
@@ -1160,7 +1151,6 @@ export function CartPage() {
       deliveryType,
       comment: comment.trim() || null,
       countryIso2: countryIso2ForOrder,
-      intlShippingKind: deliveryType === "INTERNATIONAL" ? intlKind : null,
       pvzCode,
       couponCode: appliedCoupon?.code ?? null,
       items: lines.map((l) =>
@@ -1311,7 +1301,6 @@ export function CartPage() {
                 type="button"
                 onClick={() => {
                   setRegionChoice(r.iso2);
-                  setIntlKind(null);
                   setCountryIso2(r.iso2 === "OTHER" ? "" : r.iso2);
                 }}
                 className={cn(
@@ -1384,51 +1373,22 @@ export function CartPage() {
                   )}
                 </div>
                 {countryIso2 && (
-                  <div className="mt-3 flex flex-col gap-2">
-                    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-black">
-                      {t("cart.intl.chooseKind")}
+                  <div className="mt-3 flex items-center justify-between border border-[--color-border] bg-[--color-surface] px-5 py-4">
+                    <div>
+                      <p className="m-0 text-sm font-semibold text-black">{t("cart.intl.air")}</p>
+                      <p className="m-0 mt-0.5 text-xs text-[--color-muted]">{t("cart.intl.airDays")}</p>
+                    </div>
+                    <p className="m-0 text-sm font-medium text-black">
+                      {intlQuoteQuery.isFetching ? (
+                        "…"
+                      ) : intlQuoteQuery.error ? (
+                        <span className="text-red-600">
+                          {(intlQuoteQuery.error as Error).message}
+                        </span>
+                      ) : intlQuoteQuery.data ? (
+                        <Price kzt={intlQuoteQuery.data.priceKzt} />
+                      ) : null}
                     </p>
-                    {(["AIR", "GROUND"] as const).map((k) => (
-                      <button
-                        key={k}
-                        type="button"
-                        onClick={() => setIntlKind(k)}
-                        className={cn(
-                          "flex items-center justify-between border px-5 py-4 text-left transition-colors",
-                          intlKind === k
-                            ? "border-black bg-black text-white"
-                            : "border-[--color-border] bg-white hover:border-zinc-400",
-                        )}
-                      >
-                        <div>
-                          <p className="m-0 text-sm font-semibold">
-                            {k === "AIR" ? t("cart.intl.air") : t("cart.intl.ground")}
-                          </p>
-                          <p
-                            className={cn(
-                              "m-0 mt-0.5 text-xs",
-                              intlKind === k ? "text-white/70" : "text-[--color-muted]",
-                            )}
-                          >
-                            {k === "AIR" ? t("cart.intl.airDays") : t("cart.intl.groundDays")}
-                          </p>
-                        </div>
-                        {intlKind === k && <CheckIcon size={12} />}
-                      </button>
-                    ))}
-                    {intlKind != null && (
-                      <p className="text-sm font-medium text-black">
-                        {intlQuoteQuery.isFetching ? (
-                          "…"
-                        ) : intlQuoteQuery.error ? (
-                          <span className="text-red-600">
-                            {(intlQuoteQuery.error as Error).message}
-                          </span>
-                        ) : intlQuoteQuery.data ? (
-                          <Price kzt={intlQuoteQuery.data.priceKzt} />
-                        ) : null}
-                      </p>
-                    )}
                   </div>
                 )}
               </div>
@@ -2168,21 +2128,6 @@ export function CartPage() {
           <h1 className="display mb-8 text-[40px] uppercase text-black md:text-[56px]">
             {t("cart.title")}
           </h1>
-
-          {justAddedTitle && lines.length > 0 ? (
-            <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border border-[--color-border] bg-[--color-surface] px-4 py-3 text-sm">
-              <span className="text-black">
-                {t("cart.addedToCart", { title: justAddedTitle })}
-              </span>
-              <button
-                type="button"
-                onClick={() => setJustAddedTitle(null)}
-                className="text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-[--color-muted] hover:text-black"
-              >
-                {t("cart.hide")}
-              </button>
-            </div>
-          ) : null}
 
           {lines.length === 0 ? (
             <div className="mx-auto flex max-w-md flex-col items-center gap-6 py-20 text-center">

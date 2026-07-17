@@ -245,8 +245,6 @@ export type CreateOrderRequest = {
   address?: DeliveryAddressRequest | null;
   /** ISO-2 код страны доставки (например "KZ", "RU"). Обязателен для всех типов кроме PICKUP. */
   countryIso2?: string | null;
-  /** Тип международной перевозки (AIR/GROUND) — обязателен при deliveryType=INTERNATIONAL. */
-  intlShippingKind?: "AIR" | "GROUND" | null;
   /** Код ПВЗ СДЭК. Обязателен для CDEK-заказов. */
   pvzCode?: string | null;
   /** Промокод — применяется сервером при создании заказа. */

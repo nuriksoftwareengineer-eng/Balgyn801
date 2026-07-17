@@ -62,8 +62,7 @@ public class DeliveryPricingServiceImpl implements DeliveryPricingService {
     public DeliveryQuote quote(DeliveryType method,
                                String countryIso2,
                                DeliveryAddressRequest address,
-                               BigDecimal weightKg,
-                               com.nurba.java.enums.IntlShipKind intlKind) {
+                               BigDecimal weightKg) {
         if (method == null) {
             throw new BusinessRuleException("Тип доставки обязателен");
         }
@@ -85,7 +84,7 @@ public class DeliveryPricingServiceImpl implements DeliveryPricingService {
         return switch (zone) {
             case KAZAKHSTAN -> kazakhstanQuote(method, address, weight);
             case CIS        -> cisQuote(address, weight);
-            case INTERNATIONAL -> internationalQuote(countryIso2, intlKind, weight);
+            case INTERNATIONAL -> internationalQuote(countryIso2, weight);
         };
     }
 
@@ -245,8 +244,8 @@ public class DeliveryPricingServiceImpl implements DeliveryPricingService {
         return new DeliveryQuote(fee, ShippingZone.CIS, weight, cityCode, null, null);
     }
 
-    private DeliveryQuote internationalQuote(String countryIso2, com.nurba.java.enums.IntlShipKind intlKind, BigDecimal weight) {
-        InternationalShippingQuote q = internationalShippingService.quote(countryIso2, intlKind, weight);
+    private DeliveryQuote internationalQuote(String countryIso2, BigDecimal weight) {
+        InternationalShippingQuote q = internationalShippingService.quote(countryIso2, weight);
         return new DeliveryQuote(
                 q.feeKzt(), ShippingZone.INTERNATIONAL, weight, null, q.feeUsd(), q.kztPerUsd());
     }

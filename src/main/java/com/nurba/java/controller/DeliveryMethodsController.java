@@ -39,7 +39,7 @@ public class DeliveryMethodsController implements DeliveryMethodsApi {
                         Integer::sum));
         BigDecimal weightKg = garmentWeightService.calculateWeightForDesignGarments(qtyByGarment);
         InternationalShippingQuote quote =
-                internationalShippingService.quote(request.countryIso2(), request.kind(), weightKg);
+                internationalShippingService.quote(request.countryIso2(), weightKg);
         return new IntlQuoteResponse(quote.feeKzt(), quote.feeUsd());
     }
 }

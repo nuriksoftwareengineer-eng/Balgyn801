@@ -249,7 +249,7 @@ class InternationalShippingIntegrationTest {
     private String body(String method, String iso2) {
         return """
                 { "customerName": "T", "customerPhone": "+77000000000",
-                  "deliveryType": "%s", "countryIso2": "%s", "intlShippingKind": "AIR",
+                  "deliveryType": "%s", "countryIso2": "%s",
                   "items": [ { "designGarmentId": %d, "colorId": %d, "sizeId": %d, "currency": "KZT", "quantity": 1 } ],
                   "address": { "city": "City", "street": "St 1", "apartment": "—",
                     "postalCode": "00000", "recipientName": "T", "recipientPhone": "+77000000000" } }
@@ -283,7 +283,7 @@ class InternationalShippingIntegrationTest {
         // = 43725 KZT. Прямой вызов /delivery/intl-quote — до создания заказа, вес считается
         // из designGarmentId+quantity (GarmentWeightService.calculateWeightForDesignGarments).
         String requestBody = """
-                { "countryIso2": "US", "kind": "AIR",
+                { "countryIso2": "US",
                   "items": [ { "designGarmentId": %d, "quantity": 11 } ] }
                 """.formatted(garmentId);
 

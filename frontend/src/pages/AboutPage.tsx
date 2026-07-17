@@ -22,6 +22,42 @@ function useSiteSettings() {
 const linkClass =
   "font-medium text-black underline underline-offset-2 transition-colors hover:text-zinc-600";
 
+/** Иконка-заглушка для мест под фото, которые ещё предстоит снять/загрузить. */
+function PhotoPlaceholderIcon() {
+  return (
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+      <rect x="3" y="4" width="18" height="16" rx="1" />
+      <circle cx="8.5" cy="9.5" r="1.5" />
+      <path d="M21 15l-5-5-9 9" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+/** Плейсхолдер под фото: сейчас показывает подпись, позже — просто `<img src>` вместо него,
+ *  без изменения сетки/вёрстки вокруг. */
+function GalleryTile({
+  label,
+  className,
+}: {
+  label: string;
+  className?: string;
+}) {
+  return (
+    <div
+      className={`relative overflow-hidden border border-[--color-border] bg-[--color-surface] ${className ?? ""}`}
+    >
+      <div className="flex h-full w-full flex-col items-center justify-center gap-2 p-4 text-center">
+        <span className="text-black/20">
+          <PhotoPlaceholderIcon />
+        </span>
+        <p className="m-0 text-[11px] uppercase tracking-[0.12em] text-[--color-muted]">
+          {label}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export function AboutPage() {
   const { t } = useTranslation();
   const { data: settings } = useSiteSettings();
@@ -88,6 +124,24 @@ export function AboutPage() {
                 </p>
               </div>
             ))}
+          </div>
+        </section>
+
+        {/* Production gallery */}
+        <section className="mb-16 border-t border-[--color-border] pt-12">
+          <p className="mb-8 text-xs font-medium tracking-wide text-[--color-muted]">
+            {t("aboutPage.gallery.heading")}
+          </p>
+          <GalleryTile
+            label={t("aboutPage.gallery.productionFloor")}
+            className="mb-3 aspect-[16/9] w-full sm:mb-4 md:aspect-[3/1]"
+          />
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-5">
+            <GalleryTile label={t("aboutPage.gallery.embroideryProcess")} className="aspect-square" />
+            <GalleryTile label={t("aboutPage.gallery.equipment")} className="aspect-square" />
+            <GalleryTile label={t("aboutPage.gallery.finishedGoods")} className="aspect-square" />
+            <GalleryTile label={t("aboutPage.gallery.packaging")} className="aspect-square" />
+            <GalleryTile label={t("aboutPage.gallery.team")} className="aspect-square" />
           </div>
         </section>
 
