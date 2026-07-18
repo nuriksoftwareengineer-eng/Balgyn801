@@ -9,7 +9,6 @@ public interface TelegramNotificationService {
     void notifyPaymentFailed(Order order);
     void notifyOrderShipped(Order order);
     void notifyOrderDelivered(Order order);
-    void notifyNewUser(String email);
     void notifyError(String context, String message);
 
     /** Уведомляет клиента в Telegram об изменении статуса заказа. No-op, если у него

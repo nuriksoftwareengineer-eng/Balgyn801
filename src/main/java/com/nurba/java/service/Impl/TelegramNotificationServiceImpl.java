@@ -189,13 +189,6 @@ public class TelegramNotificationServiceImpl implements TelegramNotificationServ
 
     @Override
     @Async
-    public void notifyNewUser(String email) {
-        if (!enabled) return;
-        send("👤 <b>Новый пользователь:</b> " + email);
-    }
-
-    @Override
-    @Async
     public void notifyError(String context, String message) {
         if (!enabled) return;
         send("⚠️ <b>Ошибка [" + context + "]</b>\n" + message);

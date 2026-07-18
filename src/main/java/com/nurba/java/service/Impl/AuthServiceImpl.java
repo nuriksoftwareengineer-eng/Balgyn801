@@ -21,7 +21,6 @@ import com.nurba.java.security.TelegramInitDataVerifier;
 import com.nurba.java.security.TelegramUserData;
 import com.nurba.java.service.AuthService;
 import com.nurba.java.service.EmailService;
-import com.nurba.java.service.TelegramNotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -51,7 +50,6 @@ public class AuthServiceImpl implements AuthService {
     private final JwtProperties jwtProperties;
     private final AuthenticationManager authenticationManager;
     private final EmailService emailService;
-    private final TelegramNotificationService telegramNotificationService;
     private final TelegramInitDataVerifier telegramInitDataVerifier;
 
     @Override
@@ -72,7 +70,6 @@ public class AuthServiceImpl implements AuthService {
         appUserRepository.save(user);
 
         emailService.sendRegistrationEmail(user.getEmail(), user.getEmail());
-        telegramNotificationService.notifyNewUser(user.getEmail());
 
         return issueTokens(user);
     }
@@ -116,9 +113,6 @@ public class AuthServiceImpl implements AuthService {
         applyTelegramFields(user, tgUser);
         appUserRepository.save(user);
 
-        if (isNewUser) {
-            telegramNotificationService.notifyNewUser(user.getEmail());
-        }
         AuthResponse response = issueTokens(user);
         log.info("[Telegram] JWT issued for telegramId={}", tgUser.telegramId());
         return response;
