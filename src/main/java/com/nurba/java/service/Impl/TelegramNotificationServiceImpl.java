@@ -5,7 +5,9 @@ import com.nurba.java.domain.DeliveryAddress;
 import com.nurba.java.domain.Order;
 import com.nurba.java.enums.DeliveryType;
 import com.nurba.java.repositories.OrderRepository;
+import com.nurba.java.security.TelegramApiErrors;
 import com.nurba.java.service.TelegramNotificationService;
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
@@ -30,6 +32,15 @@ public class TelegramNotificationServiceImpl implements TelegramNotificationServ
     @Value("${app.telegram.chat-id:}")
     private String chatId;
 
+    // Dedicated admin-alert bot. Blank = admin alerts fall back to the Mini App bot/chat above.
+    // Customer-facing messages always go through the Mini App bot — customers only have a chat
+    // relationship with the bot they logged in through.
+    @Value("${app.telegram.admin-bot-token:}")
+    private String adminBotToken;
+
+    @Value("${app.telegram.admin-chat-id:}")
+    private String adminChatId;
+
     @Value("${app.frontend.base-url:http://localhost:5173}")
     private String frontendBaseUrl;
 
@@ -40,6 +51,21 @@ public class TelegramNotificationServiceImpl implements TelegramNotificationServ
 
     public TelegramNotificationServiceImpl(OrderRepository orderRepository) {
         this.orderRepository = orderRepository;
+    }
+
+    /** Startup visibility only — logs which bot configuration is active, never token values. */
+    @PostConstruct
+    void logStartupStatus() {
+        if (!enabled) {
+            log.info("[Telegram] Notifications disabled (app.telegram.enabled=false)");
+            return;
+        }
+        boolean dedicatedAdminBot = adminBotToken != null && !adminBotToken.isBlank();
+        String adminChat = effectiveAdminChatId();
+        log.info("[Telegram] Notifications enabled: mini-app bot token {}; admin alerts via {} bot, admin chat id {}",
+                (botToken != null && !botToken.isBlank()) ? "present" : "MISSING",
+                dedicatedAdminBot ? "dedicated admin" : "mini-app (fallback)",
+                (adminChat == null || adminChat.isBlank()) ? "MISSING" : "present");
     }
 
     // ─── New order (fires right after order creation, before payment) ──────────
@@ -187,7 +213,8 @@ public class TelegramNotificationServiceImpl implements TelegramNotificationServ
         String text = customerStatusMessage(order);
         if (text == null) return;
 
-        send(String.valueOf(user.getTelegramId()), text);
+        // Always the Mini App bot: the customer started (and trusts) that bot, not the admin one.
+        sendMessage(botToken, String.valueOf(user.getTelegramId()), text);
     }
 
     private static String customerStatusMessage(Order order) {
@@ -209,22 +236,45 @@ public class TelegramNotificationServiceImpl implements TelegramNotificationServ
 
     // ─── Internal ────────────────────────────────────────────────────────────────
 
+    /** Admin-facing alerts → admin bot; falls back to the Mini App bot when no dedicated one is set. */
     private void send(String text) {
-        send(chatId, text);
+        String targetChatId = effectiveAdminChatId();
+        if (targetChatId == null || targetChatId.isBlank()) {
+            log.info("[Telegram] Admin notification skipped — no admin chat id configured");
+            return;
+        }
+        if (sendMessage(effectiveAdminBotToken(), targetChatId, text)) {
+            log.info("[Telegram] Admin notification delivered to chat {}", targetChatId);
+        }
     }
 
-    private void send(String targetChatId, String text) {
-        if (botToken == null || botToken.isBlank() || targetChatId == null || targetChatId.isBlank()) return;
+    private boolean sendMessage(String token, String targetChatId, String text) {
+        if (token == null || token.isBlank() || targetChatId == null || targetChatId.isBlank()) return false;
         try {
-            String url = "https://api.telegram.org/bot" + botToken + "/sendMessage";
+            String url = "https://api.telegram.org/bot" + token + "/sendMessage";
             restClient.post()
                     .uri(url)
                     .body(Map.of("chat_id", targetChatId, "text", text, "parse_mode", "HTML"))
                     .retrieve()
                     .toBodilessEntity();
+            return true;
         } catch (Exception e) {
-            log.warn("Telegram notification failed: {}", e.getMessage());
+            // Not e.getMessage(): transport exceptions embed the token-bearing request URL.
+            log.warn("Telegram notification failed: {}", TelegramApiErrors.describe(e));
+            return false;
         }
+    }
+
+    // Fallback lives here (not in property placeholders) deliberately: docker compose's
+    // `${VAR:-}` forwarding defines the variable as an EMPTY string in the container, which
+    // Spring treats as "set" — a properties-level `${TELEGRAM_ADMIN_BOT_TOKEN:${TELEGRAM_BOT_TOKEN:}}`
+    // default would therefore never fire under compose. A blank-check catches both unset and empty.
+    private String effectiveAdminBotToken() {
+        return adminBotToken != null && !adminBotToken.isBlank() ? adminBotToken : botToken;
+    }
+
+    private String effectiveAdminChatId() {
+        return adminChatId != null && !adminChatId.isBlank() ? adminChatId : chatId;
     }
 
     private static String deliveryLabel(DeliveryType type) {

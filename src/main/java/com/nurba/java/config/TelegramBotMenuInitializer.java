@@ -1,5 +1,6 @@
 package com.nurba.java.config;
 
+import com.nurba.java.security.TelegramApiErrors;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -48,7 +49,8 @@ public class TelegramBotMenuInitializer {
                     .toBodilessEntity();
             log.info("[Telegram] Bot menu button configured to open {}", frontendBaseUrl);
         } catch (Exception e) {
-            log.warn("[Telegram] Failed to set bot menu button: {}", e.getMessage());
+            // Not e.getMessage(): transport exceptions embed the token-bearing request URL.
+            log.warn("[Telegram] Failed to set bot menu button: {}", TelegramApiErrors.describe(e));
         }
     }
 }

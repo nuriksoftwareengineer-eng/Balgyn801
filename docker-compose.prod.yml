@@ -49,16 +49,22 @@ services:
       - PAYPAL_CLIENT_ID=${PAYPAL_CLIENT_ID:?Set PAYPAL_CLIENT_ID}
       - PAYPAL_CLIENT_SECRET=${PAYPAL_CLIENT_SECRET:?Set PAYPAL_CLIENT_SECRET}
       - PAYPAL_WEBHOOK_ID=${PAYPAL_WEBHOOK_ID:?Set PAYPAL_WEBHOOK_ID}
-      # Email / Telegram — optional features, disabled by default even in prod.
+      # Email — optional feature, disabled by default even in prod.
       - MAIL_ENABLED=${MAIL_ENABLED:-false}
       - MAIL_HOST=${MAIL_HOST:-smtp.gmail.com}
       - MAIL_PORT=${MAIL_PORT:-587}
       - MAIL_USERNAME=${MAIL_USERNAME:-}
       - MAIL_PASSWORD=${MAIL_PASSWORD:-}
       - MAIL_FROM=${MAIL_FROM:-noreply@balgyn.kz}
+      # Telegram — required: powers Mini App login, not just admin alerts. :? matches the
+      # other production secrets below so a missing token fails the deploy loudly instead
+      # of silently shipping with Telegram auth broken.
       - TELEGRAM_ENABLED=${TELEGRAM_ENABLED:-false}
-      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:?Set TELEGRAM_BOT_TOKEN in .env.prod}
       - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID:-}
+      # Optional dedicated admin-alert bot; blank = admin alerts use the Mini App bot above.
+      - TELEGRAM_ADMIN_BOT_TOKEN=${TELEGRAM_ADMIN_BOT_TOKEN:-}
+      - TELEGRAM_ADMIN_CHAT_ID=${TELEGRAM_ADMIN_CHAT_ID:-}
       - STORAGE_ENABLED=true
       - MINIO_ENDPOINT=http://minio:9000
       - MINIO_PUBLIC_URL=${MINIO_PUBLIC_URL:?Set MINIO_PUBLIC_URL (e.g. https://media.balgyn.kz)}
