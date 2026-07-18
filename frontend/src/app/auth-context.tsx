@@ -162,6 +162,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const loginWithTelegram = useCallback(async (initData: string) => {
+    console.log("[TEMP-DEBUG] auth-context.loginWithTelegram() arg length:", initData.length,
+      "| contains '+':", initData.includes("+"), "| contains '%2B':", initData.includes("%2B"));
     const res = await loginTelegramApi({ initData });
     writeStoredToken(res.accessToken);
     setSessionHint();

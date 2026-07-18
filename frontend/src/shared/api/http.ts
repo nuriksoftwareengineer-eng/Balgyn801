@@ -51,6 +51,12 @@ async function apiFetchInternal<T>(
   const fetchInit: RequestInit = init ? { ...init } : {};
   delete (fetchInit as FetchInit).token;
 
+  if (path.includes("/auth/telegram")) {
+    // TEMP-DEBUG: this is the literal body about to go into fetch() — not init.body, not the
+    // caller's variable, the exact value spread into the actual request below.
+    console.log("[TEMP-DEBUG] apiFetch actual request body for", path, ":", fetchInit.body);
+  }
+
   const response = await fetch(url, { ...fetchInit, headers });
 
   const isRefreshPath = path.includes("/auth/refresh");

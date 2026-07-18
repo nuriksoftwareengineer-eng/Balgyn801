@@ -79,6 +79,9 @@ public class TelegramInitDataVerifier {
         if (initData == null || initData.isBlank()) {
             throw new BusinessRuleException("Отсутствуют данные Telegram initData");
         }
+        log.info("[TEMP-DEBUG] Verifier received initData (first 200 chars): {}",
+                initData.length() > 200 ? initData.substring(0, 200) : initData);
+        log.info("[TEMP-DEBUG] Verifier received initData length: {}", initData.length());
 
         Map<String, String> params = parseQueryString(initData);
         String receivedHash = params.remove("hash");
@@ -89,6 +92,9 @@ public class TelegramInitDataVerifier {
 
         String dataCheckString = buildDataCheckString(params);
         String computedHash = computeHash(dataCheckString);
+        log.info("[TEMP-DEBUG] dataCheckString: {}", dataCheckString);
+        log.info("[TEMP-DEBUG] computedHash:     {}", computedHash);
+        log.info("[TEMP-DEBUG] receivedHash:     {}", receivedHash);
 
         if (!constantTimeEquals(computedHash, receivedHash.toLowerCase())) {
             throw new BusinessRuleException("Неверная подпись Telegram initData");

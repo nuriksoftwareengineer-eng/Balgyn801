@@ -16,10 +16,12 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.RestController;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 public class AuthController implements AuthApi {
@@ -49,6 +51,11 @@ public class AuthController implements AuthApi {
 
     @Override
     public AuthResponse loginTelegram(TelegramLoginRequest request, HttpServletResponse response) {
+        String initData = request.getInitData();
+        log.info("[TEMP-DEBUG] AuthController.loginTelegram received initData (first 200 chars): {}",
+                initData != null && initData.length() > 200 ? initData.substring(0, 200) : initData);
+        log.info("[TEMP-DEBUG] AuthController.loginTelegram received initData length: {}",
+                initData != null ? initData.length() : 0);
         AuthResponse auth = authService.loginWithTelegram(request);
         setRefreshCookie(response, auth.getRefreshToken());
         return cookieResponse(auth);
