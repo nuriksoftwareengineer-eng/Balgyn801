@@ -83,9 +83,22 @@ public class TelegramInitDataVerifier {
                 initData.length() > 200 ? initData.substring(0, 200) : initData);
         log.info("[TEMP-DEBUG] Verifier received initData length: {}", initData.length());
 
+        // TEMP-DEBUG: independent raw key split — NOT routed through parseQueryString(), so this
+        // catches a key silently vanishing inside parseQueryString() itself, not just downstream.
+        List<String> rawKeys = new ArrayList<>();
+        for (String pair : initData.split("&")) {
+            if (pair.isBlank()) continue;
+            int eq = pair.indexOf('=');
+            rawKeys.add(eq >= 0 ? pair.substring(0, eq) : pair);
+        }
+        log.info("[TEMP-DEBUG] initData keys (raw split on &/=, undecoded): {}", rawKeys);
+
         Map<String, String> params = parseQueryString(initData);
+        log.info("[TEMP-DEBUG] parsed keys (parseQueryString() output): {}", params.keySet());
+
         String receivedHash = params.remove("hash");
         params.remove("signature"); // ed25519 alt-verification field — excluded from the check-string, not used here
+        log.info("[TEMP-DEBUG] dataCheckString keys (after hash/signature removed): {}", params.keySet());
         if (receivedHash == null || receivedHash.isBlank()) {
             throw new BusinessRuleException("Отсутствует подпись Telegram initData");
         }
