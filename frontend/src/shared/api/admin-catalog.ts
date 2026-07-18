@@ -162,6 +162,15 @@ export function updateDesign(id: number, body: AdminDesignRequest, token: string
   });
 }
 
+/** Copies the design's garments/colors/sizes/prices into a new DRAFT design. Inventory is not
+ *  copied — the new design starts unstocked. Name/slug collisions get an incrementing suffix. */
+export function duplicateDesign(id: number, token: string): Promise<AdminDesign> {
+  return apiFetch<AdminDesign>(`/admin/catalog/designs/${id}/duplicate`, {
+    method: "POST",
+    token,
+  });
+}
+
 export function deleteDesign(id: number, token: string): Promise<void> {
   return apiFetch<void>(`/admin/catalog/designs/${id}`, { method: "DELETE", token });
 }

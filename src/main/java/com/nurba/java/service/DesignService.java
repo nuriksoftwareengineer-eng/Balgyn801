@@ -12,6 +12,10 @@ public interface DesignService {
     DesignResponse update(Long id, CreateDesignRequest request);
     void delete(Long id);
 
+    /** Copies a design's own fields plus its garments/colors/sizes/prices into a brand-new
+     *  DRAFT design. Inventory is intentionally not copied — the copy starts unstocked. */
+    DesignResponse duplicate(Long id);
+
     /** Validates requirements and transitions DRAFT/READY → PUBLISHED. Sets publishedAt on first publish. */
     DesignResponse publish(Long id);
 

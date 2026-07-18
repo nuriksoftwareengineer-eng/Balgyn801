@@ -38,6 +38,11 @@ public class DesignController implements DesignApi {
     }
 
     @Override
+    public DesignResponse duplicate(Long id) {
+        return service.duplicate(id);
+    }
+
+    @Override
     public DesignResponse publish(Long id) {
         return service.publish(id);
     }

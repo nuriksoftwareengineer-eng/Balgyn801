@@ -29,6 +29,11 @@ public interface DesignApi {
     @PutMapping("/{id}")
     DesignResponse update(@PathVariable Long id, @Valid @RequestBody CreateDesignRequest request);
 
+    @Operation(summary = "Duplicate a design — copies garments/colors/sizes/prices into a new " +
+            "DRAFT design; inventory, status, view count and publish/archive dates are reset")
+    @PostMapping("/{id}/duplicate")
+    DesignResponse duplicate(@PathVariable Long id);
+
     @Operation(summary = "Publish a design (DRAFT/READY → PUBLISHED). Returns 400 if requirements not met.")
     @PatchMapping("/{id}/publish")
     DesignResponse publish(@PathVariable Long id);

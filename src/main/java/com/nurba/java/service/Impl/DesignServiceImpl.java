@@ -4,6 +4,7 @@ import com.nurba.java.component.DesignReadinessService;
 import com.nurba.java.domain.Collection;
 import com.nurba.java.domain.Design;
 import com.nurba.java.domain.DesignGarment;
+import com.nurba.java.domain.DesignGarmentPrice;
 import com.nurba.java.dto.request.CreateDesignRequest;
 import com.nurba.java.dto.responce.DesignResponse;
 import com.nurba.java.enums.DesignStatus;
@@ -12,6 +13,7 @@ import com.nurba.java.exception.NotFoundException;
 import com.nurba.java.exception.PublicationValidationException;
 import com.nurba.java.mapper.DesignMapper;
 import com.nurba.java.repositories.CollectionRepository;
+import com.nurba.java.repositories.DesignGarmentPriceRepository;
 import com.nurba.java.repositories.DesignGarmentRepository;
 import com.nurba.java.repositories.DesignRepository;
 import com.nurba.java.repositories.InventoryRepository;
@@ -25,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 
 @Service
@@ -34,6 +37,7 @@ public class DesignServiceImpl implements DesignService {
     private final DesignRepository repository;
     private final CollectionRepository collectionRepository;
     private final DesignGarmentRepository garmentRepository;
+    private final DesignGarmentPriceRepository priceRepository;
     private final InventoryRepository inventoryRepository;
     private final OrderItemRepository orderItemRepository;
     private final WishlistRepository wishlistRepository;
@@ -101,6 +105,87 @@ public class DesignServiceImpl implements DesignService {
         // Re-evaluate readiness after update (may flip DRAFT ↔ READY based on new image)
         readinessService.recompute(id);
         return response;
+    }
+
+    @Override
+    @Transactional
+    public DesignResponse duplicate(Long id) {
+        Design source = findOrThrow(id);
+        CopyNames names = generateCopyNames(source);
+
+        Design copy = new Design();
+        copy.setCollection(source.getCollection());
+        copy.setName(names.name());
+        copy.setNameKk(names.nameKk());
+        copy.setNameEn(names.nameEn());
+        copy.setSlug(generateCopySlug(source.getSlug()));
+        copy.setDescription(source.getDescription());
+        copy.setMainImageUrl(source.getMainImageUrl());
+        copy.setGallery(new ArrayList<>(source.getGallery()));
+        copy.setStatus(DesignStatus.DRAFT);
+        // sortOrder intentionally left null — same as a normal create(); copying the source's
+        // value would put two designs at the same position, making list order ambiguous.
+        copy.setNewArrival(source.isNewArrival());
+        copy.setCreatedAt(LocalDateTime.now());
+        Design savedCopy = repository.save(copy);
+
+        List<DesignGarment> newGarments = new ArrayList<>();
+        for (DesignGarment sourceGarment : garmentRepository.findByDesign_Id(id)) {
+            DesignGarment newGarment = new DesignGarment();
+            newGarment.setDesign(savedCopy);
+            newGarment.setGarmentProfile(sourceGarment.getGarmentProfile());
+            newGarment.setActive(sourceGarment.getActive());
+            newGarment.setSortOrder(sourceGarment.getSortOrder());
+            newGarment.setColors(new LinkedHashSet<>(sourceGarment.getColors()));
+            newGarment.setSizes(new LinkedHashSet<>(sourceGarment.getSizes()));
+            DesignGarment savedGarment = garmentRepository.save(newGarment);
+            newGarments.add(savedGarment);
+
+            // Inventory is deliberately NOT copied — the copy is a new, unstocked design.
+            for (DesignGarmentPrice sourcePrice : priceRepository.findByDesignGarment_Id(sourceGarment.getId())) {
+                DesignGarmentPrice newPrice = new DesignGarmentPrice();
+                newPrice.setDesignGarment(savedGarment);
+                newPrice.setCurrency(sourcePrice.getCurrency());
+                newPrice.setAmount(sourcePrice.getAmount());
+                priceRepository.save(newPrice);
+            }
+        }
+
+        DesignResponse response = mapper.toResponse(savedCopy);
+        response.setActiveGarmentCount((int) newGarments.stream()
+                .filter(g -> Boolean.TRUE.equals(g.getActive()))
+                .count());
+        return response;
+    }
+
+    private record CopyNames(String name, String nameKk, String nameEn) {
+    }
+
+    /** " (копия)", then " (копия 2)", " (копия 3)"... — checked against existing design names
+     *  so repeatedly duplicating the same design doesn't produce indistinguishable copies. */
+    private CopyNames generateCopyNames(Design source) {
+        String suffix = " (копия)";
+        int n = 2;
+        while (repository.existsByName(source.getName() + suffix)) {
+            suffix = " (копия " + n + ")";
+            n++;
+        }
+        return new CopyNames(
+                source.getName() + suffix,
+                source.getNameKk() != null ? source.getNameKk() + suffix : null,
+                source.getNameEn() != null ? source.getNameEn() + suffix : null);
+    }
+
+    /** "-copy", then "-copy-2", "-copy-3"... — slug is UNIQUE at the DB level, so a plain copy
+     *  of the source slug would fail to save. */
+    private String generateCopySlug(String sourceSlug) {
+        String candidate = sourceSlug + "-copy";
+        int n = 2;
+        while (repository.existsBySlug(candidate)) {
+            candidate = sourceSlug + "-copy-" + n;
+            n++;
+        }
+        return candidate;
     }
 
     @Override

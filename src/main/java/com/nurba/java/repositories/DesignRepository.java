@@ -14,6 +14,7 @@ import java.util.Optional;
 
 public interface DesignRepository extends JpaRepository<Design, Long> {
     boolean existsBySlug(String slug);
+    boolean existsByName(String name);
     boolean existsByCollection_Id(Long collectionId);
     long countByCollection_Id(Long collectionId);
     List<Design> findByCollection_Id(Long collectionId);

@@ -6,6 +6,7 @@ import {
   archiveDesign,
   createDesign,
   deleteDesign,
+  duplicateDesign,
   listCollections,
   listDesigns,
   listGroups,
@@ -18,6 +19,7 @@ import {
 import { uploadMedia } from "@/shared/api/backend-api";
 import { ApiError } from "@/shared/api/http";
 import { Button } from "@/shared/ui/button";
+import { Toast } from "@/shared/ui/toast";
 import { slugify } from "@/admin/AdminCategoriesPage";
 
 const inputClass =
@@ -92,6 +94,7 @@ export function AdminDesignsPage() {
   const [mainBusy, setMainBusy] = useState(false);
   const [galleryBusy, setGalleryBusy] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
   const mainRef = useRef<HTMLInputElement>(null);
   const galleryRef = useRef<HTMLInputElement>(null);
 
@@ -221,6 +224,18 @@ export function AdminDesignsPage() {
     mutationFn: (id: number) => deleteDesign(id, token!),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "designs"] }),
     onError: (e) => setFormError(e instanceof ApiError ? e.message : "Не удалось удалить"),
+  });
+
+  const duplicateMut = useMutation({
+    mutationFn: (id: number) => duplicateDesign(id, token!),
+    onSuccess: (saved) => {
+      qc.invalidateQueries({ queryKey: ["admin", "designs"] });
+      setToastMessage("Дизайн успешно продублирован");
+      // Opens the copy directly in the edit form above — duplicating is usually followed by
+      // tweaking a couple of fields, so this skips a manual "find it in the list" step.
+      startEdit(saved);
+    },
+    onError: (e) => setFormError(e instanceof ApiError ? e.message : "Не удалось продублировать"),
   });
 
   const publishMut = useMutation({
@@ -570,6 +585,14 @@ export function AdminDesignsPage() {
                       </button>
                       <button
                         type="button"
+                        onClick={() => duplicateMut.mutate(d.id)}
+                        disabled={duplicateMut.isPending}
+                        className="text-xs font-semibold text-zinc-300 hover:text-white disabled:opacity-50"
+                      >
+                        Дублировать
+                      </button>
+                      <button
+                        type="button"
                         onClick={() => {
                           if (confirm(`Удалить дизайн «${d.name}»?`)) deleteMut.mutate(d.id);
                         }}
@@ -586,6 +609,8 @@ export function AdminDesignsPage() {
           </table>
         </div>
       )}
+
+      <Toast message={toastMessage} onDismiss={() => setToastMessage(null)} />
     </div>
   );
 }
