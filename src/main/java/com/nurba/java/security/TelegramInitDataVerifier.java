@@ -97,6 +97,19 @@ public class TelegramInitDataVerifier {
         log.info("[TEMP-DEBUG] parsed keys (parseQueryString() output): {}", params.keySet());
 
         String receivedHash = params.remove("hash");
+
+        // TEMP-DEBUG: compute the hash a second way, WITH "signature" still included, to test
+        // whether Telegram's real data-check-string includes it (the official spec documents
+        // excluding only "hash" itself — excluding "signature" too, below, is this code's own
+        // assumption, not something the spec states). Purely a comparison log — params is
+        // unchanged by this block, so the real verification decision further down is unaffected.
+        if (params.containsKey("signature")) {
+            String dataCheckStringWithSignature = buildDataCheckString(params);
+            String computedHashWithSignature = computeHash(dataCheckStringWithSignature);
+            log.info("[TEMP-DEBUG] dataCheckString WITH signature: {}", dataCheckStringWithSignature);
+            log.info("[TEMP-DEBUG] computedHash WITH signature:    {}", computedHashWithSignature);
+        }
+
         params.remove("signature"); // ed25519 alt-verification field — excluded from the check-string, not used here
         log.info("[TEMP-DEBUG] dataCheckString keys (after hash/signature removed): {}", params.keySet());
         if (receivedHash == null || receivedHash.isBlank()) {
