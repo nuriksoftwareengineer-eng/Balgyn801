@@ -97,10 +97,13 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public AuthResponse loginWithTelegram(TelegramLoginRequest request) {
+        log.info("[Telegram] Login flow started");
         TelegramUserData tgUser = telegramInitDataVerifier.verify(request.getInitData());
 
         AppUser user = appUserRepository.findByTelegramId(tgUser.telegramId()).orElse(null);
         boolean isNewUser = user == null;
+        log.info("[Telegram] {} for telegramId={}",
+                isNewUser ? "Creating new user" : "Found existing user", tgUser.telegramId());
         if (isNewUser) {
             user = AppUser.builder()
                     .email("tg_" + tgUser.telegramId() + "@telegram.balgynbol.kz")
@@ -116,12 +119,15 @@ public class AuthServiceImpl implements AuthService {
         if (isNewUser) {
             telegramNotificationService.notifyNewUser(user.getEmail());
         }
-        return issueTokens(user);
+        AuthResponse response = issueTokens(user);
+        log.info("[Telegram] JWT issued for telegramId={}", tgUser.telegramId());
+        return response;
     }
 
     @Override
     @Transactional
     public AuthMeResponse linkTelegram(String currentUserEmail, TelegramLoginRequest request) {
+        log.info("[Telegram] Link flow started");
         TelegramUserData tgUser = telegramInitDataVerifier.verify(request.getInitData());
 
         AppUser currentUser = appUserRepository.findByEmailIgnoreCase(normalize(currentUserEmail))
@@ -135,6 +141,7 @@ public class AuthServiceImpl implements AuthService {
 
         applyTelegramFields(currentUser, tgUser);
         appUserRepository.save(currentUser);
+        log.info("[Telegram] Linked telegramId={} to existing account", tgUser.telegramId());
         return toMeResponse(currentUser);
     }
 

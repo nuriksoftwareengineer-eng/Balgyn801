@@ -3,6 +3,7 @@ package com.nurba.java.security;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nurba.java.exception.BusinessRuleException;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -38,12 +39,40 @@ public class TelegramInitDataVerifier {
     @Value("${app.telegram.bot-token:}")
     private String botToken;
 
+    @Value("${app.telegram.enabled:false}")
+    private boolean telegramEnabled;
+
     @Value("${app.telegram.init-data-max-age-seconds:300}")
     private long maxAgeSeconds;
 
     private final ObjectMapper objectMapper;
 
+    /** Startup visibility only — never logs the token value, just whether one is configured. */
+    @PostConstruct
+    public void logStartupStatus() {
+        boolean tokenPresent = botToken != null && !botToken.isBlank();
+        if (!tokenPresent) {
+            log.warn("[Telegram] TELEGRAM_BOT_TOKEN is missing — every Telegram login/link request will be " +
+                    "rejected until it is set. app.telegram.enabled={}", telegramEnabled);
+        } else {
+            log.info("[Telegram] Startup check: bot token present (length={}), app.telegram.enabled={}",
+                    botToken.length(), telegramEnabled);
+        }
+    }
+
     public TelegramUserData verify(String initData) {
+        log.info("[Telegram] initData verification started");
+        try {
+            TelegramUserData result = doVerify(initData);
+            log.info("[Telegram] initData verification succeeded for telegramId={}", result.telegramId());
+            return result;
+        } catch (BusinessRuleException e) {
+            log.warn("[Telegram] initData verification failed: {}", e.getMessage());
+            throw e;
+        }
+    }
+
+    private TelegramUserData doVerify(String initData) {
         if (botToken == null || botToken.isBlank()) {
             throw new BusinessRuleException("Вход через Telegram временно недоступен");
         }
@@ -62,7 +91,6 @@ public class TelegramInitDataVerifier {
         String computedHash = computeHash(dataCheckString);
 
         if (!constantTimeEquals(computedHash, receivedHash.toLowerCase())) {
-            log.warn("[Telegram] initData signature mismatch");
             throw new BusinessRuleException("Неверная подпись Telegram initData");
         }
 
