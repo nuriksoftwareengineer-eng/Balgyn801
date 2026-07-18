@@ -97,21 +97,14 @@ public class TelegramInitDataVerifier {
         log.info("[TEMP-DEBUG] parsed keys (parseQueryString() output): {}", params.keySet());
 
         String receivedHash = params.remove("hash");
-
-        // TEMP-DEBUG: compute the hash a second way, WITH "signature" still included, to test
-        // whether Telegram's real data-check-string includes it (the official spec documents
-        // excluding only "hash" itself — excluding "signature" too, below, is this code's own
-        // assumption, not something the spec states). Purely a comparison log — params is
-        // unchanged by this block, so the real verification decision further down is unaffected.
-        if (params.containsKey("signature")) {
-            String dataCheckStringWithSignature = buildDataCheckString(params);
-            String computedHashWithSignature = computeHash(dataCheckStringWithSignature);
-            log.info("[TEMP-DEBUG] dataCheckString WITH signature: {}", dataCheckStringWithSignature);
-            log.info("[TEMP-DEBUG] computedHash WITH signature:    {}", computedHashWithSignature);
-        }
-
-        params.remove("signature"); // ed25519 alt-verification field — excluded from the check-string, not used here
-        log.info("[TEMP-DEBUG] dataCheckString keys (after hash/signature removed): {}", params.keySet());
+        // "signature" (Ed25519, bot-token-free alt-verification) is intentionally NOT removed
+        // here. Per https://core.telegram.org/bots/webapps#validating-data-received-via-the-mini-app,
+        // the HMAC data-check-string (this method) excludes only "hash" — excluding "signature"
+        // too is a rule that applies solely to the separate Ed25519 signature's OWN data-check-string
+        // (which additionally excludes both "hash" and "signature" and uses a different secret
+        // derivation). Confirmed against production: with "signature" removed, computedHash never
+        // matched receivedHash; keeping it in, it matched on every real Telegram-signed request.
+        log.info("[TEMP-DEBUG] dataCheckString keys (after hash removed): {}", params.keySet());
         if (receivedHash == null || receivedHash.isBlank()) {
             throw new BusinessRuleException("Отсутствует подпись Telegram initData");
         }

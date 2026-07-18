@@ -50,6 +50,24 @@ class TelegramInitDataVerifierTest {
     }
 
     @Test
+    void verify_initDataWithSignatureField_stillValidates() {
+        // Regression test: real Telegram initData always carries a "signature" field (Ed25519,
+        // a separate bot-token-free verification mechanism) alongside "hash". Per Telegram's own
+        // spec, the HMAC data-check-string used here excludes only "hash" — "signature" must be
+        // included as just another field. This test signs the payload WITH signature included in
+        // the data-check-string, exactly like Telegram's real client does; if the verifier were
+        // to exclude "signature" when building its own data-check-string (as it incorrectly did
+        // before this fix), the hashes would no longer match and this test would fail with a
+        // BusinessRuleException instead of returning the user.
+        String initData = signedInitDataWithSignature(Instant.now().getEpochSecond(), 555555555L, "sig_field_user");
+
+        TelegramUserData result = verifier.verify(initData);
+
+        assertThat(result.telegramId()).isEqualTo(555555555L);
+        assertThat(result.username()).isEqualTo("sig_field_user");
+    }
+
+    @Test
     void verify_tamperedPayload_isRejected() {
         String initData = signedInitData(Instant.now().getEpochSecond(), 123456789L, "john_doe");
         // Flip the user id after signing — the signature no longer matches the payload.
@@ -89,6 +107,29 @@ class TelegramInitDataVerifierTest {
         Map<String, String> params = new LinkedHashMap<>();
         params.put("auth_date", String.valueOf(authDateEpochSeconds));
         params.put("query_id", "AAHtest");
+        params.put("user", userJson);
+
+        String hash = hmacHex(buildDataCheckString(params));
+
+        StringBuilder sb = new StringBuilder();
+        for (Map.Entry<String, String> entry : params.entrySet()) {
+            if (!sb.isEmpty()) sb.append('&');
+            sb.append(entry.getKey()).append('=')
+                    .append(URLEncoder.encode(entry.getValue(), StandardCharsets.UTF_8));
+        }
+        sb.append("&hash=").append(hash);
+        return sb.toString();
+    }
+
+    /** Same as {@link #signedInitData}, but includes an Ed25519 "signature" field in both the
+     *  wire string and the HMAC data-check-string, matching what real Telegram clients send. */
+    private static String signedInitDataWithSignature(long authDateEpochSeconds, long userId, String username) {
+        String userJson = "{\"id\":" + userId + ",\"username\":\"" + username + "\",\"first_name\":\"John\"}";
+
+        Map<String, String> params = new LinkedHashMap<>();
+        params.put("auth_date", String.valueOf(authDateEpochSeconds));
+        params.put("query_id", "AAHtest");
+        params.put("signature", "not-a-real-ed25519-signature-just-needs-to-be-present-and-hashed");
         params.put("user", userJson);
 
         String hash = hmacHex(buildDataCheckString(params));
