@@ -45,6 +45,11 @@ services:
       - VTB_SANDBOX=${VTB_SANDBOX:-false}
       - VTB_CALLBACK_URL=${VTB_CALLBACK_URL:-}
       - VTB_HMAC_SECRET=${VTB_HMAC_SECRET:-}
+      # Base URL for stub-mode payment redirects (a gateway with blank credentials falls back
+      # to stub). Without this the Spring default is http://localhost:8080 — a URL the buyer's
+      # browser can't open, which is exactly how VTB stub payments broke in production.
+      # Defaults to the public site domain: /api/* is routed to this backend by Caddy.
+      - PAYMENT_STUB_BASE_URL=${PAYMENT_STUB_BASE_URL:-${FRONTEND_BASE_URL}}
       - PAYPAL_MODE=${PAYPAL_MODE:-live}
       - PAYPAL_CLIENT_ID=${PAYPAL_CLIENT_ID:?Set PAYPAL_CLIENT_ID}
       - PAYPAL_CLIENT_SECRET=${PAYPAL_CLIENT_SECRET:?Set PAYPAL_CLIENT_SECRET}
