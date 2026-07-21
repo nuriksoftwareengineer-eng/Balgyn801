@@ -1,23 +1,12 @@
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { useQuery } from "@tanstack/react-query";
 import {
   CONTACT_EMAIL,
   STORE_TELEGRAM_URL,
   SUPPORT_TELEGRAM_URL,
 } from "@/shared/constants/store-content";
 import { Container } from "@/shared/ui/container";
-
-function useSiteSettings() {
-  return useQuery({
-    queryKey: ["site-settings"],
-    queryFn: () =>
-      fetch("/api/v1/site-settings").then(
-        (r) => r.json() as Promise<Record<string, string>>,
-      ),
-    staleTime: 5 * 60 * 1000,
-  });
-}
+import { useSiteSettings } from "@/shared/api/queries";
 
 const linkClass =
   "font-medium text-black underline underline-offset-2 transition-colors hover:text-zinc-600";

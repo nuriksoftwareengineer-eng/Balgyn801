@@ -32,6 +32,62 @@ function useSetSiteSetting() {
   });
 }
 
+/** One admin-editable multi-line text setting — Production/Delivery/Shipping/Care
+ *  Instructions all follow this exact shape, reusing the same generic get/set hooks
+ *  the CEO-photo section above uses. */
+function TextSettingSection({
+  settingKey,
+  label,
+  description,
+  placeholder,
+}: {
+  settingKey: string;
+  label: string;
+  description: string;
+  placeholder: string;
+}) {
+  const q = useSiteSettingAdmin(settingKey);
+  const setSetting = useSetSiteSetting();
+  const [value, setValue] = useState<string | null>(null);
+  const [saveMsg, setSaveMsg] = useState<string | null>(null);
+
+  const current = value ?? q.data?.value ?? "";
+
+  async function handleSave() {
+    setSaveMsg(null);
+    await setSetting.mutateAsync({ key: settingKey, value: current.trim() || null });
+    setSaveMsg("Сохранено");
+    setTimeout(() => setSaveMsg(null), 3000);
+  }
+
+  return (
+    <section className="mt-6 rounded-[14px] border border-white/10 bg-zinc-900/50 p-6">
+      <h2 className="mb-1 text-sm font-semibold uppercase tracking-wider text-zinc-400">
+        {label}
+      </h2>
+      <p className="mb-5 text-xs text-zinc-500">{description}</p>
+
+      {q.isLoading ? (
+        <div className="mb-4 h-28 animate-pulse bg-zinc-800" />
+      ) : (
+        <textarea
+          value={current}
+          onChange={(e) => setValue(e.target.value)}
+          placeholder={placeholder}
+          rows={5}
+          className="mb-4 w-full rounded border border-white/20 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-600 outline-none focus:border-white/40"
+        />
+      )}
+
+      {saveMsg && <p className="mb-3 text-xs text-emerald-400">{saveMsg}</p>}
+
+      <Button type="button" disabled={setSetting.isPending} onClick={handleSave}>
+        {setSetting.isPending ? "Сохранение…" : "Сохранить"}
+      </Button>
+    </section>
+  );
+}
+
 export function AdminSiteSettingsPage() {
   const { token } = useAuth();
   const ceoQ = useSiteSettingAdmin("ceo_photo_url");
@@ -171,6 +227,32 @@ export function AdminSiteSettingsPage() {
           )}
         </div>
       </section>
+
+      {/* Product-page info block + accordion — shown on every design/product page */}
+      <TextSettingSection
+        settingKey="production_description"
+        label="Production"
+        description="Короткий текст в карточке «Production» на странице товара."
+        placeholder={"Handmade after order.\nProduction takes 5–10 business days."}
+      />
+      <TextSettingSection
+        settingKey="delivery_description"
+        label="Delivery"
+        description="Короткий текст в карточке «Delivery» на странице товара."
+        placeholder={"Worldwide delivery.\nDelivery time depends on destination country."}
+      />
+      <TextSettingSection
+        settingKey="shipping_description"
+        label="Shipping (аккордеон)"
+        description="Подробный текст в разделе «Shipping» аккордеона на странице товара — отдельно от короткого текста карточки Delivery выше."
+        placeholder={"Orders are produced within 7–10 business days.\nDelivery time:\nEurope — 2–3 weeks.\nUSA — 2–4 weeks.\nAsia — 3–5 weeks."}
+      />
+      <TextSettingSection
+        settingKey="care_instructions"
+        label="Care Instructions"
+        description="Текст в разделе «Care Instructions» аккордеона на странице товара."
+        placeholder="Machine wash cold. Do not bleach. Tumble dry low."
+      />
     </div>
   );
 }

@@ -77,6 +77,8 @@ export interface GarmentDetail {
   garmentType: string;       // English profile name (fallback)
   garmentTypeRu?: string | null;
   garmentTypeKk?: string | null;
+  /** Material composition/care notes from the garment profile, e.g. "95% cotton, 5% polyester". */
+  materialDescription?: string | null;
   active: boolean;
   prices: GarmentPrice[];
   colors: ColorInfo[];

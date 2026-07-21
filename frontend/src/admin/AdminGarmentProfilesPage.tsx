@@ -25,6 +25,7 @@ const emptyForm = (): GarmentProfileRequest => ({
   widthCm: 28,
   heightCm: 5,
   sortOrder: 0,
+  materialDescription: "",
 });
 
 export function AdminGarmentProfilesPage() {
@@ -64,6 +65,7 @@ export function AdminGarmentProfilesPage() {
       widthCm: p.widthCm,
       heightCm: p.heightCm,
       sortOrder: p.sortOrder,
+      materialDescription: p.materialDescription ?? "",
     });
     setError(null);
   }
@@ -201,6 +203,18 @@ export function AdminGarmentProfilesPage() {
               />
             </label>
           </div>
+          <label className="mt-4 flex flex-col gap-1.5">
+            <span className="text-xs text-zinc-400">
+              Описание материала (показывается на странице товара)
+            </span>
+            <textarea
+              value={form.materialDescription ?? ""}
+              onChange={(e) => set("materialDescription", e.target.value)}
+              placeholder={"95% cotton\n5% polyester\n380 g/m²"}
+              rows={4}
+              className={inputClass}
+            />
+          </label>
           {error && <p className="mt-3 text-xs text-red-400">{error}</p>}
           <div className="mt-4 flex gap-3">
             <Button type="button" disabled={!form.name.trim() || saveMut.isPending} onClick={() => saveMut.mutate()}>

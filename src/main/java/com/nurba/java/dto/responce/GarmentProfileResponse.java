@@ -12,6 +12,7 @@ public record GarmentProfileResponse(
         Integer sortOrder,
         String nameRu,
         String nameKk,
-        String nameEn
+        String nameEn,
+        String materialDescription
 ) {
 }

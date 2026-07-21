@@ -361,7 +361,6 @@ const PAYMENT_PROVIDERS = [
   {
     id: "FREEDOM_PAY" as PaymentProvider,
     titleKey: "payment.bankCard",
-    descKey: "payment.bankCardDesc",
     footerKey: "payment.freedomPayNetworks",
     logo: (selected: boolean) => (
       <div className="flex flex-wrap items-center gap-1.5">
@@ -402,7 +401,6 @@ const PAYMENT_PROVIDERS = [
   {
     id: "PAYPAL" as PaymentProvider,
     titleKey: "payment.paypalLabel",
-    descKey: "payment.paypalDesc",
     footerKey: "payment.paypalNetworks",
     logo: (selected: boolean) => (
       <div className={cn(
@@ -416,7 +414,6 @@ const PAYMENT_PROVIDERS = [
   {
     id: "VTB_KZ" as PaymentProvider,
     titleKey: "payment.vtbCard",
-    descKey: "payment.vtbCardDesc",
     footerKey: "payment.vtbNetworks",
     logo: (selected: boolean) => (
       <div className={cn(
@@ -561,13 +558,7 @@ function OrderSuccess({
                   </span>
                 )}
                 {p.logo(selected)}
-                <div>
-                  <p className="text-[13px] font-bold leading-tight">{t(p.titleKey)}</p>
-                  <p className={cn(
-                    "mt-0.5 text-[11px]",
-                    selected ? "text-white/70" : "text-[--color-muted]",
-                  )}>{t(p.descKey)}</p>
-                </div>
+                <p className="text-[13px] font-bold leading-tight">{t(p.titleKey)}</p>
                 <p className={cn(
                   "text-[11px]",
                   selected ? "text-white/50" : "text-zinc-400",

@@ -209,6 +209,7 @@ export interface GarmentProfile {
   widthCm: number;
   heightCm: number;
   sortOrder: number;
+  materialDescription?: string | null;
 }
 
 export interface GarmentProfileRequest {
@@ -221,6 +222,7 @@ export interface GarmentProfileRequest {
   widthCm: number;
   heightCm: number;
   sortOrder?: number;
+  materialDescription?: string;
 }
 
 export function listGarmentProfiles(token: string): Promise<GarmentProfile[]> {

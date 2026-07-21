@@ -4,6 +4,7 @@ import { Link, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useCatalogDesign } from "@/shared/api/catalog-api";
 import { getSizeCharts } from "@/shared/api/backend-api";
+import { useSiteSettings } from "@/shared/api/queries";
 import {
   dedupeColors,
   dedupeSizes,
@@ -19,7 +20,9 @@ import { cn } from "@/shared/lib/cn";
 import { haptic } from "@/shared/lib/telegram";
 import { Container } from "@/shared/ui/container";
 import { Toast } from "@/shared/ui/toast";
+import { AccordionItem } from "@/shared/ui/AccordionItem";
 import { RecommendedSection } from "@/widgets/catalog/RecommendedSection";
+import { DesignInfoStrip } from "@/widgets/design/DesignInfoStrip";
 
 // ── Lightbox ──────────────────────────────────────────────────────────────────
 interface LightboxProps {
@@ -147,6 +150,7 @@ export function DesignPage() {
   const { format } = useCurrency();
 
   const { data: design, isLoading, error } = useCatalogDesign(designSlug);
+  const { data: siteSettings } = useSiteSettings();
 
   // ── Selections ────────────────────────────────────────────────────────────
   const [selectedGarmentId, setSelectedGarmentId] = useState<number | null>(null);
@@ -158,6 +162,7 @@ export function DesignPage() {
   const [activeChartType, setActiveChartType] = useState<string | null>(null);
   const [galleryIndex, setGalleryIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [openAccordion, setOpenAccordion] = useState<"shipping" | "materials" | "care" | null>(null);
 
   const { data: sizeCharts = [] } = useQuery({
     queryKey: ["size-charts"],
@@ -620,6 +625,38 @@ export function DesignPage() {
           </div>
         </div>
       </Container>
+
+      {design && (
+        <>
+          <DesignInfoStrip
+            productionText={siteSettings?.["production_description"] ?? ""}
+            deliveryText={siteSettings?.["delivery_description"] ?? ""}
+          />
+
+          <Container className="max-w-3xl py-12 md:py-16">
+            <div className="border-t border-[--color-border]">
+              <AccordionItem
+                title={t("design.info.shipping")}
+                content={siteSettings?.["shipping_description"] ?? ""}
+                open={openAccordion === "shipping"}
+                onToggle={() => setOpenAccordion(openAccordion === "shipping" ? null : "shipping")}
+              />
+              <AccordionItem
+                title={t("design.info.materials")}
+                content={selectedGarment?.materialDescription || t("design.info.materialsFallback")}
+                open={openAccordion === "materials"}
+                onToggle={() => setOpenAccordion(openAccordion === "materials" ? null : "materials")}
+              />
+              <AccordionItem
+                title={t("design.info.careInstructions")}
+                content={siteSettings?.["care_instructions"] ?? ""}
+                open={openAccordion === "care"}
+                onToggle={() => setOpenAccordion(openAccordion === "care" ? null : "care")}
+              />
+            </div>
+          </Container>
+        </>
+      )}
 
       {design && <RecommendedSection designId={design.id} />}
 

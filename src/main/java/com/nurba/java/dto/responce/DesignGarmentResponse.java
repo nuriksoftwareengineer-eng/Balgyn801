@@ -18,6 +18,8 @@ public class DesignGarmentResponse {
     private String garmentTypeRu;
     /** Kazakh localized garment label from the profile. */
     private String garmentTypeKk;
+    /** Material composition/care notes from the profile — shown on the storefront product page. */
+    private String materialDescription;
     private Boolean active;
     private List<DesignGarmentPriceResponse> prices;
     private List<ColorResponse> colors;

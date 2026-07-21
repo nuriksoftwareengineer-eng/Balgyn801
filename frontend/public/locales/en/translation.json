@@ -72,10 +72,8 @@
     "freedomPayLabel": "Freedom Pay",
     "freedomPayDesc": "Card payment in Kazakhstan",
     "paypalLabel": "PayPal",
-    "paypalDesc": "International payments",
     "bankCard": "Bank Card",
     "confirming": "Confirming payment…",
-    "bankCardDesc": "Secure online payment",
     "kaspi": "Kaspi Bank",
     "halyk": "Halyk Bank",
     "kazakhCards": "Kazakh bank cards",
@@ -84,7 +82,6 @@
     "freedomPayNetworks": "Kaspi · Halyk · Visa · Mastercard · Apple Pay · Google Pay",
     "paypalNetworks": "Visa · Mastercard · Amex · PayPal",
     "vtbCard": "VTB Kazakhstan",
-    "vtbCardDesc": "Visa, Mastercard, Mir cards",
     "vtbNetworks": "Mir · Visa · Mastercard · UnionPay",
     "success": {
       "title": "Payment successful",
@@ -364,7 +361,17 @@
     "selectColor": "Select colour",
     "selectSize": "Select size",
     "selectAll": "Select garment, colour and size",
-    "recommendations": "You might also like"
+    "recommendations": "You might also like",
+    "info": {
+      "production": "Production",
+      "delivery": "Delivery",
+      "secureCheckout": "Secure checkout",
+      "secureCheckoutDesc": "Secure payments via FreedomPay, PayPal and VTB.",
+      "shipping": "Shipping",
+      "materials": "Materials",
+      "materialsFallback": "Material information will be available soon.",
+      "careInstructions": "Care Instructions"
+    }
   },
   "wishlist": {
     "title": "Wishlist",

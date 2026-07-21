@@ -72,9 +72,7 @@
     "freedomPayLabel": "Freedom Pay",
     "freedomPayDesc": "Оплата картой в Казахстане",
     "paypalLabel": "PayPal",
-    "paypalDesc": "Международные платежи",
     "bankCard": "Банковская карта",
-    "bankCardDesc": "Безопасная онлайн-оплата",
     "confirming": "Подтверждаем платёж…",
     "kaspi": "Kaspi Bank",
     "halyk": "Halyk Bank",
@@ -84,7 +82,6 @@
     "freedomPayNetworks": "Kaspi · Halyk · Visa · Mastercard · Apple Pay · Google Pay",
     "paypalNetworks": "Visa · Mastercard · Amex · PayPal",
     "vtbCard": "ВТБ Казахстан",
-    "vtbCardDesc": "Карты Visa, Mastercard, Mir",
     "vtbNetworks": "Mir · Visa · Mastercard · UnionPay",
     "success": {
       "title": "Оплата прошла успешно",
@@ -364,7 +361,17 @@
     "selectColor": "Выберите цвет",
     "selectSize": "Выберите размер",
     "selectAll": "Выберите изделие, цвет и размер",
-    "recommendations": "Вам может понравиться"
+    "recommendations": "Вам может понравиться",
+    "info": {
+      "production": "Производство",
+      "delivery": "Доставка",
+      "secureCheckout": "Безопасная оплата",
+      "secureCheckoutDesc": "Оплата через FreedomPay, PayPal и ВТБ.",
+      "shipping": "Сроки доставки",
+      "materials": "Материалы",
+      "materialsFallback": "Информация о материале скоро появится.",
+      "careInstructions": "Уход за изделием"
+    }
   },
   "wishlist": {
     "title": "Избранное",

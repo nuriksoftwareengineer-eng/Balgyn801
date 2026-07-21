@@ -51,4 +51,8 @@ public class GarmentProfile {
 
     @Column(name = "name_en", length = 100)
     private String nameEn;
+
+    /** Free-text material composition/care notes (e.g. "95% cotton, 5% polyester, 380 g/m²"). */
+    @Column(name = "material_description", columnDefinition = "TEXT")
+    private String materialDescription;
 }

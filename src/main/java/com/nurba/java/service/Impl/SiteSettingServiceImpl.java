@@ -14,7 +14,12 @@ import java.util.stream.Collectors;
 
 /** Keys that the public storefront may access without authentication. */
 class PublicSettingKeys {
-    static final List<String> ALL = List.of("ceo_photo_url");
+    static final List<String> ALL = List.of(
+            "ceo_photo_url",
+            "production_description",
+            "delivery_description",
+            "shipping_description",
+            "care_instructions");
 }
 
 @Service
