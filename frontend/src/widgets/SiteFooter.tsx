@@ -7,6 +7,8 @@ import {
   CONTACT_EMAIL,
   MERCHANT,
 } from "@/shared/constants/store-content";
+import vtbLogo from "@/assets/payments/VTB_Logo_2018.svg.webp";
+import mirLogo from "@/assets/payments/Mir-logo.SVG.svg.webp";
 
 const linkClass =
   "text-[13px] text-[#9A9A9A] transition-colors hover:text-white";
@@ -109,8 +111,12 @@ export function SiteFooter() {
             </span>
           </div>
           {/* VTB */}
-          <div className="flex h-9 w-[60px] items-center justify-center rounded border border-[#0066B2]/60 bg-[#0066B2]/20">
-            <span className="text-[13px] font-extrabold tracking-[2px] text-white">ВТБ</span>
+          <div className="flex h-9 w-[84px] items-center justify-center rounded border border-white/10 bg-white px-2.5 py-1.5">
+            <img src={vtbLogo} alt="VTB" className="h-full w-full object-contain" />
+          </div>
+          {/* Mir */}
+          <div className="flex h-9 w-[84px] items-center justify-center rounded border border-white/10 bg-white px-2.5 py-1.5">
+            <img src={mirLogo} alt="Mir" className="h-full w-full object-contain" />
           </div>
         </div>
 
