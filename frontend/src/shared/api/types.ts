@@ -201,6 +201,7 @@ export type CdekTariffRequest = {
   toCityCode: number;
   weightGrams: number;
   tariffCode?: number | null;
+  countryIso2?: string | null;
 };
 
 /** Позиция корзины для расчёта СДЭК на бэкенде. */
@@ -215,6 +216,7 @@ export type CdekOrderTariffRequest = {
   toCityCode: number;
   items: CdekOrderItemRequest[];
   tariffCode?: number | null;
+  countryIso2?: string | null;
 };
 
 /** Ответ `POST /delivery/cdek/calculate`. */

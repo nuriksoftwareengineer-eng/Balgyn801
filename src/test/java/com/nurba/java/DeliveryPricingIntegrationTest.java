@@ -278,4 +278,24 @@ class DeliveryPricingIntegrationTest {
         org.assertj.core.api.Assertions.assertThat(totalPrice)
                 .isEqualByComparingTo(new BigDecimal("12000.00"));
     }
+
+    /**
+     * The CDEK country markup lives entirely inside CdekDeliveryService — a non-CDEK method
+     * must be provably unaffected. Paired with KZ deliberately (the one country CDEK markup
+     * *does* apply to) to prove the markup is scoped to deliveryType == CDEK, not just the
+     * country. Same flat-rate branch as {@link #kazakhstanDelivery_isFlat1600} (TAXI) — POSTAL
+     * shares it.
+     */
+    @Test
+    void postalKazakhstan_feeUnaffectedByCdekMarkup() throws Exception {
+        String body = """
+                { "customerName": "T", "customerPhone": "+77000000000",
+                  "deliveryType": "POSTAL", "countryIso2": "KZ", "items": [ %s ], %s }
+                """.formatted(item(), addressBlock("Алматы"));
+
+        mockMvc.perform(post("/api/v1/order").contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.deliveryFee").value(1600.0))
+                .andExpect(jsonPath("$.totalPrice").value(13600.0));
+    }
 }

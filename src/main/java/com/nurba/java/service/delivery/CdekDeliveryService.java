@@ -45,6 +45,10 @@ public class CdekDeliveryService {
     /** Алматы (код по справочнику СДЭК), используется в stub-режиме для предсказуемых ответов. */
     private static final int STUB_SENDER_CITY = 270;
 
+    /** Надбавка к стоимости доставки СДЭК по стране получателя — см. {@link #applyCountryMarkup}. */
+    private static final BigDecimal MARKUP_PERCENT_RU = new BigDecimal("10");
+    private static final BigDecimal MARKUP_PERCENT_KZ = new BigDecimal("3");
+
     private final CdekClient client;
     private final ProductRepository productRepository;
     private final DesignGarmentRepository designGarmentRepository;
@@ -75,7 +79,7 @@ public class CdekDeliveryService {
         }
         Integer tariff = request.tariffCode() != null ? request.tariffCode() : defaultTariff();
         if (!client.useRealApi()) {
-            return stubTariff(request.weightGrams(), tariff);
+            return applyCountryMarkup(stubTariff(request.weightGrams(), tariff), request.countryIso2());
         }
         Integer senderCity = client.senderCity();
         if (senderCity == null) {
@@ -87,13 +91,14 @@ public class CdekDeliveryService {
         if (price == null) {
             throw new BusinessRuleException("СДЭК: пустой ответ калькулятора");
         }
-        return new CdekTariffResponse(
+        CdekTariffResponse response = new CdekTariffResponse(
                 price.setScale(2, RoundingMode.HALF_UP),
                 raw.currency() == null ? "KZT" : raw.currency().toUpperCase(Locale.ROOT),
                 raw.periodMin(),
                 raw.periodMax(),
                 raw.tariffCode() == null ? tariff : raw.tariffCode(),
                 false);
+        return applyCountryMarkup(response, request.countryIso2());
     }
 
     @Transactional(readOnly = true)
@@ -164,7 +169,8 @@ public class CdekDeliveryService {
         CdekTariffResponse tariff = calculate(new CdekTariffRequest(
                 request.toCityCode(),
                 finalWeightGrams,
-                request.tariffCode()
+                request.tariffCode(),
+                request.countryIso2()
         ));
         BigDecimal itemsTotalScaled = itemsTotal.setScale(2, RoundingMode.HALF_UP);
         BigDecimal orderTotal = itemsTotalScaled.add(tariff.totalPrice()).setScale(2, RoundingMode.HALF_UP);
@@ -185,6 +191,44 @@ public class CdekDeliveryService {
     private Integer defaultTariff() {
         Integer cfg = client.defaultTariff();
         return cfg != null ? cfg : FALLBACK_TARIFF;
+    }
+
+    /**
+     * Надбавка к стоимости доставки СДЭК по стране получателя: RU +10%, KZ +3%,
+     * для остальных стран (включая прочие страны СНГ) — без изменений.
+     */
+    private static BigDecimal markupPercentFor(String countryIso2) {
+        if (countryIso2 == null || countryIso2.isBlank()) {
+            return null;
+        }
+        return switch (countryIso2.trim().toUpperCase(Locale.ROOT)) {
+            case "RU" -> MARKUP_PERCENT_RU;
+            case "KZ" -> MARKUP_PERCENT_KZ;
+            default -> null;
+        };
+    }
+
+    /**
+     * Применяет наценку к {@code totalPrice}, остальные поля ответа копируются без изменений.
+     * Единственное место в коде, где считается эта наценка — оба пути расчёта (превью корзины и
+     * финальный заказ) сходятся в {@link #calculate}, который оборачивает оба своих return'а этим методом.
+     */
+    private static CdekTariffResponse applyCountryMarkup(CdekTariffResponse base, String countryIso2) {
+        BigDecimal percent = markupPercentFor(countryIso2);
+        if (percent == null) {
+            return base;
+        }
+        BigDecimal markup = base.totalPrice()
+                .multiply(percent)
+                .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+        BigDecimal markedUpPrice = base.totalPrice().add(markup).setScale(2, RoundingMode.HALF_UP);
+        return new CdekTariffResponse(
+                markedUpPrice,
+                base.currency(),
+                base.minDays(),
+                base.maxDays(),
+                base.tariffCode(),
+                base.sourcedFromStub());
     }
 
     private int estimateWeightGrams(int totalQty) {

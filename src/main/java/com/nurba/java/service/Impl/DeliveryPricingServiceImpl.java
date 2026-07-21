@@ -82,8 +82,8 @@ public class DeliveryPricingServiceImpl implements DeliveryPricingService {
         }
 
         return switch (zone) {
-            case KAZAKHSTAN -> kazakhstanQuote(method, address, weight);
-            case CIS        -> cisQuote(address, weight);
+            case KAZAKHSTAN -> kazakhstanQuote(method, countryIso2, address, weight);
+            case CIS        -> cisQuote(countryIso2, address, weight);
             case INTERNATIONAL -> internationalQuote(countryIso2, weight);
         };
     }
@@ -205,7 +205,7 @@ public class DeliveryPricingServiceImpl implements DeliveryPricingService {
 
     // ── per-zone pricing ────────────────────────────────────────────────────────
 
-    private DeliveryQuote kazakhstanQuote(DeliveryType method, DeliveryAddressRequest address, BigDecimal weight) {
+    private DeliveryQuote kazakhstanQuote(DeliveryType method, String countryIso2, DeliveryAddressRequest address, BigDecimal weight) {
         return switch (method) {
             case PICKUP -> new DeliveryQuote(zero(), ShippingZone.KAZAKHSTAN, weight, null, null, null);
             case TAXI   -> {
@@ -224,7 +224,7 @@ public class DeliveryPricingServiceImpl implements DeliveryPricingService {
                 }
                 int cityCode = resolveCdekCityCode(address.getCity());
                 CdekTariffResponse tariff = cdekDeliveryService.calculate(
-                        new CdekTariffRequest(cityCode, toGrams(weight), null));
+                        new CdekTariffRequest(cityCode, toGrams(weight), null, countryIso2));
                 BigDecimal fee = tariff.totalPrice().setScale(2, RoundingMode.HALF_UP);
                 yield new DeliveryQuote(fee, ShippingZone.KAZAKHSTAN, weight, cityCode, null, null);
             }
@@ -232,14 +232,14 @@ public class DeliveryPricingServiceImpl implements DeliveryPricingService {
         };
     }
 
-    private DeliveryQuote cisQuote(DeliveryAddressRequest address, BigDecimal weight) {
+    private DeliveryQuote cisQuote(String countryIso2, DeliveryAddressRequest address, BigDecimal weight) {
         // CIS zone: CDEK only. POSTAL was removed from CIS per business requirements.
         if (address == null || isBlank(address.getCity())) {
             throw new BusinessRuleException("Для доставки СДЭК укажите город");
         }
         int cityCode = resolveCdekCityCode(address.getCity());
         CdekTariffResponse tariff = cdekDeliveryService.calculate(
-                new CdekTariffRequest(cityCode, toGrams(weight), null));
+                new CdekTariffRequest(cityCode, toGrams(weight), null, countryIso2));
         BigDecimal fee = tariff.totalPrice().setScale(2, RoundingMode.HALF_UP);
         return new DeliveryQuote(fee, ShippingZone.CIS, weight, cityCode, null, null);
     }

@@ -250,6 +250,77 @@ class CdekCalculateOrderIntegrationTest {
     }
 
     /**
+     * Same legacy-product cart as {@link #legacyProduct_returnsCorrectPriceAndHeuristicWeight},
+     * with countryIso2=RU: stub fee 1720.00 × 1.10 = 1 892.00 KZT.
+     */
+    @Test
+    void legacyProduct_russia_appliesTenPercentMarkup() throws Exception {
+        String body = """
+                {
+                  "toCityCode": %d,
+                  "items": [{ "productId": %d, "quantity": 2 }],
+                  "countryIso2": "RU"
+                }
+                """.formatted(CDEK_STUB_CITY, productId);
+
+        mockMvc.perform(post("/api/v1/delivery/cdek/calculate-order")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.itemsTotal").value(10000.00))
+                .andExpect(jsonPath("$.deliveryPrice").value(1892.00))
+                .andExpect(jsonPath("$.orderTotal").value(11892.00))
+                .andExpect(jsonPath("$.sourcedFromStub").value(true));
+    }
+
+    /**
+     * Same legacy-product cart, countryIso2=KZ: stub fee 1720.00 × 1.03 = 1 771.60 KZT.
+     */
+    @Test
+    void legacyProduct_kazakhstan_appliesThreePercentMarkup() throws Exception {
+        String body = """
+                {
+                  "toCityCode": %d,
+                  "items": [{ "productId": %d, "quantity": 2 }],
+                  "countryIso2": "KZ"
+                }
+                """.formatted(CDEK_STUB_CITY, productId);
+
+        mockMvc.perform(post("/api/v1/delivery/cdek/calculate-order")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.itemsTotal").value(10000.00))
+                .andExpect(jsonPath("$.deliveryPrice").value(1771.60))
+                .andExpect(jsonPath("$.orderTotal").value(11771.60))
+                .andExpect(jsonPath("$.sourcedFromStub").value(true));
+    }
+
+    /**
+     * Same legacy-product cart, countryIso2=US (neither RU nor KZ): no markup — identical to the
+     * no-country case in {@link #legacyProduct_returnsCorrectPriceAndHeuristicWeight}.
+     */
+    @Test
+    void legacyProduct_otherCountry_priceUnchanged() throws Exception {
+        String body = """
+                {
+                  "toCityCode": %d,
+                  "items": [{ "productId": %d, "quantity": 2 }],
+                  "countryIso2": "US"
+                }
+                """.formatted(CDEK_STUB_CITY, productId);
+
+        mockMvc.perform(post("/api/v1/delivery/cdek/calculate-order")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.itemsTotal").value(10000.00))
+                .andExpect(jsonPath("$.deliveryPrice").value(1720.00))
+                .andExpect(jsonPath("$.orderTotal").value(11720.00))
+                .andExpect(jsonPath("$.sourcedFromStub").value(true));
+    }
+
+    /**
      * Item with neither productId nor designGarmentId must be rejected immediately.
      */
     @Test

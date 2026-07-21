@@ -980,6 +980,7 @@ export function CartPage() {
           ? { designGarmentId: l.designGarmentId, quantity: l.qty }
           : { productId: l.productId, quantity: l.qty },
       ),
+      countryIso2,
     })
       .then((t) => {
         if (!cancelled) setCdekTariff(t);
@@ -1001,7 +1002,7 @@ export function CartPage() {
     };
     // linesSig tracks lines changes; lines itself used inside via closure
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [deliveryType, selectedPoint?.code, selectedCity?.code, linesSig]);
+  }, [deliveryType, selectedPoint?.code, selectedCity?.code, linesSig, countryIso2]);
 
   useEffect(() => {
     if (step === 4) {
