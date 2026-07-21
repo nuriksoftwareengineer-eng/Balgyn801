@@ -16,10 +16,10 @@ import java.util.stream.Collectors;
 class PublicSettingKeys {
     static final List<String> ALL = List.of(
             "ceo_photo_url",
-            "production_description",
-            "delivery_description",
-            "shipping_description",
-            "care_instructions");
+            "production_description_ru", "production_description_kk", "production_description_en",
+            "delivery_description_ru", "delivery_description_kk", "delivery_description_en",
+            "shipping_description_ru", "shipping_description_kk", "shipping_description_en",
+            "care_instructions_ru", "care_instructions_kk", "care_instructions_en");
 }
 
 @Service

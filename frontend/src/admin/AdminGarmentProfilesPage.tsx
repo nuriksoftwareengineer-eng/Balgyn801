@@ -26,6 +26,8 @@ const emptyForm = (): GarmentProfileRequest => ({
   heightCm: 5,
   sortOrder: 0,
   materialDescription: "",
+  materialDescriptionRu: "",
+  materialDescriptionKk: "",
 });
 
 export function AdminGarmentProfilesPage() {
@@ -66,6 +68,8 @@ export function AdminGarmentProfilesPage() {
       heightCm: p.heightCm,
       sortOrder: p.sortOrder,
       materialDescription: p.materialDescription ?? "",
+      materialDescriptionRu: p.materialDescriptionRu ?? "",
+      materialDescriptionKk: p.materialDescriptionKk ?? "",
     });
     setError(null);
   }
@@ -203,18 +207,41 @@ export function AdminGarmentProfilesPage() {
               />
             </label>
           </div>
-          <label className="mt-4 flex flex-col gap-1.5">
-            <span className="text-xs text-zinc-400">
-              Описание материала (показывается на странице товара)
-            </span>
-            <textarea
-              value={form.materialDescription ?? ""}
-              onChange={(e) => set("materialDescription", e.target.value)}
-              placeholder={"95% cotton\n5% polyester\n380 g/m²"}
-              rows={4}
-              className={inputClass}
-            />
-          </label>
+          <div className="mt-4 grid gap-4 sm:grid-cols-3">
+            <label className="flex flex-col gap-1.5">
+              <span className="text-xs text-zinc-400">Состав материала (EN, дефолт)</span>
+              <textarea
+                value={form.materialDescription ?? ""}
+                onChange={(e) => set("materialDescription", e.target.value)}
+                placeholder={"95% cotton\n5% polyester\n380 g/m²"}
+                rows={4}
+                className={inputClass}
+              />
+            </label>
+            <label className="flex flex-col gap-1.5">
+              <span className="text-xs text-zinc-400">Состав материала RU</span>
+              <textarea
+                value={form.materialDescriptionRu ?? ""}
+                onChange={(e) => set("materialDescriptionRu", e.target.value)}
+                placeholder={"95% хлопок\n5% полиэстер\n380 г/м²"}
+                rows={4}
+                className={inputClass}
+              />
+            </label>
+            <label className="flex flex-col gap-1.5">
+              <span className="text-xs text-zinc-400">Состав материала KK</span>
+              <textarea
+                value={form.materialDescriptionKk ?? ""}
+                onChange={(e) => set("materialDescriptionKk", e.target.value)}
+                placeholder={"95% мақта\n5% полиэстер\n380 г/м²"}
+                rows={4}
+                className={inputClass}
+              />
+            </label>
+          </div>
+          <p className="mt-1.5 text-[11px] text-zinc-600">
+            На странице товара показывается версия на языке покупателя; если для RU/KK не заполнено — используется EN.
+          </p>
           {error && <p className="mt-3 text-xs text-red-400">{error}</p>}
           <div className="mt-4 flex gap-3">
             <Button type="button" disabled={!form.name.trim() || saveMut.isPending} onClick={() => saveMut.mutate()}>

@@ -77,8 +77,11 @@ export interface GarmentDetail {
   garmentType: string;       // English profile name (fallback)
   garmentTypeRu?: string | null;
   garmentTypeKk?: string | null;
-  /** Material composition/care notes from the garment profile, e.g. "95% cotton, 5% polyester". */
+  /** Material composition/care notes from the garment profile, e.g. "95% cotton, 5% polyester".
+   *  Base/fallback value — see {@link localizedMaterialDescription}. */
   materialDescription?: string | null;
+  materialDescriptionRu?: string | null;
+  materialDescriptionKk?: string | null;
   active: boolean;
   prices: GarmentPrice[];
   colors: ColorInfo[];
@@ -164,6 +167,26 @@ export function garmentLabel(
   if (l === "kk") return garment.garmentTypeKk || garment.garmentTypeRu || garment.garmentType;
   if (l === "en") return garment.garmentType;
   return garment.garmentTypeRu || garment.garmentType;
+}
+
+/** Returns the localized material description, or null if none is set in any
+ *  language. Falls back the same way garmentLabel does: KK → RU → base, EN → base. */
+export function localizedMaterialDescription(
+  garment: {
+    materialDescription?: string | null;
+    materialDescriptionRu?: string | null;
+    materialDescriptionKk?: string | null;
+  },
+  lang: string,
+): string | null {
+  const l = lang.split("-")[0];
+  if (l === "kk") {
+    return garment.materialDescriptionKk || garment.materialDescriptionRu || garment.materialDescription || null;
+  }
+  if (l === "en") {
+    return garment.materialDescription || null;
+  }
+  return garment.materialDescriptionRu || garment.materialDescription || null;
 }
 
 // ── Price helpers ─────────────────────────────────────────────────────────────

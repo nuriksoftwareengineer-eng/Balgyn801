@@ -41,6 +41,8 @@ public record CreateGarmentProfileRequest(
         @Size(max = 100)
         String nameEn,
 
-        String materialDescription
+        String materialDescription,
+        String materialDescriptionRu,
+        String materialDescriptionKk
 ) {
 }

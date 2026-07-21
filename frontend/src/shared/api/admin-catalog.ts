@@ -210,6 +210,8 @@ export interface GarmentProfile {
   heightCm: number;
   sortOrder: number;
   materialDescription?: string | null;
+  materialDescriptionRu?: string | null;
+  materialDescriptionKk?: string | null;
 }
 
 export interface GarmentProfileRequest {
@@ -223,6 +225,8 @@ export interface GarmentProfileRequest {
   heightCm: number;
   sortOrder?: number;
   materialDescription?: string;
+  materialDescriptionRu?: string;
+  materialDescriptionKk?: string;
 }
 
 export function listGarmentProfiles(token: string): Promise<GarmentProfile[]> {

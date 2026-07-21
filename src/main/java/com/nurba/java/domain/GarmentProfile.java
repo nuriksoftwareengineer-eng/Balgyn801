@@ -52,7 +52,14 @@ public class GarmentProfile {
     @Column(name = "name_en", length = 100)
     private String nameEn;
 
-    /** Free-text material composition/care notes (e.g. "95% cotton, 5% polyester, 380 g/m²"). */
+    /** Free-text material composition/care notes (e.g. "95% cotton, 5% polyester, 380 g/m²").
+     *  Base/fallback value — same role as {@link #name} relative to {@link #nameRu}/{@link #nameKk}. */
     @Column(name = "material_description", columnDefinition = "TEXT")
     private String materialDescription;
+
+    @Column(name = "material_description_ru", columnDefinition = "TEXT")
+    private String materialDescriptionRu;
+
+    @Column(name = "material_description_kk", columnDefinition = "TEXT")
+    private String materialDescriptionKk;
 }

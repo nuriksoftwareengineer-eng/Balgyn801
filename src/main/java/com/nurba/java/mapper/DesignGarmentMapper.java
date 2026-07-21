@@ -26,6 +26,8 @@ public interface DesignGarmentMapper {
     @Mapping(source = "garmentProfile.nameRu", target = "garmentTypeRu")
     @Mapping(source = "garmentProfile.nameKk", target = "garmentTypeKk")
     @Mapping(source = "garmentProfile.materialDescription", target = "materialDescription")
+    @Mapping(source = "garmentProfile.materialDescriptionRu", target = "materialDescriptionRu")
+    @Mapping(source = "garmentProfile.materialDescriptionKk", target = "materialDescriptionKk")
     @Mapping(source = "prices",                target = "prices")
     @Mapping(source = "colors",                target = "colors")
     @Mapping(source = "sizes",                 target = "sizes")

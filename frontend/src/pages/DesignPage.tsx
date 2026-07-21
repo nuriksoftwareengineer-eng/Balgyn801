@@ -11,6 +11,7 @@ import {
   sortSizes,
   garmentLabel,
   localizeName,
+  localizedMaterialDescription,
   kztPrice,
 } from "@/shared/types/catalog";
 import { useSeoMeta } from "@/shared/hooks/useSeoMeta";
@@ -23,6 +24,19 @@ import { Toast } from "@/shared/ui/toast";
 import { AccordionItem } from "@/shared/ui/AccordionItem";
 import { RecommendedSection } from "@/widgets/catalog/RecommendedSection";
 import { DesignInfoStrip } from "@/widgets/design/DesignInfoStrip";
+
+/** Production/Delivery/Shipping/Care Instructions are each stored as three
+ *  site_settings keys ({baseKey}_ru/_kk/_en) — same ru→kk→en resolution as
+ *  localizeName/garmentLabel elsewhere in this file. */
+function localizedSetting(
+  settings: Record<string, string> | undefined,
+  baseKey: string,
+  lang: string,
+): string {
+  const l = lang.split("-")[0];
+  const suffix = l === "kk" ? "kk" : l === "en" ? "en" : "ru";
+  return settings?.[`${baseKey}_${suffix}`] ?? "";
+}
 
 // ── Lightbox ──────────────────────────────────────────────────────────────────
 interface LightboxProps {
@@ -629,27 +643,30 @@ export function DesignPage() {
       {design && (
         <>
           <DesignInfoStrip
-            productionText={siteSettings?.["production_description"] ?? ""}
-            deliveryText={siteSettings?.["delivery_description"] ?? ""}
+            productionText={localizedSetting(siteSettings, "production_description", i18n.language)}
+            deliveryText={localizedSetting(siteSettings, "delivery_description", i18n.language)}
           />
 
           <Container className="max-w-3xl py-12 md:py-16">
             <div className="border-t border-[--color-border]">
               <AccordionItem
                 title={t("design.info.shipping")}
-                content={siteSettings?.["shipping_description"] ?? ""}
+                content={localizedSetting(siteSettings, "shipping_description", i18n.language)}
                 open={openAccordion === "shipping"}
                 onToggle={() => setOpenAccordion(openAccordion === "shipping" ? null : "shipping")}
               />
               <AccordionItem
                 title={t("design.info.materials")}
-                content={selectedGarment?.materialDescription || t("design.info.materialsFallback")}
+                content={
+                  (selectedGarment && localizedMaterialDescription(selectedGarment, i18n.language)) ||
+                  t("design.info.materialsFallback")
+                }
                 open={openAccordion === "materials"}
                 onToggle={() => setOpenAccordion(openAccordion === "materials" ? null : "materials")}
               />
               <AccordionItem
                 title={t("design.info.careInstructions")}
-                content={siteSettings?.["care_instructions"] ?? ""}
+                content={localizedSetting(siteSettings, "care_instructions", i18n.language)}
                 open={openAccordion === "care"}
                 onToggle={() => setOpenAccordion(openAccordion === "care" ? null : "care")}
               />

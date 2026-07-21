@@ -32,33 +32,49 @@ function useSetSiteSetting() {
   });
 }
 
-/** One admin-editable multi-line text setting — Production/Delivery/Shipping/Care
- *  Instructions all follow this exact shape, reusing the same generic get/set hooks
- *  the CEO-photo section above uses. */
-function TextSettingSection({
-  settingKey,
+/** One admin-editable concept (Production/Delivery/Shipping/Care Instructions),
+ *  stored as three site_settings keys — {baseKey}_ru / _kk / _en. One textarea per
+ *  language, saved together. Reuses the same generic get/set hooks the CEO-photo
+ *  section above uses, just called three times. */
+function LocalizedTextSettingSection({
+  baseKey,
   label,
   description,
-  placeholder,
+  placeholders,
 }: {
-  settingKey: string;
+  baseKey: string;
   label: string;
   description: string;
-  placeholder: string;
+  placeholders: { ru: string; kk: string; en: string };
 }) {
-  const q = useSiteSettingAdmin(settingKey);
+  const ru = useSiteSettingAdmin(`${baseKey}_ru`);
+  const kk = useSiteSettingAdmin(`${baseKey}_kk`);
+  const en = useSiteSettingAdmin(`${baseKey}_en`);
   const setSetting = useSetSiteSetting();
-  const [value, setValue] = useState<string | null>(null);
+
+  const [ruValue, setRuValue] = useState<string | null>(null);
+  const [kkValue, setKkValue] = useState<string | null>(null);
+  const [enValue, setEnValue] = useState<string | null>(null);
   const [saveMsg, setSaveMsg] = useState<string | null>(null);
 
-  const current = value ?? q.data?.value ?? "";
+  const currentRu = ruValue ?? ru.data?.value ?? "";
+  const currentKk = kkValue ?? kk.data?.value ?? "";
+  const currentEn = enValue ?? en.data?.value ?? "";
+  const loading = ru.isLoading || kk.isLoading || en.isLoading;
 
-  async function handleSave() {
+  async function handleSaveAll() {
     setSaveMsg(null);
-    await setSetting.mutateAsync({ key: settingKey, value: current.trim() || null });
+    await Promise.all([
+      setSetting.mutateAsync({ key: `${baseKey}_ru`, value: currentRu.trim() || null }),
+      setSetting.mutateAsync({ key: `${baseKey}_kk`, value: currentKk.trim() || null }),
+      setSetting.mutateAsync({ key: `${baseKey}_en`, value: currentEn.trim() || null }),
+    ]);
     setSaveMsg("Сохранено");
     setTimeout(() => setSaveMsg(null), 3000);
   }
+
+  const textareaClass =
+    "w-full rounded border border-white/20 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-600 outline-none focus:border-white/40";
 
   return (
     <section className="mt-6 rounded-[14px] border border-white/10 bg-zinc-900/50 p-6">
@@ -67,22 +83,51 @@ function TextSettingSection({
       </h2>
       <p className="mb-5 text-xs text-zinc-500">{description}</p>
 
-      {q.isLoading ? (
-        <div className="mb-4 h-28 animate-pulse bg-zinc-800" />
+      {loading ? (
+        <div className="mb-4 grid gap-3 sm:grid-cols-3">
+          <div className="h-28 animate-pulse bg-zinc-800" />
+          <div className="h-28 animate-pulse bg-zinc-800" />
+          <div className="h-28 animate-pulse bg-zinc-800" />
+        </div>
       ) : (
-        <textarea
-          value={current}
-          onChange={(e) => setValue(e.target.value)}
-          placeholder={placeholder}
-          rows={5}
-          className="mb-4 w-full rounded border border-white/20 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-600 outline-none focus:border-white/40"
-        />
+        <div className="mb-4 grid gap-3 sm:grid-cols-3">
+          <label className="flex flex-col gap-1.5">
+            <span className="text-[11px] text-zinc-500">RU</span>
+            <textarea
+              value={currentRu}
+              onChange={(e) => setRuValue(e.target.value)}
+              placeholder={placeholders.ru}
+              rows={5}
+              className={textareaClass}
+            />
+          </label>
+          <label className="flex flex-col gap-1.5">
+            <span className="text-[11px] text-zinc-500">KK</span>
+            <textarea
+              value={currentKk}
+              onChange={(e) => setKkValue(e.target.value)}
+              placeholder={placeholders.kk}
+              rows={5}
+              className={textareaClass}
+            />
+          </label>
+          <label className="flex flex-col gap-1.5">
+            <span className="text-[11px] text-zinc-500">EN</span>
+            <textarea
+              value={currentEn}
+              onChange={(e) => setEnValue(e.target.value)}
+              placeholder={placeholders.en}
+              rows={5}
+              className={textareaClass}
+            />
+          </label>
+        </div>
       )}
 
       {saveMsg && <p className="mb-3 text-xs text-emerald-400">{saveMsg}</p>}
 
-      <Button type="button" disabled={setSetting.isPending} onClick={handleSave}>
-        {setSetting.isPending ? "Сохранение…" : "Сохранить"}
+      <Button type="button" disabled={setSetting.isPending} onClick={handleSaveAll}>
+        {setSetting.isPending ? "Сохранение…" : "Сохранить все языки"}
       </Button>
     </section>
   );
@@ -228,30 +273,48 @@ export function AdminSiteSettingsPage() {
         </div>
       </section>
 
-      {/* Product-page info block + accordion — shown on every design/product page */}
-      <TextSettingSection
-        settingKey="production_description"
+      {/* Product-page info block + accordion — shown on every design/product page.
+          Each setting is stored as three keys ({base}_ru/_kk/_en); the storefront
+          picks the one matching the visitor's language. */}
+      <LocalizedTextSettingSection
+        baseKey="production_description"
         label="Production"
         description="Короткий текст в карточке «Production» на странице товара."
-        placeholder={"Handmade after order.\nProduction takes 5–10 business days."}
+        placeholders={{
+          ru: "Изготовление вручную под заказ.\nПроизводство занимает 5–10 рабочих дней.",
+          kk: "Тапсырыс бойынша қолмен жасалады.\nӨндіріс 5–10 жұмыс күнін алады.",
+          en: "Handmade after order.\nProduction takes 5–10 business days.",
+        }}
       />
-      <TextSettingSection
-        settingKey="delivery_description"
+      <LocalizedTextSettingSection
+        baseKey="delivery_description"
         label="Delivery"
         description="Короткий текст в карточке «Delivery» на странице товара."
-        placeholder={"Worldwide delivery.\nDelivery time depends on destination country."}
+        placeholders={{
+          ru: "Доставка по всему миру.\nСрок зависит от страны получателя.",
+          kk: "Дүние жүзі бойынша жеткізу.\nМерзімі алушы еліне байланысты.",
+          en: "Worldwide delivery.\nDelivery time depends on destination country.",
+        }}
       />
-      <TextSettingSection
-        settingKey="shipping_description"
+      <LocalizedTextSettingSection
+        baseKey="shipping_description"
         label="Shipping (аккордеон)"
         description="Подробный текст в разделе «Shipping» аккордеона на странице товара — отдельно от короткого текста карточки Delivery выше."
-        placeholder={"Orders are produced within 7–10 business days.\nDelivery time:\nEurope — 2–3 weeks.\nUSA — 2–4 weeks.\nAsia — 3–5 weeks."}
+        placeholders={{
+          ru: "Заказы изготавливаются за 7–10 рабочих дней.\nСроки доставки:\nЕвропа — 2–3 недели.\nСША — 2–4 недели.\nАзия — 3–5 недель.",
+          kk: "Тапсырыстар 7–10 жұмыс күнінде дайындалады.\nЖеткізу мерзімдері:\nЕуропа — 2–3 апта.\nАҚШ — 2–4 апта.\nАзия — 3–5 апта.",
+          en: "Orders are produced within 7–10 business days.\nDelivery time:\nEurope — 2–3 weeks.\nUSA — 2–4 weeks.\nAsia — 3–5 weeks.",
+        }}
       />
-      <TextSettingSection
-        settingKey="care_instructions"
+      <LocalizedTextSettingSection
+        baseKey="care_instructions"
         label="Care Instructions"
         description="Текст в разделе «Care Instructions» аккордеона на странице товара."
-        placeholder="Machine wash cold. Do not bleach. Tumble dry low."
+        placeholders={{
+          ru: "Информация по уходу появится позже.",
+          kk: "Күтім туралы ақпарат жақында қосылады.",
+          en: "Care instructions will be available soon.",
+        }}
       />
     </div>
   );

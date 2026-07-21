@@ -13,6 +13,8 @@ public record GarmentProfileResponse(
         String nameRu,
         String nameKk,
         String nameEn,
-        String materialDescription
+        String materialDescription,
+        String materialDescriptionRu,
+        String materialDescriptionKk
 ) {
 }

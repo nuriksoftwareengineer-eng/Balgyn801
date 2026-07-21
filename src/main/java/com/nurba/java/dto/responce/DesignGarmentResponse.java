@@ -20,6 +20,8 @@ public class DesignGarmentResponse {
     private String garmentTypeKk;
     /** Material composition/care notes from the profile — shown on the storefront product page. */
     private String materialDescription;
+    private String materialDescriptionRu;
+    private String materialDescriptionKk;
     private Boolean active;
     private List<DesignGarmentPriceResponse> prices;
     private List<ColorResponse> colors;
